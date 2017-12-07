@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017.  saki t_saki@serenegiant.com
+ * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  *
  * based on DiskLruCache on AOSP
  *
