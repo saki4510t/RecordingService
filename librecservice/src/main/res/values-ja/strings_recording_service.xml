@@ -1,0 +1,12 @@
+<!--
+  ~ Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
+  -->
+
+<resources>
+	<!-- 通知エリアへの表示用メッセージ -->
+	<string name="notification_service">録画サービス</string>
+	<string name="notification_start_recording">録画開始</string>
+	<string name="notification_stop_recording">録画終了</string>
+
+	<string name="error_no_free_space">空き容量が足らないかパーミッションがありません</string>
+</resources>
