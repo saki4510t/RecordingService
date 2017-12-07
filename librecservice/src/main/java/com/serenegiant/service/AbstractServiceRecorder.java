@@ -16,7 +16,7 @@ import java.lang.ref.WeakReference;
  * Created by saki on 2017/12/05.
  *
  */
-public class AbstractServiceRecorder {
+public abstract class AbstractServiceRecorder {
 	private static final boolean DEBUG = true;	// FIXME set false on production
 	private static final String TAG = AbstractServiceRecorder.class.getSimpleName();
 
@@ -104,10 +104,10 @@ public class AbstractServiceRecorder {
 	public void start(final String outputPath)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "startTimeShift:");
+		if (DEBUG) Log.v(TAG, "start:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
-		if (service instanceof TimeShiftRecService) {
+		if (service != null) {
 			service.start(outputPath);
 		}
 	}
@@ -121,7 +121,7 @@ public class AbstractServiceRecorder {
 	public void start(final int accessId)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "startTimeShift:");
+		if (DEBUG) Log.v(TAG, "start:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
@@ -133,7 +133,7 @@ public class AbstractServiceRecorder {
 	 * 録画終了
 	 */
 	public void stop() {
-		if (DEBUG) Log.v(TAG, "stopTimeShift:");
+		if (DEBUG) Log.v(TAG, "stop:");
 		final AbstractRecorderService service = getService();
 		if (service != null) {
 			service.stop();
@@ -145,7 +145,7 @@ public class AbstractServiceRecorder {
 	 * @return
 	 */
 	public Surface getInputSurface() {
-		if (DEBUG) Log.v(TAG, "stopTimeShift:");
+		if (DEBUG) Log.v(TAG, "getInputSurface:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		return service != null ? service.getInputSurface() : null;
@@ -279,7 +279,7 @@ public class AbstractServiceRecorder {
 				if (mState == STATE_BINDING) {
 					mState = STATE_BIND;
 				}
-				mService = ((TimeShiftRecService.LocalBinder)service).getService();
+				mService = getService(service);
 				mServiceSync.notifyAll();
 			}
 			mCallback.onReady();
@@ -297,4 +297,5 @@ public class AbstractServiceRecorder {
 		}
 	};
 
+	protected abstract AbstractRecorderService getService(final IBinder service);
 }

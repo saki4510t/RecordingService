@@ -5,6 +5,7 @@
 package com.serenegiant.service;
 
 import android.content.Context;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -20,11 +21,6 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 		@NonNull final Callback callback) {
 
 		super(context, serviceClazz, callback);
-	}
-
-	protected void internalRelease() {
-		stopTimeShift();
-		super.internalRelease();
 	}
 
 	/**
@@ -49,7 +45,6 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 		}
 	}
 
-//================================================================================
 	/**
 	 * タイムシフトバッファリング中かどうかを取得
 	 * @return
@@ -59,5 +54,17 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 		return (service instanceof TimeShiftRecService)
 			&& ((TimeShiftRecService) service).isTimeShift();
 	}
+
+//================================================================================
+	protected void internalRelease() {
+		stopTimeShift();
+		super.internalRelease();
+	}
+	
+	@Override
+	protected AbstractRecorderService getService(final IBinder service) {
+		return ((TimeShiftRecService.LocalBinder)service).getService();
+	}
+	
 
 }
