@@ -54,6 +54,7 @@ import static com.serenegiant.media.MediaCodecHelper.selectVideoCodec;
 /**
  * Created by saki on 2017/12/05.
  * TimeShiftRecServiceから流用できそうな部分を切り出し
+ * FIXME 今は録画のみ。録音は未対応
  */
 public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = true; // FIXME set false on production
@@ -171,12 +172,15 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @return
 	 */
 	public boolean isRecording() {
-		final int state = getState();
-		return (state == STATE_RECORDING);
+		synchronized (mSync) {
+			return (getState() == STATE_RECORDING);
+		}
 	}
 
 	public boolean isRunning() {
-		return getState() == STATE_RECORDING;
+		synchronized (mSync) {
+			return getState() == STATE_RECORDING;
+		}
 	}
 	
 	protected void setState(final int newState) {
@@ -210,10 +214,8 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	protected void checkStopSelf() {
 		if (DEBUG) Log.v(TAG, "checkStopSelf:");
-		boolean isRunning = mIsBind | isRunning();
-		// FIXME ここで終了できるかどうか確認
 		synchronized (mSync) {
-			if (!isRunning()) {
+			if (canStopSelf(mIsBind | isRunning())) {
 				if (DEBUG) Log.v(TAG, "stopSelf");
 				setState(STATE_RELEASING);
 				queueEvent(new Runnable() {
@@ -226,7 +228,15 @@ public abstract class AbstractRecorderService extends BaseService {
 			}
 		}
 	}
-
+	
+	/**
+	 * サービスを終了可能かどうかを確認
+	 * @return 終了可能であればtrue
+	 */
+	protected boolean canStopSelf(final boolean isRunning) {
+		return !isRunning;
+	}
+	
 	@SuppressWarnings("deprecation")
 	protected void showNotification(final CharSequence text) {
 		final PendingIntent intent = createPendingIntent();
@@ -390,9 +400,15 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	private static final String EXT_VIDEO = ".mp4";
 	private String mOutputPath;
-
+	
+	/**
+	 * #startの実態, mSyncをロックして呼ばれる
+	 * @param outputPath
+	 * @throws IOException
+	 */
 	protected void internalStart(final String outputPath) throws IOException {
 		if (DEBUG) Log.v(TAG, "internalStart:");
+		// FIXME 録音は未対応
 		if (mVideoFormat != null) {
 			if (checkFreeSpace(this, 0)) {
 				final IMuxer muxer = new MediaMuxerWrapper(
@@ -409,6 +425,11 @@ public abstract class AbstractRecorderService extends BaseService {
 		setState(STATE_RECORDING);
 	}
 	
+	/**
+	 * #startの実態, mSyncをロックして呼ばれる
+	 * @param accessId
+	 * @throws IOException
+	 */
 	protected void internalStart(final int accessId) throws IOException {
 		if (DEBUG) Log.v(TAG, "internalStart:");
 		if (mVideoFormat != null) {
@@ -453,7 +474,15 @@ public abstract class AbstractRecorderService extends BaseService {
 		return FileUtils.checkFreeSpace(context,
 			VideoConfig.maxDuration, System.currentTimeMillis(), accessId);
 	}
-
+	
+	/**
+	 * エンコード済みのフレームデータを書き出す
+	 * @param reaperType
+	 * @param byteBuf
+	 * @param bufferInfo
+	 * @param pts
+	 * @throws IOException
+	 */
 	protected abstract void onWriteSampleData(final int reaperType,
 		final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo,
 		final long pts) throws IOException;
@@ -463,12 +492,15 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	private final MediaReaper.ReaperListener
 		mReaperListener = new MediaReaper.ReaperListener() {
+
 		@Override
 		public void writeSampleData(final int reaperType,
 			final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
 
 //			if (DEBUG) Log.v(TAG, "writeSampleData:");
-			if (reaperType == MediaReaper.REAPER_VIDEO) {
+			switch (reaperType) {
+			case MediaReaper.REAPER_VIDEO:
+//			case MediaReaper.REAPER_AUDIO:	// FIXME 録音は未対応
 				try {
 					final long ptsUs = getInputPTSUs();
 					synchronized (mSync) {
@@ -477,12 +509,14 @@ public abstract class AbstractRecorderService extends BaseService {
 				} catch (final IOException e) {
 					AbstractRecorderService.this.onError(e);
 				}
+				break;
 			}
 		}
 
 		@Override
 		public void onOutputFormatChanged(final MediaFormat format) {
 			if (DEBUG) Log.v(TAG, "onOutputFormatChanged:");
+			// FIXME 録音は未対応
 			mVideoFormat = format;	// そのまま代入するだけでいいんかなぁ
 		}
 
@@ -515,7 +549,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		throws IOException;
 	
 	/**
-	 * 非同期でディスクキャッシュからエンコード済みの動画フレームを取得して
+	 * 非同期でエンコード済みの動画フレームを取得して
 	 * mp4ファイルへ書き出すためのRunnable
 	 */
 	private class RecordingTask implements Runnable {
@@ -591,7 +625,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	/**
-	 * 録画終了, バッファリングは継続
+	 * 録画終了
 	 */
 	public void stop() {
 		if (DEBUG) Log.v(TAG, "stop:");
@@ -599,7 +633,10 @@ public abstract class AbstractRecorderService extends BaseService {
 			internalStop();
 		}
 	}
-
+	
+	/**
+	 * 録画終了の実態, mSyncをロックして呼ばれる
+	 */
 	protected void internalStop() {
 		if (DEBUG) Log.v(TAG, "internalStop:");
 		mRecordingTask = null;

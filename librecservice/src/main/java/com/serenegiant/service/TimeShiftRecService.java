@@ -96,7 +96,9 @@ public class TimeShiftRecService extends AbstractRecorderService {
 
 	@Override
 	public boolean isRunning() {
-		return super.isRunning() || (getState() == STATE_BUFFERING);
+		synchronized (mSync) {
+			return super.isRunning() || (getState() == STATE_BUFFERING);
+		}
 	}
 
 	/**
@@ -104,8 +106,10 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * @return
 	 */
 	public boolean isTimeShift() {
-		final int state = getState();
-		return (state == STATE_BUFFERING) || (state == STATE_RECORDING);
+		synchronized (mSync) {
+			final int state = getState();
+			return (state == STATE_BUFFERING) || (state == STATE_RECORDING);
+		}
 	}
 
 	/**
@@ -116,9 +120,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (DEBUG) Log.v(TAG, "clear:");
 		stop();
 		internalStopTimeShift();
-		synchronized (mSync) {
-			setState(STATE_INITIALIZED);
-		}
+		setState(STATE_INITIALIZED);
 	}
 
 	@Override
@@ -131,12 +133,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * タイムシフトバッファリングを終了の実体
 	 */
 	private void internalStopTimeShift() {
-		synchronized (mSync) {
-			if (getState() == STATE_BUFFERING) {
-				setState(STATE_READY);
-			} else {
-				return;
-			}
+		if (getState() == STATE_BUFFERING) {
+			setState(STATE_READY);
 			releaseEncoder();
 		}
 	}
@@ -242,6 +240,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	protected void internalPrepare(final int width, final int height,
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
+
 		File cacheDir = null;
 		if (!TextUtils.isEmpty(mCacheDir)) {
 			// キャッシュディレクトリが指定されている時
