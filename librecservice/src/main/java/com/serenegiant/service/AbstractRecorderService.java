@@ -160,6 +160,10 @@ public abstract class AbstractRecorderService extends BaseService {
 		return (state == STATE_RECORDING);
 	}
 
+	public boolean isRunning() {
+		return getState() == STATE_RECORDING;
+	}
+	
 	protected void setState(final int newState) {
 		boolean changed;
 		synchronized (mSync) {
@@ -189,10 +193,6 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 	}
 
-	public boolean isRunning() {
-		return getState() == STATE_RECORDING;
-	}
-	
 	protected void checkStopSelf() {
 		if (DEBUG) Log.v(TAG, "checkStopSelf:");
 		boolean isRunning = mIsBind | isRunning();
@@ -214,15 +214,19 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	@SuppressWarnings("deprecation")
 	protected void showNotification(final CharSequence text) {
-		final Notification notification = new Notification.Builder(this)
+		final PendingIntent intent = createPendingIntent();
+		final Notification.Builder builder
+		 	= new Notification.Builder(this)
 			.setSmallIcon(R.mipmap.ic_recording_service)  // the status icon
 			.setTicker(text)  // the status text
 			.setWhen(System.currentTimeMillis())  // the time stamp
 			.setContentTitle(getText(R.string.time_shift))  // the label of the entry
-			.setContentText(text)  // the contents of the entry
-			.setContentIntent(createPendingIntent())  // The intent to send when the entry is clicked
-			.build();
+			.setContentText(text);  // the contents of the entry
+		if (intent != null) {
+			builder.setContentIntent(intent);  // The intent to send when the entry is clicked
+		}
 		// Send the notification.
+		final Notification notification = builder.build();
 		synchronized (mSync) {
 			if (mNotificationManager != null) {
 				startForeground(NOTIFICATION, notification);
@@ -233,11 +237,14 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	/**
 	 * サービスのティフィケーションを選択した時に実行されるPendingIntentの生成
-	 * 普通はMainActivityを起動させる
+	 * 普通はMainActivityを起動させる。
+	 * デフォルトはnullを返すだけでのティフィケーションを選択しても何も実行されない。
 	 * @return
 	 */
-	@NonNull
-	protected abstract PendingIntent createPendingIntent();
+	@Nullable
+	protected PendingIntent createPendingIntent() {
+		return null;
+	}
 
 	/**
 	 * 録画の準備
@@ -307,7 +314,8 @@ public abstract class AbstractRecorderService extends BaseService {
 		// エンコーダーへの入力に使うSurfaceを取得する
 		mInputSurface = mVideoEncoder.createInputSurface();	// API >= 18
 		mVideoEncoder.start();
-		mVideoReaper = new MediaReaper.VideoReaper(mVideoEncoder, mReaperListener, width, height);
+		mVideoReaper = new MediaReaper.VideoReaper(mVideoEncoder, mReaperListener,
+			width, height);
 	}
 
 	/**

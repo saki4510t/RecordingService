@@ -107,7 +107,7 @@ public class AbstractServiceRecorder {
 		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
-		if (service instanceof AbstractTimeShiftRecService) {
+		if (service instanceof TimeShiftRecService) {
 			service.start(outputPath);
 		}
 	}
@@ -279,7 +279,7 @@ public class AbstractServiceRecorder {
 				if (mState == STATE_BINDING) {
 					mState = STATE_BIND;
 				}
-				mService = ((AbstractTimeShiftRecService.LocalBinder)service).getService();
+				mService = ((TimeShiftRecService.LocalBinder)service).getService();
 				mServiceSync.notifyAll();
 			}
 			mCallback.onReady();

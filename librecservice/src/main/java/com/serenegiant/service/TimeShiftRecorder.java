@@ -2,15 +2,11 @@
  * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  */
 
-package com.serenegiant.media;
+package com.serenegiant.service;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
-
-import com.serenegiant.service.AbstractRecorderService;
-import com.serenegiant.service.AbstractServiceRecorder;
-import com.serenegiant.service.AbstractTimeShiftRecService;
 
 import java.io.IOException;
 
@@ -20,7 +16,7 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 
 
 	public TimeShiftRecorder(final Context context,
-		@NonNull Class<? extends AbstractTimeShiftRecService> serviceClazz,
+		@NonNull Class<? extends TimeShiftRecService> serviceClazz,
 		@NonNull final Callback callback) {
 
 		super(context, serviceClazz, callback);
@@ -37,8 +33,8 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	public void startTimeShift() throws IOException {
 		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		final AbstractRecorderService service = getService();
-		if (service instanceof AbstractTimeShiftRecService) {
-			((AbstractTimeShiftRecService) service).startTimeShift();
+		if (service instanceof TimeShiftRecService) {
+			((TimeShiftRecService) service).startTimeShift();
 		}
 	}
 
@@ -48,8 +44,8 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	public void stopTimeShift() {
 		if (DEBUG) Log.v(TAG, "stopTimeShift:");
 		final AbstractRecorderService service = getService();
-		if (service instanceof AbstractTimeShiftRecService) {
-			((AbstractTimeShiftRecService) service).stopTimeShift();
+		if (service instanceof TimeShiftRecService) {
+			((TimeShiftRecService) service).stopTimeShift();
 		}
 	}
 
@@ -60,8 +56,8 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	 */
 	public boolean isTimeShift() {
 		final AbstractRecorderService service = getService();
-		return (service instanceof AbstractTimeShiftRecService)
-			&& ((AbstractTimeShiftRecService) service).isTimeShift();
+		return (service instanceof TimeShiftRecService)
+			&& ((TimeShiftRecService) service).isTimeShift();
 	}
 
 }

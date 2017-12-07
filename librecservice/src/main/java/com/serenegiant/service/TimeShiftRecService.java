@@ -12,7 +12,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.serenegiant.librecservice.BuildConfig;
-import com.serenegiant.media.TimeShiftDiskCache;
 import com.serenegiant.media.VideoConfig;
 
 import java.io.File;
@@ -21,10 +20,11 @@ import java.nio.ByteBuffer;
 
 /**
  * タイムシフト録画サービス
+ * #startTimeShift => [#start => #stop] => #stopTimeShift
  */
-public abstract class AbstractTimeShiftRecService extends AbstractRecorderService {
+public class TimeShiftRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = true;	// FIXME set false on production
-	private static final String TAG = "AbstractTimeShiftRecService";
+	private static final String TAG = TimeShiftRecService.class.getSimpleName();
 
 	private static final long CACHE_SIZE = 1024 * 1024 * 20; // 20MB... 1920x1080@15fpsで20秒強ぐらい
 	private static final String MIME_TYPE = "video/avc";
@@ -34,10 +34,10 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 	
 	private static final long DEFAULT_MAX_SHIFT_MS = 10000L;	// 10秒
 
-	/**Binder class to access this local service */
+	/** Binder class to access this local service */
 	public class LocalBinder extends Binder {
-		public AbstractTimeShiftRecService getService() {
-			return AbstractTimeShiftRecService.this;
+		public TimeShiftRecService getService() {
+			return TimeShiftRecService.this;
 		}
 	}
 
@@ -78,6 +78,20 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 		checkStopSelf();
 	}
 
+	@Override
+	public boolean isRunning() {
+		return super.isRunning() || (getState() == STATE_BUFFERING);
+	}
+
+	/**
+	 * タイムシフトバッファリング中かどうかを取得
+	 * @return
+	 */
+	public boolean isTimeShift() {
+		final int state = getState();
+		return (state == STATE_BUFFERING) || (state == STATE_RECORDING);
+	}
+
 	/**
 	 * タイムシフト処理を全て停止して初期状態に戻す
 	 * 一度#prepareを呼ぶと#clearを呼ぶまではキャッシュディレクトリやキャッシュサイズは変更できない
@@ -97,21 +111,6 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 	}
 	
 //================================================================================
-	@Override
-	public boolean isRunning() {
-		return super.isRunning() || (getState() == STATE_BUFFERING);
-	}
-
-	/**
-	 * タイムシフトバッファリング中かどうかを取得
-	 * @return
-	 */
-	public boolean isTimeShift() {
-		final int state = getState();
-		return (state == STATE_BUFFERING) || (state == STATE_RECORDING);
-	}
-
-//--------------------------------------------------------------------------------
 	/**
 	 * タイムシフトバッファリングを終了の実体
 	 */
@@ -152,25 +151,26 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 		super.internalStop();
 	}
 	
-	protected void onError(final Exception e) {
-		super.onError(e);
-		stopAsync();
-	}
-	
 	/**
-	 * 非同期でstopを呼ぶ
+	 * 非同期で#stopTimeShiftを呼ぶ
 	 */
-	private void stopAsync() {
-		if (DEBUG) Log.v(TAG, "stopAsync:");
+	private void stopTimeShiftAsync() {
+		if (DEBUG) Log.v(TAG, "stopTimeShiftAsync:");
 		queueEvent(new Runnable() {
 			@Override
 			public void run() {
-				if (DEBUG) Log.v(TAG, "stopAsync#run:");
+				if (DEBUG) Log.v(TAG, "stopTimeShiftAsync#run:");
 				stopTimeShift();
 			}
 		});
 	}
 
+	@Override
+	protected void onError(final Exception e) {
+		super.onError(e);
+		stopTimeShiftAsync();
+	}
+	
 	/**
 	 * キャッシュサイズを指定
 	 * @param cacheSize
