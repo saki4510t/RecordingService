@@ -53,7 +53,7 @@ import static com.serenegiant.media.MediaCodecHelper.selectVideoCodec;
 
 /**
  * Created by saki on 2017/12/05.
- *
+ * TimeShiftRecServiceから流用できそうな部分を切り出し
  */
 public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = true; // FIXME set false on production
@@ -503,7 +503,15 @@ public abstract class AbstractRecorderService extends BaseService {
 		Log.w(TAG, e);
 	}
 	
-	protected abstract byte[] processFrame(final MediaCodec.BufferInfo info)
+	/**
+	 * フレームデータが準備できているかどうか確認して準備できていれば
+	 * BufferInfoを設定してByteBufferを返す
+	 * @param info
+	 * @return
+	 * @throws IOException
+	 */
+	@Nullable
+	protected abstract ByteBuffer processFrame(final MediaCodec.BufferInfo info)
 		throws IOException;
 	
 	/**
@@ -524,7 +532,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			if (DEBUG) Log.v(TAG, "RecordingTask#run");
 			final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 			int frames = 0, error = 0;
-			byte[] buf = null;
+			ByteBuffer buf = null;
 			muxer.start();
 			boolean iFrame = false;
 			for ( ; ; ) {
@@ -561,7 +569,7 @@ public abstract class AbstractRecorderService extends BaseService {
 					+ ", presentationTimeUs=" + info.presentationTimeUs);
 				try {
 					frames++;
-					muxer.writeSampleData(trackIndex, ByteBuffer.wrap(buf, 0, info.size), info);
+					muxer.writeSampleData(trackIndex, buf, info);
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					error++;

@@ -32,6 +32,10 @@ import java.nio.ByteBuffer;
 
 /**
  * タイムシフト録画サービス
+ * #startTimeShiftを呼ぶと常時エンコードをしながら一定間分を保持
+ * #startを呼ぶと保持しているところまで遡って実際の録画を開始
+ * #stopを呼ぶと録画を終了、エンコード自体は継続
+ * #stopTimeShiftを呼ぶとエンコードを終了
  * #startTimeShift => [#start => #stop] => #stopTimeShift
  */
 public class TimeShiftRecService extends AbstractRecorderService {
@@ -296,7 +300,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	TimeShiftDiskCache.Snapshot oldest;
 	@SuppressWarnings("WrongConstant")
 	@Override
-	protected byte[] processFrame(final MediaCodec.BufferInfo info)
+	protected ByteBuffer processFrame(final MediaCodec.BufferInfo info)
 		throws IOException {
 
 		if (mVideoCache.size() > 0) {
@@ -314,7 +318,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 				}
 				prevPtsUs = info.presentationTimeUs;
 			}
-			return buf;
+			return ByteBuffer.wrap(buf, 0, info.size);
 		} else {
 			info.size = 0;
 		}
