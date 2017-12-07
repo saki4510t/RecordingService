@@ -101,14 +101,14 @@ public class AbstractServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void startRecording(final String outputPath)
+	public void start(final String outputPath)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "startRecording:");
+		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service instanceof AbstractTimeShiftRecService) {
-			service.startRecording(outputPath);
+			service.start(outputPath);
 		}
 	}
 
@@ -118,25 +118,25 @@ public class AbstractServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void startRecording(final int accessId)
+	public void start(final int accessId)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "startRecording:");
+		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.startRecording(accessId);
+			service.start(accessId);
 		}
 	}
 
 	/**
 	 * 録画終了
 	 */
-	public void stopRecording() {
-		if (DEBUG) Log.v(TAG, "stopRecording:");
+	public void stop() {
+		if (DEBUG) Log.v(TAG, "stopTimeShift:");
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.stopRecording();
+			service.stop();
 		}
 	}
 
@@ -145,7 +145,7 @@ public class AbstractServiceRecorder {
 	 * @return
 	 */
 	public Surface getInputSurface() {
-		if (DEBUG) Log.v(TAG, "stopRecording:");
+		if (DEBUG) Log.v(TAG, "stopTimeShift:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		return service != null ? service.getInputSurface() : null;

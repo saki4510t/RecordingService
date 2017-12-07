@@ -20,36 +20,36 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 
 
 	public TimeShiftRecorder(final Context context,
-		@NonNull Class<? extends AbstractRecorderService> serviceClazz,
+		@NonNull Class<? extends AbstractTimeShiftRecService> serviceClazz,
 		@NonNull final Callback callback) {
 
 		super(context, serviceClazz, callback);
 	}
 
 	protected void internalRelease() {
-		stop();
+		stopTimeShift();
 		super.internalRelease();
 	}
 
 	/**
 	 * タイムシフトバッファリング開始
 	 */
-	public void start() throws IOException {
-		if (DEBUG) Log.v(TAG, "start:");
+	public void startTimeShift() throws IOException {
+		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		final AbstractRecorderService service = getService();
 		if (service instanceof AbstractTimeShiftRecService) {
-			((AbstractTimeShiftRecService) service).start();
+			((AbstractTimeShiftRecService) service).startTimeShift();
 		}
 	}
 
 	/**
 	 * タイムシフトバッファリング終了
 	 */
-	public void stop() {
-		if (DEBUG) Log.v(TAG, "stop:");
+	public void stopTimeShift() {
+		if (DEBUG) Log.v(TAG, "stopTimeShift:");
 		final AbstractRecorderService service = getService();
 		if (service instanceof AbstractTimeShiftRecService) {
-			((AbstractTimeShiftRecService) service).stop();
+			((AbstractTimeShiftRecService) service).stopTimeShift();
 		}
 	}
 

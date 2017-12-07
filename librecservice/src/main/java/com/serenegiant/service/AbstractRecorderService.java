@@ -56,9 +56,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	
 	public interface StateChangeListener {
 		public void onStateChanged(@NonNull final AbstractRecorderService service,
-								   final int state);
+			final int state);
 	}
-
+	
 	protected final Object mSync = new Object();
 	private final Set<StateChangeListener> mListeners
 		= new CopyOnWriteArraySet<StateChangeListener>();
@@ -347,10 +347,10 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * 録画開始
 	 * @param outputPath
 	 */
-	public void startRecording(final String outputPath) throws IllegalStateException, IOException {
-		if (DEBUG) Log.v(TAG, "startRecording:");
+	public void start(final String outputPath) throws IllegalStateException, IOException {
+		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			internalStartRecording(outputPath);
+			internalStart(outputPath);
 		}
 	}
 
@@ -358,17 +358,18 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * 録画開始
 	 * @param accessId
 	 */
-	public void startRecording(final int accessId) throws IllegalStateException, IOException {
-		if (DEBUG) Log.v(TAG, "startRecording:");
+	public void start(final int accessId) throws IllegalStateException, IOException {
+		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			internalStartRecording(accessId);
+			internalStart(accessId);
 		}
 	}
 
 	private static final String EXT_VIDEO = ".mp4";
 	private String mOutputPath;
 
-	protected void internalStartRecording(final String outputPath) throws IOException {
+	protected void internalStart(final String outputPath) throws IOException {
+		if (DEBUG) Log.v(TAG, "internalStart:");
 		if (mVideoFormat != null) {
 			if (checkFreeSpace(this, 0)) {
 				final IMuxer muxer = new MediaMuxerWrapper(
@@ -385,12 +386,14 @@ public abstract class AbstractRecorderService extends BaseService {
 		setState(STATE_RECORDING);
 	}
 	
-	protected void internalStartRecording(final int accessId) throws IOException {
+	protected void internalStart(final int accessId) throws IOException {
+		if (DEBUG) Log.v(TAG, "internalStart:");
 		if (mVideoFormat != null) {
 			if (checkFreeSpace(this, accessId)) {
 				// 録画開始
 				final IMuxer muxer;
 				if ((accessId > 0) && SDUtils.hasStorageAccess(this, accessId)) {
+					// FIXME Oreoの場合の処理を追加
 					mOutputPath = FileUtils.getCaptureFile(this,
 						Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, accessId).toString();
 					final String file_name = FileUtils.getDateTimeString() + EXT_VIDEO;
@@ -556,14 +559,15 @@ public abstract class AbstractRecorderService extends BaseService {
 	/**
 	 * 録画終了, バッファリングは継続
 	 */
-	public void stopRecording() {
-		if (DEBUG) Log.v(TAG, "stopRecording:");
+	public void stop() {
+		if (DEBUG) Log.v(TAG, "stop:");
 		synchronized (mSync) {
-			internalStopRecording();
+			internalStop();
 		}
 	}
 
-	protected void internalStopRecording() {
+	protected void internalStop() {
+		if (DEBUG) Log.v(TAG, "internalStop:");
 		mRecordingTask = null;
 		if (!TextUtils.isEmpty(mOutputPath)) {
 			final String path = mOutputPath;

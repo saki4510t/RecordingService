@@ -50,15 +50,15 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 
 	@Override
 	public boolean onUnbind(final Intent intent) {
-		stop();
+		stopTimeShift();
 		return super.onUnbind(intent);
 	}
 	
 	/**
 	 * タイムシフトバッファリングを開始
 	 */
-	public void start() throws IllegalStateException {
-		if (DEBUG) Log.v(TAG, "start:");
+	public void startTimeShift() throws IllegalStateException {
+		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		synchronized (mSync) {
 			if (getState() != STATE_READY) {
 				throw new IllegalStateException();
@@ -71,10 +71,10 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 	/**
 	 * タイムシフトバッファリングを終了
 	 */
-	public void stop() {
-		if (DEBUG) Log.v(TAG, "stop:");
-		stopRecording();
-		internalStop();
+	public void stopTimeShift() {
+		if (DEBUG) Log.v(TAG, "stopTimeShift:");
+		stop();
+		internalStopTimeShift();
 		checkStopSelf();
 	}
 
@@ -84,8 +84,8 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 	 */
 	public void clear() {
 		if (DEBUG) Log.v(TAG, "clear:");
-		stopRecording();
-		internalStop();
+		stop();
+		internalStopTimeShift();
 		synchronized (mSync) {
 			setState(STATE_INITIALIZED);
 		}
@@ -115,7 +115,7 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 	/**
 	 * タイムシフトバッファリングを終了の実体
 	 */
-	private void internalStop() {
+	private void internalStopTimeShift() {
 		synchronized (mSync) {
 			if (getState() == STATE_BUFFERING) {
 				setState(STATE_READY);
@@ -127,29 +127,29 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 	}
 	
 	@Override
-	protected void internalStartRecording(final String outputPath) throws IOException {
+	protected void internalStart(final String outputPath) throws IOException {
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		super.internalStartRecording(outputPath);
+		super.internalStart(outputPath);
 	}
 
 	@Override
-	protected void internalStartRecording(final int accessId) throws IOException {
+	protected void internalStart(final int accessId) throws IOException {
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		super.internalStartRecording(accessId);
+		super.internalStart(accessId);
 	}
 
 	@Override
-	protected void internalStopRecording() {
+	protected void internalStop() {
 		if (getState() == STATE_RECORDING) {
 			setState(STATE_BUFFERING);
 		} else {
 			return;
 		}
-		super.internalStopRecording();
+		super.internalStop();
 	}
 	
 	protected void onError(final Exception e) {
@@ -166,7 +166,7 @@ public abstract class AbstractTimeShiftRecService extends AbstractRecorderServic
 			@Override
 			public void run() {
 				if (DEBUG) Log.v(TAG, "stopAsync#run:");
-				stop();
+				stopTimeShift();
 			}
 		});
 	}
