@@ -2,7 +2,7 @@
  * Copyright (c) 2016.  saki t_saki@serenegiant.com
  */
 
-package com.serenegiant.media.timeshift;
+package com.serenegiant.service;
 
 import android.content.Intent;
 import android.media.MediaCodec;
@@ -12,7 +12,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.serenegiant.librecservice.BuildConfig;
-import com.serenegiant.media.AbstractRecorderService;
+import com.serenegiant.media.TimeShiftDiskCache;
 import com.serenegiant.media.VideoConfig;
 
 import java.io.File;

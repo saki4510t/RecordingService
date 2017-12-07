@@ -2,14 +2,15 @@
  * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  */
 
-package com.serenegiant.media.timeshift;
+package com.serenegiant.media;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.serenegiant.media.AbstractRecorderService;
-import com.serenegiant.media.AbstractServiceRecorder;
+import com.serenegiant.service.AbstractRecorderService;
+import com.serenegiant.service.AbstractServiceRecorder;
+import com.serenegiant.service.AbstractTimeShiftRecService;
 
 import java.io.IOException;
 

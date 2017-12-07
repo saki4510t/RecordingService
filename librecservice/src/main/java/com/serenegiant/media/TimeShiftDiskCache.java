@@ -2,7 +2,7 @@
  * Copyright (c) 2017.  saki t_saki@serenegiant.com
  */
 
-package com.serenegiant.media.timeshift;
+package com.serenegiant.media;
 
 import android.os.SystemClock;
 import android.support.annotation.NonNull;

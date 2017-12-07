@@ -1,4 +1,4 @@
-package com.serenegiant.media;
+package com.serenegiant.service;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -8,8 +8,6 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Surface;
-
-import com.serenegiant.media.timeshift.AbstractTimeShiftRecService;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;

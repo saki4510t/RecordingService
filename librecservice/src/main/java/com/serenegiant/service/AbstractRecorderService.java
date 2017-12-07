@@ -1,4 +1,4 @@
-package com.serenegiant.media;
+package com.serenegiant.service;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -20,7 +20,11 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.serenegiant.librecservice.R;
-import com.serenegiant.service.BaseService;
+import com.serenegiant.media.IMuxer;
+import com.serenegiant.media.MediaMuxerWrapper;
+import com.serenegiant.media.MediaReaper;
+import com.serenegiant.media.VideoConfig;
+import com.serenegiant.media.VideoMuxer;
 import com.serenegiant.utils.FileUtils;
 import com.serenegiant.utils.SDUtils;
 
