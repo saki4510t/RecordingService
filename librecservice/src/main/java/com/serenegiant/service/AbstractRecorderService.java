@@ -519,7 +519,9 @@ public abstract class AbstractRecorderService extends BaseService {
 						buf = processFrame(info);
 						if (buf != null) {
 							if (!iFrame) {
-								if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != MediaCodec.BUFFER_FLAG_KEY_FRAME) {
+								if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME)
+									!= MediaCodec.BUFFER_FLAG_KEY_FRAME) {
+
 									continue;
 								} else {
 									iFrame = true;
@@ -540,7 +542,8 @@ public abstract class AbstractRecorderService extends BaseService {
 						continue;
 					}
 				} // synchronized (mSync)
-				if (DEBUG) Log.v(TAG, "writeSampleData:size=" + info.size + ", presentationTimeUs=" + info.presentationTimeUs);
+				if (DEBUG) Log.v(TAG, "writeSampleData:size=" + info.size
+					+ ", presentationTimeUs=" + info.presentationTimeUs);
 				try {
 					frames++;
 					muxer.writeSampleData(trackIndex, ByteBuffer.wrap(buf, 0, info.size), info);

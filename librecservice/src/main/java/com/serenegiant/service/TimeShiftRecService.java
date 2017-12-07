@@ -195,9 +195,12 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * キャッシュ場所を指定, パーミッションが有ってアプリから書き込めること
 	 * @param cacheDir
 	 * @throws IllegalStateException prepareよりも後には呼べない
-	 * @throws IllegalArgumentException パーミッションが無いあるいは存在しない場所など書き込めない時
+	 * @throws IllegalArgumentException パーミッションが無い
+	 * 									あるいは存在しない場所など書き込めない時
 	 */
-	public void setCacheDir(final String cacheDir) throws IllegalStateException, IllegalArgumentException {
+	public void setCacheDir(final String cacheDir)
+		throws IllegalStateException, IllegalArgumentException {
+
 		synchronized (mSync) {
 			if (getState() != STATE_INITIALIZED) {
 				throw new IllegalStateException();
@@ -211,7 +214,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 						throw new IllegalArgumentException();
 					}
 				} catch (final Exception e) {
-					throw new IllegalArgumentException("can't write to the directory:" + cacheDir);
+					throw new IllegalArgumentException(
+						"can't write to the directory:" + cacheDir);
 				}
 			}
 		}
@@ -228,7 +232,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			cacheDir = new File(mCacheDir);
 		}
 		if ((cacheDir == null) || !cacheDir.canWrite()) {
-			// キャッシュディレクトリが指定されていないか書き込めない時は外部ストレージのキャッシュディレクトリを試みる
+			// キャッシュディレクトリが指定されていないか書き込めない時は
+			// 外部ストレージのキャッシュディレクトリを試みる
 			cacheDir = getExternalCacheDir();
 			if ((cacheDir == null) || !cacheDir.canWrite()) {
 				// 内部ストレージのキャッシュディレクトリを試みる
@@ -240,7 +245,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		}
 		final long maxShiftMs = getMaxShiftMs();
 		VideoConfig.maxDuration = maxShiftMs;
-		mVideoCache = TimeShiftDiskCache.open(cacheDir, BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+		mVideoCache = TimeShiftDiskCache.open(cacheDir,
+			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
 		super.internalPrepare(width, height, frameRate, bpp);
 	}
 
@@ -278,7 +284,9 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	TimeShiftDiskCache.Snapshot oldest;
 	@SuppressWarnings("WrongConstant")
 	@Override
-	protected byte[] processFrame(final MediaCodec.BufferInfo info) throws IOException {
+	protected byte[] processFrame(final MediaCodec.BufferInfo info)
+		throws IOException {
+
 		if (mVideoCache.size() > 0) {
 			oldest = mVideoCache.getOldest();
 			info.size = oldest != null ? oldest.available(0) : 0;

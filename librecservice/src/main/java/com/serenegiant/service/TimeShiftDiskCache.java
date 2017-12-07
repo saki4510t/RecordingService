@@ -317,8 +317,10 @@ final class TimeShiftDiskCache implements Closeable {
 	 * @param maxDuration the maximum time as mills seconds that this cache will hold
 	 * @throws IOException if reading or writing the cache directory fails
 	 */
-	public static TimeShiftDiskCache open(final File directory, final int appVersion, final int valueCount, final long maxSize, final long maxDuration)
-			throws IOException {
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	public static TimeShiftDiskCache open(final File directory,
+		final int appVersion, final int valueCount,
+		final long maxSize, final long maxDuration) throws IOException {
 
 		if (maxSize <= 0) {
 			throw new IllegalArgumentException("maxSize <= 0");
@@ -331,7 +333,8 @@ final class TimeShiftDiskCache implements Closeable {
 		}
 
 		// prefer to pick up where we left off
-		TimeShiftDiskCache cache = new TimeShiftDiskCache(directory, appVersion, valueCount, maxSize, maxDuration);
+		TimeShiftDiskCache cache = new TimeShiftDiskCache(directory,
+			appVersion, valueCount, maxSize, maxDuration);
 		if (cache.journalFile.exists()) {
 			try {
 				cache.readJournal();
@@ -354,7 +357,8 @@ final class TimeShiftDiskCache implements Closeable {
 	}
 
 	private void readJournal() throws IOException {
-		final InputStream in = new BufferedInputStream(new FileInputStream(journalFile), IO_BUFFER_SIZE);
+		final InputStream in = new BufferedInputStream(
+			new FileInputStream(journalFile), IO_BUFFER_SIZE);
 		try {
 			final String magic = readAsciiLine(in);
 			final String version = readAsciiLine(in);
@@ -367,7 +371,8 @@ final class TimeShiftDiskCache implements Closeable {
 					|| !Integer.toString(valueCount).equals(valueCountString)
 					|| !"".equals(blank)) {
 				throw new IOException("unexpected journal header: ["
-						+ magic + ", " + version + ", " + valueCountString + ", " + blank + "]");
+					+ magic + ", " + version + ", "
+					+ valueCountString + ", " + blank + "]");
 			}
 
 			for ( ; ; ) {
@@ -445,7 +450,8 @@ final class TimeShiftDiskCache implements Closeable {
 			journalWriter.close();
 		}
 
-		final Writer writer = new BufferedWriter(new FileWriter(journalFileTmp), IO_BUFFER_SIZE);
+		final Writer writer = new BufferedWriter(
+			new FileWriter(journalFileTmp), IO_BUFFER_SIZE);
 		writer.write(MAGIC);
 		writer.write("\n");
 		writer.write(VERSION_1);
@@ -531,12 +537,15 @@ final class TimeShiftDiskCache implements Closeable {
 		return edit(key, ANY_SEQUENCE_NUMBER);
 	}
 
-	private synchronized Editor edit(final long key, final long expectedSequenceNumber) throws IOException {
+	private synchronized Editor edit(final long key,
+		final long expectedSequenceNumber) throws IOException {
+
 		checkNotClosed();
 //		validateKey(key);
 		Entry entry = mEntries.get(key);
 		if (expectedSequenceNumber != ANY_SEQUENCE_NUMBER
-				&& (entry == null || entry.sequenceNumber != expectedSequenceNumber)) {
+				&& ((entry == null) ||
+					(entry.sequenceNumber != expectedSequenceNumber))) {
 			return null; // snapshot is stale
 		}
 		if (entry == null) {
@@ -579,7 +588,9 @@ final class TimeShiftDiskCache implements Closeable {
 		return size;
 	}
 
-	private synchronized void completeEdit(final Editor editor, final boolean success) throws IOException {
+	private synchronized void completeEdit(final Editor editor,
+		final boolean success) throws IOException {
+
 		final Entry entry = editor.entry;
 		if (entry.currentEditor != editor) {
 			throw new IllegalStateException();
@@ -726,7 +737,10 @@ final class TimeShiftDiskCache implements Closeable {
 //			remove(toEvict.getKey());	// この中でsizeが再計算される
 //		}
 		final long limit = SystemClock.elapsedRealtime() - maxDurationMs;
-		for (long key = oldestKey(); (size > maxSize) || ((key > 0) && (key < limit)); key = oldestKey()) {
+		for (long key = oldestKey();
+			(size > maxSize) || ((key > 0) && (key < limit));
+			key = oldestKey()) {
+
 			if (!remove(key)) {    // この中でsizeが再計算される
 				// 削除されなければfalseが返ってくるのでループを中断する
 				break;
@@ -745,7 +759,9 @@ final class TimeShiftDiskCache implements Closeable {
 		deleteContents(directory);
 	}
 
-	private static String inputStreamToString(final InputStream in) throws IOException {
+	private static String inputStreamToString(final InputStream in)
+		throws IOException {
+
 		return readFully(new InputStreamReader(in, UTF_8));
 	}
 
@@ -757,7 +773,9 @@ final class TimeShiftDiskCache implements Closeable {
 		private final long sequenceNumber;
 		private final InputStream[] ins;
 
-		private Snapshot(final long key, final long sequenceNumber, final InputStream[] ins) {
+		private Snapshot(final long key,
+			final long sequenceNumber, final InputStream[] ins) {
+
 			this.key = key;
 			this.sequenceNumber = sequenceNumber;
 			this.ins = ins;
@@ -851,7 +869,9 @@ final class TimeShiftDiskCache implements Closeable {
 			throw new IOException();
 		}
 
-		public byte[] getBytes(final int index, final byte[] dst) throws IOException {
+		public byte[] getBytes(final int index, final byte[] dst)
+			throws IOException {
+
 			final byte[] buf = new byte[4096];
 			byte[] result = dst;
 			final InputStream in = getInputStream(index);
@@ -860,7 +880,8 @@ final class TimeShiftDiskCache implements Closeable {
 				int bytes;
 				while ((bytes = in.read(buf)) != -1) {
 					if ((result == null) || (result.length < total + bytes)) {
-						final byte[] temp = new byte[result == null ? 4096 : result.length * 2];
+						final byte[] temp = new byte[
+							result == null ? 4096 : result.length * 2];
 						if ((total > 0) && (result != null)) {
 							System.arraycopy(result, 0, temp, 0, total);
 						}
@@ -904,7 +925,9 @@ final class TimeShiftDiskCache implements Closeable {
 		 * Returns an unbuffered input stream to read the last committed value,
 		 * or null if no value has been committed.
 		 */
-		public InputStream newInputStream(final int index) throws IOException, IllegalStateException {
+		public InputStream newInputStream(final int index)
+			throws IOException, IllegalStateException {
+
 			synchronized (TimeShiftDiskCache.this) {
 				if (entry.currentEditor != this) {
 					throw new IllegalStateException();
@@ -932,12 +955,15 @@ final class TimeShiftDiskCache implements Closeable {
 		 * {@link #commit} is called. The returned output stream does not throw
 		 * IOExceptions.
 		 */
-		public OutputStream newOutputStream(final int index) throws IOException, IllegalStateException {
+		public OutputStream newOutputStream(final int index)
+			throws IOException, IllegalStateException {
+
 			synchronized (TimeShiftDiskCache.this) {
 				if (entry.currentEditor != this) {
 					throw new IllegalStateException();
 				}
-				return new FaultHidingOutputStream(new FileOutputStream(entry.getDirtyFile(index)));
+				return new FaultHidingOutputStream(
+					new FileOutputStream(entry.getDirtyFile(index)));
 			}
 		}
 
@@ -960,7 +986,9 @@ final class TimeShiftDiskCache implements Closeable {
 		 * @param buffer
 		 * @throws IOException
 		 */
-		public void set(final int index, final ByteBuffer buffer) throws IOException {
+		public void set(final int index, final ByteBuffer buffer)
+			throws IOException {
+
 			set(index, buffer, 0, buffer.remaining());
 		}
 
@@ -972,7 +1000,10 @@ final class TimeShiftDiskCache implements Closeable {
 		 * @param size
 		 * @throws IOException
 		 */
-		public void set(final int index, final ByteBuffer buffer, final int offset, final int size) throws IOException {
+		public void set(final int index,
+			final ByteBuffer buffer, final int offset, final int size)
+				throws IOException {
+
 			buffer.clear();
 			buffer.position(offset);
 			if ((work == null) || (work.length < size)) {
@@ -1075,7 +1106,9 @@ final class TimeShiftDiskCache implements Closeable {
 			}
 
 			@Override
-			public void write(@NonNull final byte[] buffer, final int offset, final int length) {
+			public void write(
+				@NonNull final byte[] buffer, final int offset, final int length) {
+
 				try {
 					out.write(buffer, offset, length);
 				} catch (final IOException e) {
