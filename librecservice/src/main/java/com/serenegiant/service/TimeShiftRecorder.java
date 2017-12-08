@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /**
  * タイムシフト録画サービスアクセス用のヘルパークラス
- * #startTimeShift => [#start => #stop] => #stopTimeShift
+ * #prepare => #startTimeShift => [#start => #stop] => #stopTimeShift => #release
  */
 public class TimeShiftRecorder extends AbstractServiceRecorder {
 	private static final boolean DEBUG = true;	// FIXME set false on production
@@ -81,6 +81,5 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	protected AbstractRecorderService getService(final IBinder service) {
 		return ((TimeShiftRecService.LocalBinder)service).getService();
 	}
-	
 
 }
