@@ -55,6 +55,7 @@ public class MediaRawFileMuxer implements IMuxer {
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
+	@NonNull
 	private final String mOutputDir;
 	private final MediaFormat mConfigFormatVideo;
 	private final MediaFormat mConfigFormatAudio;
@@ -62,6 +63,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * 最終出力ファイル名 = 一時ファイルを保存するディレクトリ名
 	 * 	= インスタンス生成時の日時文字列
 	 */
+	@NonNull
 	private final String mOutputName;
 	private volatile boolean mIsRunning;
 	private boolean mReleased;
@@ -113,6 +115,9 @@ public class MediaRawFileMuxer implements IMuxer {
 			if (mIsRunning) {
 				throw new IllegalStateException("already started");
 			}
+			if (mLastTrackIndex < 0) {
+				throw new IllegalStateException("no track added");
+			}
 			mIsRunning = true;
 		}
 	}
@@ -121,6 +126,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	public void stop() {
 		synchronized (mSync) {
 			mIsRunning = false;
+			mLastTrackIndex = 0;
 		}
 	}
 	

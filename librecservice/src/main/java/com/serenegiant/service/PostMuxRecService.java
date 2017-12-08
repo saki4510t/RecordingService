@@ -49,6 +49,8 @@ public class PostMuxRecService extends AbstractRecorderService {
 	/** binder instance to access this local service */
 	private final IBinder mBinder = new LocalBinder();
 	private MediaRawFileMuxer mMuxer;
+	private int mVideoTrackIx = -1;
+	private int mAudioTrackIx = -1;
 
 	@Override
 	protected IBinder getBinder() {
@@ -63,6 +65,13 @@ public class PostMuxRecService extends AbstractRecorderService {
 		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputPath);
 		if (mMuxer == null) {
 			mMuxer = new MediaRawFileMuxer(this, outputPath, videoFormat, audioFormat);
+			if (videoFormat != null) {
+				mVideoTrackIx = mMuxer.addTrack(videoFormat);
+			}
+			if (audioFormat != null) {
+				mAudioTrackIx = mMuxer.addTrack(audioFormat);
+			}
+			mMuxer.start();
 		}
 	}
 	
@@ -79,22 +88,25 @@ public class PostMuxRecService extends AbstractRecorderService {
 	protected void internalStop() {
 		final MediaRawFileMuxer muxer = mMuxer;
 		mMuxer = null;
-		releaseEncoder();
-		if (muxer != null) {
-			setState(STATE_MUXING);
-			queueEvent(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						muxer.build();
-					} catch (final IOException e) {
-						Log.w(TAG, e);
+		if (getState() == STATE_RECORDING) {
+			releaseEncoder();
+			setState(STATE_READY);
+			if (muxer != null) {
+				setState(STATE_MUXING);
+				queueEvent(new Runnable() {
+					@Override
+					public void run() {
+						try {
+							muxer.build();
+						} catch (final IOException e) {
+							Log.w(TAG, e);
+						}
+						setState(STATE_READY);
+						muxer.release();
+						checkStopSelf();
 					}
-					setState(STATE_READY);
-					muxer.release();
-					checkStopSelf();
-				}
-			});
+				});
+			}
 		}
 	}
 		
@@ -112,9 +124,15 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs)
 			throws IOException {
 
-		// FIXME 未実装
 		if (mMuxer != null) {
-			mMuxer.writeSampleData(reaper.reaperType(), byteBuf, bufferInfo);
+			switch (reaper.reaperType()) {
+			case MediaReaper.REAPER_VIDEO:
+				mMuxer.writeSampleData(mVideoTrackIx, byteBuf, bufferInfo);
+				break;
+			case MediaReaper.REAPER_AUDIO:
+				mMuxer.writeSampleData(mAudioTrackIx, byteBuf, bufferInfo);
+				break;
+			}
 		}
 	}
 	
