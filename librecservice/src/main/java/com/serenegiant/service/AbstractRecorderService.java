@@ -388,7 +388,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * 録画開始
 	 * @param outputPath
 	 */
-	public void start(@NonNull final String outputPath) throws IllegalStateException, IOException {
+	public void start(@NonNull final String outputPath)
+		throws IllegalStateException, IOException {
+
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
 			// FIXME 録音は未対応
@@ -409,7 +411,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * 録画開始
 	 * @param accessId
 	 */
-	public void start(final int accessId) throws IllegalStateException, IOException {
+	public void start(final int accessId)
+		throws IllegalStateException, IOException {
+
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
 			// FIXME 録音は未対応

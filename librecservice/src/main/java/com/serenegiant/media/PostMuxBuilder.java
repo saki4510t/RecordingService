@@ -15,10 +15,29 @@
  */
 package com.serenegiant.media;
 
+import android.support.annotation.NonNull;
+
+import java.io.IOException;
+
 /**
  * Created by saki on 2017/12/08.
  *
  */
 class PostMuxBuilder {
-	// FIXME 未実装
+	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final String TAG = PostMuxBuilder.class.getSimpleName();
+	
+	public PostMuxBuilder(@NonNull final String tempDir,
+		@NonNull final String outputPath) {
+		// FIXME 未実装
+	}
+
+	public PostMuxBuilder(@NonNull final String tempDir,
+		final int accessId) {
+		// FIXME 未実装
+	}
+	
+	public void build() throws IOException {
+		// FIXME 未実装
+	}
 }

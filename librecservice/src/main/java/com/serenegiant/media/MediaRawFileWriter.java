@@ -57,7 +57,7 @@ abstract class MediaRawFileWriter {
 	 * @param mediaType
 	 * @param configFormat
 	 * @param outputFormat
-	 * @param basePath
+	 * @param tempDir
 	 * @return
 	 * @throws IOException
 	 */
@@ -66,13 +66,13 @@ abstract class MediaRawFileWriter {
 		@MediaRawFileMuxer.MediaType final int mediaType,
 		@NonNull final MediaFormat configFormat,
 		@NonNull final MediaFormat outputFormat,
-		@NonNull final String basePath) throws IOException {
+		@NonNull final String tempDir) throws IOException {
 
 		switch (mediaType) {
 		case MediaRawFileMuxer.TYPE_VIDEO:
-			return new MediaRawVideoWriter(context, configFormat, outputFormat, basePath);
+			return new MediaRawVideoWriter(context, configFormat, outputFormat, tempDir);
 		case MediaRawFileMuxer.TYPE_AUDIO:
-			return new MediaRawAudioWriter(context, configFormat, outputFormat, basePath);
+			return new MediaRawAudioWriter(context, configFormat, outputFormat, tempDir);
 		default:
 			throw new IOException("Unexpected media type=" + mediaType);
 		}
@@ -84,7 +84,7 @@ abstract class MediaRawFileWriter {
 	 * @param mediaType
 	 * @param configFormat
 	 * @param outputFormat
-	 * @param basePath
+	 * @param tempDir
 	 * @return
 	 * @throws IOException
 	 */
@@ -93,13 +93,13 @@ abstract class MediaRawFileWriter {
 		@MediaRawFileMuxer.MediaType final int mediaType,
 		@NonNull final MediaFormat configFormat,
 		@NonNull final MediaFormat outputFormat,
-		@NonNull final DocumentFile basePath) throws IOException {
+		@NonNull final DocumentFile tempDir) throws IOException {
 
 		switch (mediaType) {
 		case MediaRawFileMuxer.TYPE_VIDEO:
-			return new MediaRawVideoWriter(context, configFormat, outputFormat, basePath);
+			return new MediaRawVideoWriter(context, configFormat, outputFormat, tempDir);
 		case MediaRawFileMuxer.TYPE_AUDIO:
-			return new MediaRawAudioWriter(context, configFormat, outputFormat, basePath);
+			return new MediaRawAudioWriter(context, configFormat, outputFormat, tempDir);
 		default:
 			throw new IOException("Unexpected media type=" + mediaType);
 		}
@@ -114,17 +114,17 @@ abstract class MediaRawFileWriter {
 		public MediaRawVideoWriter(@NonNull final Context context,
 			@NonNull final MediaFormat configFormat,
 			@NonNull final MediaFormat outputFormat,
-			@NonNull final String basePath) throws IOException {
+			@NonNull final String tempDir) throws IOException {
 
-			super(context, configFormat, outputFormat, basePath, VIDEO_NAME);
+			super(context, configFormat, outputFormat, tempDir, VIDEO_NAME);
 		}
 
 		public MediaRawVideoWriter(@NonNull final Context context,
 			@NonNull final MediaFormat configFormat,
 			@NonNull final MediaFormat outputFormat,
-			@NonNull final DocumentFile basePath) throws IOException {
+			@NonNull final DocumentFile tempDir) throws IOException {
 
-			super(context, configFormat, outputFormat, basePath, VIDEO_NAME);
+			super(context, configFormat, outputFormat, tempDir, VIDEO_NAME);
 		}
 	}
 	
@@ -135,17 +135,17 @@ abstract class MediaRawFileWriter {
 		public MediaRawAudioWriter(@NonNull final Context context,
 			@NonNull final MediaFormat configFormat,
 			@NonNull final MediaFormat outputFormat,
-			@NonNull final String basePath) throws IOException {
+			@NonNull final String tempDir) throws IOException {
 
-			super(context, configFormat,outputFormat, basePath, AUDIO_NAME);
+			super(context, configFormat,outputFormat, tempDir, AUDIO_NAME);
 		}
 
 		public MediaRawAudioWriter(@NonNull final Context context,
 			@NonNull final MediaFormat configFormat,
 			@NonNull final MediaFormat outputFormat,
-			@NonNull final DocumentFile basePath) throws IOException {
+			@NonNull final DocumentFile tempDir) throws IOException {
 
-			super(context, configFormat, outputFormat, basePath, AUDIO_NAME);
+			super(context, configFormat, outputFormat, tempDir, AUDIO_NAME);
 		}
 	}
 	
@@ -154,26 +154,27 @@ abstract class MediaRawFileWriter {
 	private int mNumFrames = -1;
 	private int mFrameCounts;
 	
-	protected MediaRawFileWriter(
+	private MediaRawFileWriter(
 		@NonNull final Context context,
 		@NonNull final MediaFormat configFormat,
 		@NonNull final MediaFormat outputFormat,
-		@NonNull final String basePath,
+		@NonNull final String tempDir,
 		@NonNull final String name) throws IOException {
 
 		this(context, configFormat, outputFormat,
-			new FileOutputStream(basePath.endsWith("/")
-				? basePath + name : basePath + "/" + name, false));
+			new FileOutputStream(tempDir.endsWith("/")
+				? tempDir + name : tempDir + "/" + name, false));
 	}
 	
-	protected MediaRawFileWriter(
+	private MediaRawFileWriter(
 		@NonNull final Context context,
 		@NonNull final MediaFormat configFormat,
 		@NonNull final MediaFormat outputFormat,
-		@NonNull final DocumentFile basePath, @NonNull final String name) throws IOException {
+		@NonNull final DocumentFile tempDir,
+		@NonNull final String name) throws IOException {
 		
 		this(context, configFormat, outputFormat,
-			SDUtils.getStorageOutputStream(context, basePath, null, null, name));
+			SDUtils.getStorageOutputStream(context, tempDir, null, null, name));
 	}
 	
 	private MediaRawFileWriter(@NonNull final Context context,

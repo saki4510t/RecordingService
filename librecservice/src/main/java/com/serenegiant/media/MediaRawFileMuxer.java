@@ -18,12 +18,16 @@ package com.serenegiant.media;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.os.Environment;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.serenegiant.utils.FileUtils;
+
+import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -51,7 +55,7 @@ public class MediaRawFileMuxer implements IMuxer {
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
-	private final String mBasePath;
+	private final String mOutputName;
 	private final MediaFormat mConfigFormatVideo;
 	private final MediaFormat mConfigFormatAudio;
 	private volatile boolean mIsRunning;
@@ -60,14 +64,19 @@ public class MediaRawFileMuxer implements IMuxer {
 	private MediaRawFileWriter mVideoWriter;
 	private MediaRawFileWriter mAudioWriter;
 	private MediaRawFileWriter[] mMediaRawFileWriters = new MediaRawFileWriter[2];
-
+	
+	/**
+	 * コンストラクタ
+	 * @param context
+	 * @param configFormatVideo
+	 * @param configFormatAudio
+	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
-		@NonNull final String basePath,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		mWeakContext = new WeakReference<Context>(context);
-		mBasePath = basePath;
+		mOutputName = FileUtils.getDateTimeString();	// XXX prefix付きも設定できたほうがいいかも
 		mConfigFormatVideo = configFormatVideo;
 		mConfigFormatAudio = configFormatAudio;
 	}
@@ -85,6 +94,7 @@ public class MediaRawFileMuxer implements IMuxer {
 					mAudioWriter.release();
 					mAudioWriter = null;
 				}
+				mMediaRawFileWriters[0] = mMediaRawFileWriters[1] = null;
 			}
 		}
 	}
@@ -110,8 +120,14 @@ public class MediaRawFileMuxer implements IMuxer {
 	/**
 	 * 一時rawファイルからmp4ファイルを生成する
 	 */
-	public void build() {
-		/// FIXME 未実装
+	public void build(@NonNull final String outputDir) throws IOException {
+		final String outputPath
+			= outputDir + (outputDir.endsWith("/")
+				? mOutputName : "/" + mOutputName) + ".mp4";
+		final String tempDir = getTempDir();
+		final PostMuxBuilder builder
+			= new PostMuxBuilder(tempDir, outputPath);
+		builder.build();
 	}
 	
 	@Override
@@ -130,6 +146,8 @@ public class MediaRawFileMuxer implements IMuxer {
 			throw new IllegalStateException("already started");
 		}
 
+		final Context context = mWeakContext.get();
+		final String tempDir = getTempDir();
 		final String mime = format.containsKey(MediaFormat.KEY_MIME)
 			? format.getString(MediaFormat.KEY_MIME) : null;
 		if (!TextUtils.isEmpty(mime)) {
@@ -140,11 +158,11 @@ public class MediaRawFileMuxer implements IMuxer {
 					if (mVideoWriter == null) {
 						try {
 							mMediaRawFileWriters[trackIndex] = mVideoWriter
-								= MediaRawFileWriter.newInstance(mWeakContext.get(),
+								= MediaRawFileWriter.newInstance(context,
 									TYPE_VIDEO,
 									mConfigFormatVideo != null ? mConfigFormatVideo : format,
 									format,
-									mBasePath);
+								tempDir);
 							mLastTrackIndex = trackIndex;
 							return trackIndex;
 						} catch (final IOException e) {
@@ -158,11 +176,11 @@ public class MediaRawFileMuxer implements IMuxer {
 					if (mAudioWriter == null) {
 						try {
 							mMediaRawFileWriters[trackIndex] = mAudioWriter
-								= MediaRawFileWriter.newInstance(mWeakContext.get(),
+								= MediaRawFileWriter.newInstance(context,
 									TYPE_AUDIO,
 									mConfigFormatAudio != null ? mConfigFormatAudio : format,
 									format,
-									mBasePath);
+								tempDir);
 							mLastTrackIndex = trackIndex;
 							return trackIndex;
 						} catch (final IOException e) {
@@ -219,5 +237,16 @@ public class MediaRawFileMuxer implements IMuxer {
 				throw new IllegalStateException("already released");
 			}
 		}
+	}
+	
+	private String getTempDir() {
+		final Context context = mWeakContext.get();
+		try {
+			return context.getDir(mOutputName, Context.MODE_PRIVATE).getAbsolutePath();
+		} catch (final Exception e) {
+			Log.w(TAG, e);
+		}
+		return new File(
+			Environment.getDataDirectory(), mOutputName).getAbsolutePath();
 	}
 }
