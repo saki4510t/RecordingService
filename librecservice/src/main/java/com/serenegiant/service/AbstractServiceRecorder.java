@@ -92,7 +92,7 @@ public abstract class AbstractServiceRecorder {
 	}
 	
 	/**
-	 * サービスとバインとして使用可能になっているかどうかを取得
+	 * サービスとバインドして使用可能になっているかどうかを取得
 	 * @return
 	 */
 	public boolean isReady() {
@@ -108,6 +108,27 @@ public abstract class AbstractServiceRecorder {
 	public boolean isRecording() {
 		final AbstractRecorderService service = peekService();
 		return !mReleased && (service != null) && service.isRecording();
+	}
+
+	/**
+	 * 録画の準備
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
+	public void prepare(final int width, final int height,
+		final int frameRate, final float bpp)
+			throws IllegalStateException, IOException {
+
+		if (DEBUG) Log.v(TAG, "prepare:");
+
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.prepare(width, height, frameRate, bpp);
+		}
 	}
 
 	/**
@@ -174,27 +195,6 @@ public abstract class AbstractServiceRecorder {
 		final AbstractRecorderService service = getService();
 		if (service != null) {
 			service.frameAvailableSoon();
-		}
-	}
-
-	/**
-	 * 録画の準備
-	 * @param width
-	 * @param height
-	 * @param frameRate
-	 * @param bpp
-	 * @throws IllegalStateException
-	 * @throws IOException
-	 */
-	public void prepare(final int width, final int height,
-		final int frameRate, final float bpp)
-			throws IllegalStateException, IOException {
-
-		if (DEBUG) Log.v(TAG, "prepare:");
-
-		final AbstractRecorderService service = getService();
-		if (service != null) {
-			service.prepare(width, height, frameRate, bpp);
 		}
 	}
 

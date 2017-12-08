@@ -18,13 +18,24 @@ package com.serenegiant.service;
 
 import android.content.Intent;
 import android.media.MediaCodec;
+import android.media.MediaFormat;
+import android.media.MediaMuxer;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.serenegiant.librecservice.BuildConfig;
+import com.serenegiant.media.IMuxer;
+import com.serenegiant.media.MediaMuxerWrapper;
+import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
+import com.serenegiant.media.VideoMuxer;
+import com.serenegiant.utils.FileUtils;
+import com.serenegiant.utils.SDUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,10 +56,11 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private static final long CACHE_SIZE = 1024 * 1024 * 20; // 20MB... 1920x1080@15fpsで20秒強ぐらい
 	private static final String MIME_TYPE = "video/avc";
 
-	public static final int STATE_BUFFERING = 3;
+	public static final int STATE_BUFFERING = 100;
 	public static final String EXTRA_MAX_SHIFT_MS = "extra_max_shift_ms";
 	
 	private static final long DEFAULT_MAX_SHIFT_MS = 10000L;	// 10秒
+	private static final String EXT_VIDEO = ".mp4";
 
 	/** Binder class to access this local service */
 	public class LocalBinder extends Binder {
@@ -63,6 +75,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private TimeShiftDiskCache mVideoCache;
 	private long mCacheSize = CACHE_SIZE;
 	private String mCacheDir;
+	private RecordingTask mRecordingTask;
 
 	@Override
 	public boolean onUnbind(final Intent intent) {
@@ -130,7 +143,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	
 //================================================================================
 	/**
-	 * タイムシフトバッファリングを終了の実体
+	 * タイムシフトバッファリング終了の実体
 	 */
 	private void internalStopTimeShift() {
 		if (getState() == STATE_BUFFERING) {
@@ -139,30 +152,77 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		}
 	}
 	
-	@Override
-	protected void internalStart(final String outputPath) throws IOException {
-		if (getState() != STATE_BUFFERING) {
-			throw new IllegalStateException("not started");
-		}
-		super.internalStart(outputPath);
-	}
+	/**
+	 * #startの実態, mSyncをロックして呼ばれる
+	 * @param outputPath
+	 * @throws IOException
+	 */
+	protected void internalStart(@NonNull final String outputPath,
+		@Nullable final MediaFormat videoFormat,
+		@Nullable final MediaFormat audioFormat) throws IOException {
 
-	@Override
-	protected void internalStart(final int accessId) throws IOException {
+		if (DEBUG) Log.v(TAG, "internalStart:");
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		super.internalStart(accessId);
+		// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
+		final IMuxer muxer = new MediaMuxerWrapper(
+			outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+		final int trackIndex = muxer.addTrack(videoFormat);
+		mRecordingTask = new RecordingTask(muxer, trackIndex);
+		new Thread(mRecordingTask, "RecordingTask").start();
+	}
+	
+	private String mOutputPath;
+
+	/**
+	 * #startの実態, mSyncをロックして呼ばれる
+	 * @param accessId
+	 * @throws IOException
+	 */
+	protected void internalStart(final int accessId,
+		@Nullable final MediaFormat videoFormat,
+		@Nullable final MediaFormat audioFormat) throws IOException {
+	
+		if (DEBUG) Log.v(TAG, "internalStart:");
+		if (getState() != STATE_BUFFERING) {
+			throw new IllegalStateException("not started");
+		}
+		// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
+		final IMuxer muxer;
+		if ((accessId > 0) && SDUtils.hasStorageAccess(this, accessId)) {
+			// FIXME Oreoの場合の処理を追加
+			mOutputPath = FileUtils.getCaptureFile(this,
+				Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, accessId).toString();
+			final String file_name = FileUtils.getDateTimeString() + EXT_VIDEO;
+			final int fd = SDUtils.createStorageFileFD(this, accessId, "*/*", file_name);
+			muxer = new VideoMuxer(fd);
+		} else {
+			// 通常のファイルパスへの出力にフォールバック
+			try {
+				mOutputPath = FileUtils.getCaptureFile(this,
+					Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, 0).toString();
+			} catch (final Exception e) {
+				throw new IOException("This app has no permission of writing external storage");
+			}
+			muxer = new MediaMuxerWrapper(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+		}
+		final int trackIndex = muxer.addTrack(videoFormat);
+		mRecordingTask = new RecordingTask(muxer, trackIndex);
+		new Thread(mRecordingTask, "RecordingTask").start();
 	}
 
 	@Override
 	protected void internalStop() {
+		mRecordingTask = null;
 		if (getState() == STATE_RECORDING) {
 			setState(STATE_BUFFERING);
-		} else {
-			return;
+			if (!TextUtils.isEmpty(mOutputPath)) {
+				final String path = mOutputPath;
+				mOutputPath = null;
+				scanFile(path);
+			}
 		}
-		super.internalStop();
 	}
 	
 	/**
@@ -297,10 +357,93 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	byte[] buf = null;
 	long prevPtsUs = 0;
 	TimeShiftDiskCache.Snapshot oldest;
+
+	/**
+	 * 非同期でエンコード済みの動画フレームを取得して
+	 * mp4ファイルへ書き出すためのRunnable
+	 */
+	private class RecordingTask implements Runnable {
+		private final IMuxer muxer;
+		private final int trackIndex;
+		public RecordingTask(final IMuxer muxer, final int trackIndex) {
+			this.muxer = muxer;
+			this.trackIndex = trackIndex;
+		}
+
+		@SuppressWarnings("WrongConstant")
+		@Override
+		public void run() {
+			if (DEBUG) Log.v(TAG, "RecordingTask#run");
+			final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+			int frames = 0, error = 0;
+			ByteBuffer buf = null;
+			muxer.start();
+			boolean iFrame = false;
+			for ( ; ; ) {
+				synchronized (mSync) {
+					if (getState() != STATE_RECORDING) break;
+					try {
+						buf = processFrame(info);
+						if (buf != null) {
+							if (!iFrame) {
+								if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME)
+									!= MediaCodec.BUFFER_FLAG_KEY_FRAME) {
+
+									continue;
+								} else {
+									iFrame = true;
+								}
+							}
+						} else {
+							info.size = 0;
+						}
+					} catch (final IOException e) {
+						info.size = 0;
+					}
+					if (info.size == 0) {
+						try {
+							mSync.wait(TIMEOUT_MS);
+						} catch (final InterruptedException e) {
+							break;
+						}
+						continue;
+					}
+				} // synchronized (mSync)
+				if (DEBUG) Log.v(TAG, "writeSampleData:size=" + info.size
+					+ ", presentationTimeUs=" + info.presentationTimeUs);
+				try {
+					frames++;
+					muxer.writeSampleData(trackIndex, buf, info);
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+					error++;
+				}
+			} // for ( ; ; )
+			try {
+				muxer.stop();
+			} catch (final Exception e) {
+				Log.w(TAG, e);
+			}
+			try {
+				muxer.release();
+			} catch (final Exception e) {
+				Log.w(TAG, e);
+			}
+			if (DEBUG) Log.v(TAG, "RecordingTask#run:finished, cnt=" + frames);
+		}
+
+	}
+
+	/**
+	 * フレームデータが準備できているかどうか確認して準備できていれば
+	 * BufferInfoを設定してByteBufferを返す
+	 * @param info
+	 * @return
+	 * @throws IOException
+	 */
 	@SuppressWarnings("WrongConstant")
-	@Override
-	protected ByteBuffer processFrame(final MediaCodec.BufferInfo info)
-		throws IOException {
+	protected ByteBuffer processFrame(
+		@NonNull final MediaCodec.BufferInfo info) throws IOException {
 
 		if (mVideoCache.size() > 0) {
 			oldest = mVideoCache.getOldest();
@@ -324,9 +467,18 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		return null;
 	}
 	
-	protected void onWriteSampleData(final int reaperType,
-		final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo,
-		final long ptsUs) throws IOException {
+	/**
+	 * エンコード済みのフレームデータを書き出す
+	 * @param reaper
+	 * @param byteBuf
+	 * @param bufferInfo
+	 * @param ptsUs
+	 * @throws IOException
+	 */
+	protected void onWriteSampleData(@NonNull final MediaReaper reaper,
+		@NonNull final ByteBuffer byteBuf,
+		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs)
+			throws IOException {
 	
 		if (mVideoCache != null) {
 			final TimeShiftDiskCache.Editor editor = mVideoCache.edit(ptsUs);

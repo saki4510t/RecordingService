@@ -24,24 +24,17 @@ import android.content.IntentFilter;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.media.MediaMuxer;
 import android.media.MediaScannerConnection;
-import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
 import com.serenegiant.librecservice.R;
-import com.serenegiant.media.IMuxer;
-import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
-import com.serenegiant.media.VideoMuxer;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.SDUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -61,8 +54,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
 	
 	private static final int NOTIFICATION = R.string.notification_service;
-	private static final int TIMEOUT_MS = 10;
+	protected static final int TIMEOUT_MS = 10;
 
+	// ステート定数, XXX 継承クラスは100以降を使う
 	public static final int STATE_UNINITIALIZED = -1;
 	public static final int STATE_INITIALIZED = 0;
 	public static final int STATE_PREPARING = 1;
@@ -86,7 +80,6 @@ public abstract class AbstractRecorderService extends BaseService {
 	private MediaCodec mVideoEncoder;
 	private Surface mInputSurface;
 	private MediaReaper.VideoReaper mVideoReaper;
-	private RecordingTask mRecordingTask;
 
 	@Override
 	public void onCreate() {
@@ -108,6 +101,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				mNotificationManager.cancel(NOTIFICATION);
 				mNotificationManager = null;
 			}
+			mListeners.clear();
 		}
 		super.onDestroy();
 	}
@@ -141,13 +135,26 @@ public abstract class AbstractRecorderService extends BaseService {
 	@Override
 	public boolean onUnbind(final Intent intent) {
 		if (DEBUG) Log.d(TAG, "onUnbind:" + intent);
-		mIsBind = false;
-		mIntent = null;
+		synchronized (mSync) {
+			mIsBind = false;
+			mIntent = null;
+			mListeners.clear();
+		}
 		checkStopSelf();
 		if (DEBUG) Log.v(TAG, "onUnbind:finished");
 		return false;	// onRebind使用不可
 	}
 
+	public void addListener(@Nullable final StateChangeListener listener) {
+		if (listener != null) {
+			mListeners.add(listener);
+		}
+	}
+	
+	public void removeListener(@Nullable final StateChangeListener listener) {
+		mListeners.remove(listener);
+	}
+	
 	@Override
 	protected IntentFilter createIntentFilter() {
 		return null;
@@ -263,7 +270,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	/**
 	 * サービスのティフィケーションを選択した時に実行されるPendingIntentの生成
 	 * 普通はMainActivityを起動させる。
-	 * デフォルトはnullを返すだけでのティフィケーションを選択しても何も実行されない。
+	 * デフォルトはnullを返すだけでノティフィケーションを選択しても何も実行されない。
 	 * @return
 	 */
 	@Nullable
@@ -293,7 +300,8 @@ public abstract class AbstractRecorderService extends BaseService {
 			try {
 				internalPrepare(width, height, frameRate, bpp);
 				createEncoder(width, height, frameRate, bpp);
-				setState(STATE_READY);
+				// MediaReaper.ReaperListener#onOutputFormatChangedへ移動
+//				setState(STATE_READY);
 			} catch (final IllegalStateException | IOException e) {
 				releaseEncoder();
 				throw e;
@@ -380,10 +388,20 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * 録画開始
 	 * @param outputPath
 	 */
-	public void start(final String outputPath) throws IllegalStateException, IOException {
+	public void start(@NonNull final String outputPath) throws IllegalStateException, IOException {
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			internalStart(outputPath);
+			// FIXME 録音は未対応
+			if (mVideoFormat != null) {
+				if (checkFreeSpace(this, 0)) {
+					internalStart(outputPath, mVideoFormat, null);
+				} else {
+					throw new IOException();
+				}
+			} else {
+				throw new IllegalStateException("there is no MediaFormat received.");
+			}
+			setState(STATE_RECORDING);
 		}
 	}
 
@@ -394,76 +412,38 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void start(final int accessId) throws IllegalStateException, IOException {
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			internalStart(accessId);
+			// FIXME 録音は未対応
+			if (mVideoFormat != null) {
+				if (checkFreeSpace(this, 0)) {
+					internalStart(accessId, mVideoFormat, null);
+				} else {
+					throw new IOException();
+				}
+			} else {
+				throw new IllegalStateException("there is no MediaFormat received.");
+			}
+			setState(STATE_RECORDING);
 		}
 	}
 
-	private static final String EXT_VIDEO = ".mp4";
-	private String mOutputPath;
-	
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
 	 * @param outputPath
 	 * @throws IOException
 	 */
-	protected void internalStart(final String outputPath) throws IOException {
-		if (DEBUG) Log.v(TAG, "internalStart:");
-		// FIXME 録音は未対応
-		if (mVideoFormat != null) {
-			if (checkFreeSpace(this, 0)) {
-				final IMuxer muxer = new MediaMuxerWrapper(
-					outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-				final int trackIndex = muxer.addTrack(mVideoFormat);
-				mRecordingTask = new RecordingTask(muxer, trackIndex);
-				new Thread(mRecordingTask, "RecordingTask").start();
-			} else {
-				throw new IOException();
-			}
-		} else {
-			throw new IllegalStateException("there is no MediaFormat received.");
-		}
-		setState(STATE_RECORDING);
-	}
+	protected abstract void internalStart(@NonNull final String outputPath,
+		@Nullable final MediaFormat videoFormat,
+		@Nullable final MediaFormat audioFormat) throws IOException;
 	
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
 	 * @param accessId
 	 * @throws IOException
 	 */
-	protected void internalStart(final int accessId) throws IOException {
-		if (DEBUG) Log.v(TAG, "internalStart:");
-		if (mVideoFormat != null) {
-			if (checkFreeSpace(this, accessId)) {
-				// 録画開始
-				final IMuxer muxer;
-				if ((accessId > 0) && SDUtils.hasStorageAccess(this, accessId)) {
-					// FIXME Oreoの場合の処理を追加
-					mOutputPath = FileUtils.getCaptureFile(this,
-						Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, accessId).toString();
-					final String file_name = FileUtils.getDateTimeString() + EXT_VIDEO;
-					final int fd = SDUtils.createStorageFileFD(this, accessId, "*/*", file_name);
-					muxer = new VideoMuxer(fd);
-				} else {
-					// 通常のファイルパスへの出力にフォールバック
-					try {
-						mOutputPath = FileUtils.getCaptureFile(this,
-							Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, 0).toString();
-					} catch (final Exception e) {
-						throw new IOException("This app has no permission of writing external storage");
-					}
-					muxer = new MediaMuxerWrapper(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-				}
-				final int trackIndex = muxer.addTrack(mVideoFormat);
-				mRecordingTask = new RecordingTask(muxer, trackIndex);
-				new Thread(mRecordingTask, "RecordingTask").start();
-			} else {
-				throw new IOException();
-			}
-		} else {
-			throw new IllegalStateException("there is no MediaFormat received.");
-		}
-		setState(STATE_RECORDING);
-	}
+	protected abstract void internalStart(final int accessId,
+		@Nullable final MediaFormat videoFormat,
+		@Nullable final MediaFormat audioFormat) throws IOException;
+	
 	/**
 	 * 空き容量をチェック
 	 * @param context
@@ -477,15 +457,16 @@ public abstract class AbstractRecorderService extends BaseService {
 	
 	/**
 	 * エンコード済みのフレームデータを書き出す
-	 * @param reaperType
+	 * @param reaper
 	 * @param byteBuf
 	 * @param bufferInfo
-	 * @param pts
+	 * @param ptsUs
 	 * @throws IOException
 	 */
-	protected abstract void onWriteSampleData(final int reaperType,
-		final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo,
-		final long pts) throws IOException;
+	protected abstract void onWriteSampleData(@NonNull MediaReaper reaper,
+		@NonNull final ByteBuffer byteBuf,
+		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs)
+			throws IOException;
 
 	/**
 	 * MediaReaperからのコールバックリスナーの実装
@@ -494,40 +475,38 @@ public abstract class AbstractRecorderService extends BaseService {
 		mReaperListener = new MediaReaper.ReaperListener() {
 
 		@Override
-		public void writeSampleData(final int reaperType,
+		public void writeSampleData(@NonNull final MediaReaper reaper,
 			final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
 
 //			if (DEBUG) Log.v(TAG, "writeSampleData:");
-			switch (reaperType) {
-			case MediaReaper.REAPER_VIDEO:
-//			case MediaReaper.REAPER_AUDIO:	// FIXME 録音は未対応
-				try {
-					final long ptsUs = getInputPTSUs();
-					synchronized (mSync) {
-						onWriteSampleData(reaperType, byteBuf, bufferInfo, ptsUs);
-					}
-				} catch (final IOException e) {
-					AbstractRecorderService.this.onError(e);
+			try {
+				final long ptsUs = getInputPTSUs();
+				synchronized (mSync) {
+					onWriteSampleData(reaper, byteBuf, bufferInfo, ptsUs);
 				}
-				break;
+			} catch (final IOException e) {
+				AbstractRecorderService.this.onError(e);
 			}
 		}
 
 		@Override
-		public void onOutputFormatChanged(final MediaFormat format) {
+		public void onOutputFormatChanged(@NonNull final MediaReaper reaper,
+			@NonNull final MediaFormat format) {
+
 			if (DEBUG) Log.v(TAG, "onOutputFormatChanged:");
 			// FIXME 録音は未対応
 			mVideoFormat = format;	// そのまま代入するだけでいいんかなぁ
+			setState(STATE_READY);
 		}
 
 		@Override
-		public void onStop() {
+		public void onStop(@NonNull final MediaReaper reaper) {
 			if (DEBUG) Log.v(TAG, "onStop:");
 			releaseEncoder();
 		}
 
 		@Override
-		public void onError(final Exception e) {
+		public void onError(@NonNull final MediaReaper reaper, final Exception e) {
 			AbstractRecorderService.this.onError(e);
 		}
 	};
@@ -537,93 +516,6 @@ public abstract class AbstractRecorderService extends BaseService {
 		Log.w(TAG, e);
 	}
 	
-	/**
-	 * フレームデータが準備できているかどうか確認して準備できていれば
-	 * BufferInfoを設定してByteBufferを返す
-	 * @param info
-	 * @return
-	 * @throws IOException
-	 */
-	@Nullable
-	protected abstract ByteBuffer processFrame(final MediaCodec.BufferInfo info)
-		throws IOException;
-	
-	/**
-	 * 非同期でエンコード済みの動画フレームを取得して
-	 * mp4ファイルへ書き出すためのRunnable
-	 */
-	private class RecordingTask implements Runnable {
-		private final IMuxer muxer;
-		private final int trackIndex;
-		public RecordingTask(final IMuxer muxer, final int trackIndex) {
-			this.muxer = muxer;
-			this.trackIndex = trackIndex;
-		}
-
-		@SuppressWarnings("WrongConstant")
-		@Override
-		public void run() {
-			if (DEBUG) Log.v(TAG, "RecordingTask#run");
-			final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-			int frames = 0, error = 0;
-			ByteBuffer buf = null;
-			muxer.start();
-			boolean iFrame = false;
-			for ( ; ; ) {
-				synchronized (mSync) {
-					if (mState != STATE_RECORDING) break;
-					try {
-						buf = processFrame(info);
-						if (buf != null) {
-							if (!iFrame) {
-								if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME)
-									!= MediaCodec.BUFFER_FLAG_KEY_FRAME) {
-
-									continue;
-								} else {
-									iFrame = true;
-								}
-							}
-						} else {
-							info.size = 0;
-						}
-					} catch (final IOException e) {
-						info.size = 0;
-					}
-					if (info.size == 0) {
-						try {
-							mSync.wait(TIMEOUT_MS);
-						} catch (final InterruptedException e) {
-							break;
-						}
-						continue;
-					}
-				} // synchronized (mSync)
-				if (DEBUG) Log.v(TAG, "writeSampleData:size=" + info.size
-					+ ", presentationTimeUs=" + info.presentationTimeUs);
-				try {
-					frames++;
-					muxer.writeSampleData(trackIndex, buf, info);
-				} catch (final Exception e) {
-					Log.w(TAG, e);
-					error++;
-				}
-			} // for ( ; ; )
-			try {
-				muxer.stop();
-			} catch (final Exception e) {
-				Log.w(TAG, e);
-			}
-			try {
-				muxer.release();
-			} catch (final Exception e) {
-				Log.w(TAG, e);
-			}
-			if (DEBUG) Log.v(TAG, "RecordingTask#run:finished, cnt=" + frames);
-		}
-
-	}
-
 	/**
 	 * 録画終了
 	 */
@@ -637,17 +529,17 @@ public abstract class AbstractRecorderService extends BaseService {
 	/**
 	 * 録画終了の実態, mSyncをロックして呼ばれる
 	 */
-	protected void internalStop() {
-		if (DEBUG) Log.v(TAG, "internalStop:");
-		mRecordingTask = null;
-		if (!TextUtils.isEmpty(mOutputPath)) {
-			final String path = mOutputPath;
-			mOutputPath = null;
-			try {
-				MediaScannerConnection.scanFile(this, new String[] {path}, null, null);
-			} catch (final Exception e) {
-				Log.w(TAG, e);
-			}
+	protected abstract void internalStop();
+	
+	/**
+	 * MediaScannerConnection.scanFileを呼び出す
+ 	 * @param outputPath
+	 */
+	protected void scanFile(@NonNull final String outputPath) {
+		try {
+			MediaScannerConnection.scanFile(this, new String[] {outputPath}, null, null);
+		} catch (final Exception e) {
+			Log.w(TAG, e);
 		}
 	}
 	
