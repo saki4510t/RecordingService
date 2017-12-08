@@ -21,6 +21,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.serenegiant.media.MediaRawFileMuxer;
 import com.serenegiant.media.MediaReaper;
@@ -59,7 +60,10 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 		
-		// FIXME 未実装
+		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputPath);
+		if (mMuxer == null) {
+			mMuxer = new MediaRawFileMuxer(this, outputPath, videoFormat, audioFormat);
+		}
 	}
 	
 	@Override
@@ -68,11 +72,30 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@Nullable final MediaFormat audioFormat) throws IOException {
 		
 		// FIXME 未実装
+		throw new UnsupportedOperationException("not implemented yet.");
 	}
 	
 	@Override
 	protected void internalStop() {
-		// FIXME ここで実際のmuxを開始する
+		final MediaRawFileMuxer muxer = mMuxer;
+		mMuxer = null;
+		releaseEncoder();
+		if (muxer != null) {
+			setState(STATE_MUXING);
+			queueEvent(new Runnable() {
+				@Override
+				public void run() {
+					try {
+						muxer.build();
+					} catch (final IOException e) {
+						Log.w(TAG, e);
+					}
+					setState(STATE_READY);
+					muxer.release();
+					checkStopSelf();
+				}
+			});
+		}
 	}
 		
 	/**
@@ -90,6 +113,9 @@ public class PostMuxRecService extends AbstractRecorderService {
 			throws IOException {
 
 		// FIXME 未実装
+		if (mMuxer != null) {
+			mMuxer.writeSampleData(reaper.reaperType(), byteBuf, bufferInfo);
+		}
 	}
 	
 }

@@ -55,9 +55,14 @@ public class MediaRawFileMuxer implements IMuxer {
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
-	private final String mOutputName;
+	private final String mOutputDir;
 	private final MediaFormat mConfigFormatVideo;
 	private final MediaFormat mConfigFormatAudio;
+	/**
+	 * 最終出力ファイル名 = 一時ファイルを保存するディレクトリ名
+	 * 	= インスタンス生成時の日時文字列
+	 */
+	private final String mOutputName;
 	private volatile boolean mIsRunning;
 	private boolean mReleased;
 	private int mLastTrackIndex = -1;
@@ -72,10 +77,12 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * @param configFormatAudio
 	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
+		@NonNull final String outputDir,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		mWeakContext = new WeakReference<Context>(context);
+		mOutputDir = outputDir;
 		mOutputName = FileUtils.getDateTimeString();	// XXX prefix付きも設定できたほうがいいかも
 		mConfigFormatVideo = configFormatVideo;
 		mConfigFormatAudio = configFormatAudio;
@@ -120,14 +127,18 @@ public class MediaRawFileMuxer implements IMuxer {
 	/**
 	 * 一時rawファイルからmp4ファイルを生成する
 	 */
-	public void build(@NonNull final String outputDir) throws IOException {
+	public void build() throws IOException {
 		final String outputPath
-			= outputDir + (outputDir.endsWith("/")
+			= mOutputDir + (mOutputDir.endsWith("/")
 				? mOutputName : "/" + mOutputName) + ".mp4";
 		final String tempDir = getTempDir();
-		final PostMuxBuilder builder
-			= new PostMuxBuilder(tempDir, outputPath);
-		builder.build();
+		try {
+			final PostMuxBuilder builder
+				= new PostMuxBuilder(tempDir, outputPath);
+			builder.build();
+		} finally {
+			delete(new File(tempDir));
+		}
 	}
 	
 	@Override
@@ -239,6 +250,10 @@ public class MediaRawFileMuxer implements IMuxer {
 		}
 	}
 	
+	/**
+	 * 一時ファイル用のディレクトリパスを取得
+	 * @return
+	 */
 	private String getTempDir() {
 		final Context context = mWeakContext.get();
 		try {
@@ -248,5 +263,26 @@ public class MediaRawFileMuxer implements IMuxer {
 		}
 		return new File(
 			Environment.getDataDirectory(), mOutputName).getAbsolutePath();
+	}
+
+	/**
+	 * delete specific file/directory recursively
+	 * @param path
+	 */
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private static final void delete(final File path) {
+		if (path != null) {
+			try {
+				if (path.isDirectory()) {
+					final File[] files = path.listFiles();
+					final int n = files != null ? files.length : 0;
+					for (int i = 0; i < n; i++)
+						delete(files[i]);
+				}
+				path.delete();
+			} catch (final Exception e) {
+				Log.w(TAG, e);
+			}
+		}
 	}
 }

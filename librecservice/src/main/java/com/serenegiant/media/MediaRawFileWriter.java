@@ -610,18 +610,4 @@ abstract class MediaRawFileWriter {
 		return buffer;
 	}
 
-	/**
-	 * delete specific file/directory recursively
-	 * @param path
-	 */
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	/*package*/ static final void delete(final File path) {
-		if (path.isDirectory()) {
-			File[] files = path.listFiles();
-			final int n = files != null ? files.length : 0;
-			for (int i = 0; i < n; i++)
-				delete(files[i]);
-		}
-		path.delete();
-	}
 }
