@@ -1,3 +1,4 @@
+package com.serenegiant.service;
 /*
  * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  *
@@ -13,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.serenegiant.service;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -84,7 +84,6 @@ public abstract class AbstractServiceRecorder {
 	 */
 	@Override
 	protected void finalize() throws Throwable {
-		if (DEBUG) Log.v(TAG, "finalize:");
 		try {
 			release();
 		} finally {
@@ -98,8 +97,8 @@ public abstract class AbstractServiceRecorder {
 	 * #internalReleaseを使う
 	 */
 	public void release() {
-		if (DEBUG) Log.v(TAG, "release:" + this);
 		if (!mReleased) {
+			if (DEBUG) Log.v(TAG, "release:");
 			mReleased = true;
 			internalRelease();
 		}

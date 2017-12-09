@@ -1,3 +1,4 @@
+package com.serenegiant.media;
 /*
  * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  *
@@ -13,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.serenegiant.media;
 
 import android.content.Context;
 import android.media.MediaCodec;

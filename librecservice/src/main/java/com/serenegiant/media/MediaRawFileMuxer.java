@@ -1,3 +1,4 @@
+package com.serenegiant.media;
 /*
  * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  *
@@ -13,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.serenegiant.media;
 
 import android.content.Context;
 import android.media.MediaCodec;
@@ -92,11 +92,20 @@ public class MediaRawFileMuxer implements IMuxer {
 	}
 	
 	@Override
+	protected void finalize() throws Throwable {
+		try {
+			release();
+		} finally {
+			super.finalize();
+		}
+	}
+	
+	@Override
 	public void release() {
-		if (DEBUG) Log.v(TAG, "release:");
 		synchronized (mSync) {
 			if (!mReleased) {
 				mReleased = true;
+				if (DEBUG) Log.v(TAG, "release:");
 				if (mVideoWriter != null) {
 					mVideoWriter.release();
 					mVideoWriter = null;

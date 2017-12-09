@@ -1,3 +1,4 @@
+package com.serenegiant.service;
 /*
  * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
  *
@@ -13,8 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.serenegiant.service;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
