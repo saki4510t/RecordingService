@@ -37,6 +37,9 @@ import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
 import com.serenegiant.glutils.GLDrawer2D;
+import com.serenegiant.glutils.IRendererHolder;
+import com.serenegiant.glutils.RenderHolderCallback;
+import com.serenegiant.glutils.RendererHolder;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -53,7 +56,7 @@ import javax.microedition.khronos.opengles.GL10;
 public final class CameraGLView extends GLSurfaceView {
 
 	private static final boolean DEBUG = false; // TODO set false on release
-	private static final String TAG = "CameraGLView";
+	private static final String TAG = CameraGLView.class.getSimpleName();
 
 	private static final int CAMERA_ID = 0;
 
@@ -68,6 +71,7 @@ public final class CameraGLView extends GLSurfaceView {
 	private int mVideoWidth, mVideoHeight;
 	private int mRotation;
 	private int mScaleMode = SCALE_STRETCH_FIT;
+	private IRendererHolder mRendererHolder;
 
 	public CameraGLView(final Context context) {
 		this(context, null, 0);
@@ -89,6 +93,7 @@ public final class CameraGLView extends GLSurfaceView {
 	public void onResume() {
 		if (DEBUG) Log.v(TAG, "onResume:");
 		super.onResume();
+		mRendererHolder = new RendererHolder(1280, 720, mRenderHolderCallback);
 		if (mHasSurface) {
 			if (mCameraHandler == null) {
 				if (DEBUG) Log.v(TAG, "surface already exist");
@@ -103,6 +108,10 @@ public final class CameraGLView extends GLSurfaceView {
 		if (mCameraHandler != null) {
 			// just request stop prviewing
 			mCameraHandler.stopPreview(false);
+		}
+		if (mRendererHolder != null) {
+			mRendererHolder.release();
+			mRendererHolder = null;
 		}
 		super.onPause();
 	}
@@ -167,6 +176,24 @@ public final class CameraGLView extends GLSurfaceView {
 		super.surfaceDestroyed(holder);
 	}
 
+	private final RenderHolderCallback mRenderHolderCallback
+		= new RenderHolderCallback() {
+
+		@Override
+		public void onCreate(final Surface surface) {
+			
+		}
+		
+		@Override
+		public void onFrameAvailable() {
+			
+		}
+		
+		@Override
+		public void onDestroy() {
+			
+		}
+	};
 //********************************************************************************
 	private synchronized void startPreview(final int width, final int height) {
 		if (mCameraHandler == null) {
@@ -508,7 +535,8 @@ public final class CameraGLView extends GLSurfaceView {
 					});
 					final SurfaceTexture st = parent.getSurfaceTexture();
 					st.setDefaultBufferSize(previewSize.width, previewSize.height);
-					mCamera.setPreviewTexture(st);
+					parent.mRendererHolder.addSurface(1, st, false);
+					mCamera.setPreviewTexture(parent.mRendererHolder.getSurfaceTexture());
 				} catch (final IOException e) {
 					Log.e(TAG, "startPreview:", e);
 					if (mCamera != null) {
