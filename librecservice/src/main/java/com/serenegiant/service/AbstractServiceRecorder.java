@@ -15,6 +15,7 @@
  */
 package com.serenegiant.service;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -24,6 +25,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
+
+import com.serenegiant.utils.BuildCheck;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -56,6 +59,7 @@ public abstract class AbstractServiceRecorder {
 	private volatile boolean mReleased = false;
 	private AbstractRecorderService mService;
 	
+	@SuppressLint("NewApi")
 	protected AbstractServiceRecorder(@NonNull final Context context,
 		@NonNull Class<? extends AbstractRecorderService> serviceClazz,
 		@NonNull final Callback callback) {
@@ -64,6 +68,13 @@ public abstract class AbstractServiceRecorder {
 		mWeakContext = new WeakReference<Context>(context);
 		mServiceClazz = serviceClazz;
 		mCallback = callback;
+		final Intent serviceIntent = new Intent(serviceClazz.getName());
+		serviceIntent.setPackage(context.getPackageName());
+		if (BuildCheck.isOreo()) {
+			context.startForegroundService(serviceIntent);
+		} else {
+			context.startService(serviceIntent);
+		}
 		doBindService();
 	}
 
