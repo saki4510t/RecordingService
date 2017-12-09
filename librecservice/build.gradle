@@ -49,7 +49,7 @@ uploadArchives {
             repository url: "file://${repo.absolutePath}"
             pom.version = versionNameString
             pom.groupId = 'com.serenegiant'
-            pom.artifactId = 'libservice'
+            pom.artifactId = 'recordingservice'
         }
     }
 }
