@@ -167,7 +167,7 @@ public final class CameraGLView extends GLSurfaceView {
 		if (DEBUG) Log.v(TAG, "surfaceDestroyed:");
 		if (mCameraHandler != null) {
 			// wait for finish previewing here
-			// otherwise camera try to display on un-exist Surface and some error will occure
+			// otherwise camera try to display on un-exist Surface and some error will occur
 			mCameraHandler.stopPreview(true);
 		}
 		mCameraHandler = null;
