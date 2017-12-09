@@ -41,8 +41,10 @@ public abstract class AbstractServiceRecorder {
 	private static final int STATE_UNBINDING = 3;
 
 	public interface Callback {
+		public void onConnected();
+		public void onPrepared();
 		public void onReady();
-		public void onRelease();
+		public void onDisconnected();
 	}
 
 	private final WeakReference<Context> mWeakContext;
@@ -140,7 +142,7 @@ public abstract class AbstractServiceRecorder {
 	public void start(final String outputPath)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:");
+		if (DEBUG) Log.v(TAG, "start:outputPath=" + outputPath);
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
@@ -200,7 +202,8 @@ public abstract class AbstractServiceRecorder {
 
 //================================================================================
 	protected void internalRelease() {
-		mCallback.onRelease();
+		mCallback.onDisconnected();
+		stop();
 		doUnBindService();
 	}
 	
@@ -296,15 +299,21 @@ public abstract class AbstractServiceRecorder {
 				}
 				mService = getService(service);
 				mServiceSync.notifyAll();
+				if (mService != null) {
+					mService.addListener(mStateChangeListener);
+				}
 			}
-			mCallback.onReady();
+			mCallback.onConnected();
 		}
 
 		@Override
 		public void onServiceDisconnected(final ComponentName name) {
 			if (DEBUG) Log.v(TAG, "onServiceDisconnected:name=" + name);
-			mCallback.onRelease();
+			mCallback.onDisconnected();
 			synchronized (mServiceSync) {
+				if (mService != null) {
+					mService.removeListener(mStateChangeListener);
+				}
 				mState = STATE_UNINITIALIZED;
 				mService = null;
 				mServiceSync.notifyAll();
@@ -313,4 +322,36 @@ public abstract class AbstractServiceRecorder {
 	};
 
 	protected abstract AbstractRecorderService getService(final IBinder service);
+	
+	private final AbstractRecorderService.StateChangeListener
+		mStateChangeListener = new AbstractRecorderService.StateChangeListener() {
+		@Override
+		public void onStateChanged(
+			@NonNull final AbstractRecorderService service, final int state) {
+			
+			switch (state) {
+			case AbstractRecorderService.STATE_INITIALIZED:
+				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_INITIALIZED");
+				break;
+			case AbstractRecorderService.STATE_PREPARING:
+				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_PREPARING");
+				break;
+			case AbstractRecorderService.STATE_PREPARED:
+				mCallback.onPrepared();
+				break;
+			case AbstractRecorderService.STATE_READY:
+				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_READY");
+				mCallback.onReady();
+				break;
+			case AbstractRecorderService.STATE_RECORDING:
+				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RECORDING");
+				break;
+			case AbstractRecorderService.STATE_RELEASING:
+				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RELEASING");
+				break;
+			default:
+				break;
+			}
+		}
+	};
 }

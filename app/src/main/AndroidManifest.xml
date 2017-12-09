@@ -22,6 +22,25 @@
 				<category android:name="android.intent.category.LAUNCHER"/>
 			</intent-filter>
 		</activity>
+
+		<service
+			android:name="com.serenegiant.service.PostMuxRecService"
+			android:exported="false"
+			android:enabled="true" >
+			<intent-filter>
+				<action android:name="com.serenegiant.service.PostMuxRecService" />
+			</intent-filter>
+		</service>
+
+		<service
+			android:name="com.serenegiant.service.TimeShiftRecService"
+			android:exported="false"
+			android:enabled="true" >
+			<intent-filter>
+				<action android:name="com.serenegiant.service.TimeShiftRecService" />
+			</intent-filter>
+		</service>
+
 	</application>
 
 </manifest>

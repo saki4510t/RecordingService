@@ -22,17 +22,26 @@ package com.serenegiant.recordingservice;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Surface;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.serenegiant.service.AbstractServiceRecorder;
+import com.serenegiant.service.PostMuxRecService;
+import com.serenegiant.service.PostMuxRecorder;
+import com.serenegiant.utils.FileUtils;
+
+import java.io.File;
+
 public class CameraFragment extends Fragment {
-	private static final boolean DEBUG = false;	// TODO set false on release
-	private static final String TAG = "CameraFragment";
+	private static final boolean DEBUG = true;	// TODO set false on release
+	private static final String TAG = CameraFragment.class.getSimpleName();
 
 	/**
 	 * for camera preview display
@@ -47,6 +56,8 @@ public class CameraFragment extends Fragment {
 	 */
 	private ImageButton mRecordButton;
 
+	private PostMuxRecorder mPostMuxRecorder;
+	
 	public CameraFragment() {
 		// need default constructor
 	}
@@ -114,7 +125,7 @@ public class CameraFragment extends Fragment {
 	}
 
 	private boolean isRecording() {
-		return false;	// FIXME 未実装
+		return mPostMuxRecorder != null;
 	}
 	
 	/**
@@ -128,6 +139,11 @@ public class CameraFragment extends Fragment {
 		mRecordButton.setColorFilter(0xffff0000);	// turn red
 		try {
 			// FIXME 未実装
+			if (mPostMuxRecorder == null) {
+				mPostMuxRecorder = new PostMuxRecorder(getActivity(),
+					PostMuxRecService.class, mCallback);
+				
+			}
 		} catch (final Exception e) {
 			mRecordButton.setColorFilter(0);
 			Log.e(TAG, "startCapture:", e);
@@ -141,6 +157,78 @@ public class CameraFragment extends Fragment {
 		if (DEBUG) Log.v(TAG, "stopRecording:");
 		mRecordButton.setColorFilter(0);	// return to default color
 		// FIXME 未実装
+		if (mPostMuxRecorder != null) {
+			mPostMuxRecorder.release();
+			mPostMuxRecorder = null;
+		}
 	}
 
+	private int mRecordingSurfaceId = 0;
+	private AbstractServiceRecorder.Callback mCallback
+		= new AbstractServiceRecorder.Callback() {
+		@Override
+		public void onConnected() {
+			if (DEBUG) Log.v(TAG, "onConnected:");
+			if (mRecordingSurfaceId != 0) {
+				mCameraView.removeSurface(mRecordingSurfaceId);
+				mRecordingSurfaceId = 0;
+			}
+			if (mPostMuxRecorder != null) {
+				try {
+					mPostMuxRecorder.prepare(1280, 720, 30, 0.25f);
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+					stopRecording();	// 非同期で呼ばないとデッドロックするかも
+				}
+			}
+		}
+		
+		@SuppressWarnings("ResultOfMethodCallIgnored")
+		@Override
+		public void onPrepared() {
+			if (DEBUG) Log.v(TAG, "onPrepared:");
+			if (mPostMuxRecorder != null) {
+				try {
+					final Surface surface = mPostMuxRecorder.getInputSurface();
+					if (surface != null) {
+						mRecordingSurfaceId = surface.hashCode();
+						mCameraView.addSurface(mRecordingSurfaceId, surface, true);
+					} else {
+						Log.w(TAG, "surface is null");
+						stopRecording();	// 非同期で呼ばないとデッドロックするかも
+					}
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+					stopRecording();	// 非同期で呼ばないとデッドロックするかも
+				}
+			}
+		}
+		
+		@Override
+		public void onReady() {
+			if (mPostMuxRecorder != null) {
+				try {
+					final File dir = new File(
+						Environment.getExternalStoragePublicDirectory(
+							Environment.DIRECTORY_MOVIES),
+						"RecordingService");
+					dir.mkdirs();
+					mPostMuxRecorder.start(new File(dir, FileUtils.getDateTimeString() + ".mp4").toString());
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+					stopRecording();	// 非同期で呼ばないとデッドロックするかも
+				}
+			}
+		}
+		
+		@Override
+		public void onDisconnected() {
+			if (DEBUG) Log.v(TAG, "onDisconnected:");
+			if (mRecordingSurfaceId != 0) {
+				mCameraView.removeSurface(mRecordingSurfaceId);
+				mRecordingSurfaceId = 0;
+			}
+			mRecordButton.setColorFilter(0);	// return to default color
+		}
+	};
 }

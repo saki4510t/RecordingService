@@ -60,7 +60,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	public static final int STATE_UNINITIALIZED = -1;
 	public static final int STATE_INITIALIZED = 0;
 	public static final int STATE_PREPARING = 1;
-	public static final int STATE_READY = 2;
+	public static final int STATE_PREPARED = 2;
+	public static final int STATE_READY = 3;
 	public static final int STATE_RECORDING = 4;
 	public static final int STATE_RELEASING = 9;
 	
@@ -301,7 +302,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				internalPrepare(width, height, frameRate, bpp);
 				createEncoder(width, height, frameRate, bpp);
 				// MediaReaper.ReaperListener#onOutputFormatChangedへ移動
-//				setState(STATE_READY);
+				setState(STATE_PREPARED);
 			} catch (final IllegalStateException | IOException e) {
 				releaseEncoder();
 				throw e;
@@ -391,7 +392,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void start(@NonNull final String outputPath)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:");
+		if (DEBUG) Log.v(TAG, "start:outputPath=" + outputPath);
 		synchronized (mSync) {
 			// FIXME 録音は未対応
 			if (mVideoFormat != null) {
@@ -555,7 +556,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	public Surface getInputSurface() throws IllegalStateException {
 		if (DEBUG) Log.v(TAG, "getInputSurface:");
 		synchronized (mSync) {
-			if (mState == STATE_READY) {
+			if (mState == STATE_PREPARED) {
 				return mInputSurface;
 			} else {
 				throw new IllegalStateException();
