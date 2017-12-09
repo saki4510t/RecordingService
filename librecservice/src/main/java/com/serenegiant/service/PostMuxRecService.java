@@ -53,6 +53,13 @@ public class PostMuxRecService extends AbstractRecorderService {
 	private int mAudioTrackIx = -1;
 
 	@Override
+	public boolean isRunning() {
+		synchronized (mSync) {
+			return super.isRunning() || (getState() == STATE_MUXING);
+		}
+	}
+
+	@Override
 	protected IBinder getBinder() {
 		return mBinder;
 	}
@@ -80,17 +87,18 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 		
+		if (DEBUG) Log.v(TAG, "internalStart:accessId=" + accessId);
 		// FIXME 未実装
 		throw new UnsupportedOperationException("not implemented yet.");
 	}
 	
 	@Override
 	protected void internalStop() {
+		if (DEBUG) Log.v(TAG, "internalStop:muxer=" + mMuxer);
 		final MediaRawFileMuxer muxer = mMuxer;
 		mMuxer = null;
 		if (getState() == STATE_RECORDING) {
 			releaseEncoder();
-			setState(STATE_READY);
 			if (muxer != null) {
 				setState(STATE_MUXING);
 				queueEvent(new Runnable() {
@@ -101,11 +109,15 @@ public class PostMuxRecService extends AbstractRecorderService {
 						} catch (final IOException e) {
 							Log.w(TAG, e);
 						}
-						setState(STATE_READY);
+						if (getState() == STATE_MUXING) {
+							setState(STATE_READY);
+						}
 						muxer.release();
 						checkStopSelf();
 					}
 				});
+			} else {
+				setState(STATE_READY);
 			}
 		}
 	}

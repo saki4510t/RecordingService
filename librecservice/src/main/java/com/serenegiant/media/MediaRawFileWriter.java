@@ -122,6 +122,7 @@ abstract class MediaRawFileWriter {
 		@NonNull final String tempDir,
 		@NonNull final String name) throws IOException {
 
+		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mOut = new DataOutputStream(new BufferedOutputStream(
 			new FileOutputStream(tempDir.endsWith("/")
 				? tempDir + name : tempDir + "/" + name, false)));
@@ -142,6 +143,7 @@ abstract class MediaRawFileWriter {
 	 */
 	public synchronized void release() {
 		if (mOut != null) {
+			if (DEBUG) Log.v(TAG, "release:");
 			try {
 				mOut.flush();
 				mOut.close();
@@ -149,6 +151,7 @@ abstract class MediaRawFileWriter {
 				Log.w(TAG, e);
 			}
 			mOut = null;
+			if (DEBUG) Log.v(TAG, "release:finished");
 		}
 	}
 	
@@ -189,6 +192,7 @@ abstract class MediaRawFileWriter {
 	}
 
 	/*package*/ static MediaFormat readFormat(@NonNull final DataInputStream in) {
+		if (DEBUG) Log.v(TAG, "readFormat:");
 		MediaFormat format = null;
 		try {
 			readHeader(in);

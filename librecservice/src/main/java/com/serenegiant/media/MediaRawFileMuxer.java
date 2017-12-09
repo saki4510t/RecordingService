@@ -83,6 +83,7 @@ public class MediaRawFileMuxer implements IMuxer {
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
+		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
 		mOutputDir = outputDir;
 		mOutputName = FileUtils.getDateTimeString();	// XXX prefix付きも設定できたほうがいいかも
@@ -92,6 +93,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	
 	@Override
 	public void release() {
+		if (DEBUG) Log.v(TAG, "release:");
 		synchronized (mSync) {
 			if (!mReleased) {
 				mReleased = true;
@@ -106,10 +108,12 @@ public class MediaRawFileMuxer implements IMuxer {
 				mMediaRawFileWriters[0] = mMediaRawFileWriters[1] = null;
 			}
 		}
+		if (DEBUG) Log.v(TAG, "release:finished");
 	}
 	
 	@Override
 	public void start() {
+		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
 			checkReleased();
 			if (mIsRunning) {
@@ -124,6 +128,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	
 	@Override
 	public void stop() {
+		if (DEBUG) Log.v(TAG, "stop:");
 		synchronized (mSync) {
 			mIsRunning = false;
 			mLastTrackIndex = 0;
@@ -134,10 +139,12 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * 一時rawファイルからmp4ファイルを生成する
 	 */
 	public void build() throws IOException {
+		if (DEBUG) Log.v(TAG, "build:");
 		final String outputPath
 			= mOutputDir + (mOutputDir.endsWith("/")
 				? mOutputName : "/" + mOutputName) + ".mp4";
 		final String tempDir = getTempDir();
+		if (DEBUG) Log.v(TAG, "build:tempDir=" + tempDir);
 		try {
 			final PostMuxBuilder builder
 				= new PostMuxBuilder(tempDir, outputPath);
@@ -145,6 +152,7 @@ public class MediaRawFileMuxer implements IMuxer {
 		} finally {
 			delete(new File(tempDir));
 		}
+		if (DEBUG) Log.v(TAG, "build:finished");
 	}
 	
 	@Override
@@ -158,6 +166,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	public int addTrack(@NonNull final MediaFormat format)
 		throws IllegalArgumentException, IllegalStateException {
 
+		if (DEBUG) Log.v(TAG, "addTrack:" + format);
 		checkReleased();
 		if (mIsRunning) {
 			throw new IllegalStateException("already started");
@@ -165,6 +174,7 @@ public class MediaRawFileMuxer implements IMuxer {
 
 		final Context context = mWeakContext.get();
 		final String tempDir = getTempDir();
+		if (DEBUG) Log.v(TAG, "addTrack:tempDir=" + tempDir);
 		final String mime = format.containsKey(MediaFormat.KEY_MIME)
 			? format.getString(MediaFormat.KEY_MIME) : null;
 		if (!TextUtils.isEmpty(mime)) {
@@ -261,6 +271,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * @return
 	 */
 	private String getTempDir() {
+		if (DEBUG) Log.v(TAG, "getTempDir:");
 		final Context context = mWeakContext.get();
 		try {
 			return context.getDir(mOutputName, Context.MODE_PRIVATE).getAbsolutePath();
@@ -276,7 +287,8 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * @param path
 	 */
 	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private static final void delete(final File path) {
+	private static final void delete(@Nullable final File path) {
+		if (DEBUG) Log.v(TAG, "delete:" + path);
 		if (path != null) {
 			try {
 				if (path.isDirectory()) {

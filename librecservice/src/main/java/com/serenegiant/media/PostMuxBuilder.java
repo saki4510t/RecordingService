@@ -16,6 +16,7 @@
 package com.serenegiant.media;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -29,15 +30,19 @@ class PostMuxBuilder {
 	
 	public PostMuxBuilder(@NonNull final String tempDir,
 		@NonNull final String outputPath) {
+		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		// FIXME 未実装
 	}
 
 	public PostMuxBuilder(@NonNull final String tempDir,
 		final int accessId) {
+		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		// FIXME 未実装
 	}
 	
 	public void build() throws IOException {
+		if (DEBUG) Log.v(TAG, "build:");
 		// FIXME 未実装
+		if (DEBUG) Log.v(TAG, "build:finished");
 	}
 }

@@ -82,12 +82,14 @@ public class CameraFragment extends Fragment {
 		super.onResume();
 		if (DEBUG) Log.v(TAG, "onResume:");
 		mCameraView.onResume();
+		mCameraView.addListener(mOnFrameAvailableListener);
 	}
 
 	@Override
 	public void onPause() {
 		if (DEBUG) Log.v(TAG, "onPause:");
 		stopRecording();
+		mCameraView.removeListener(mOnFrameAvailableListener);
 		mCameraView.onPause();
 		super.onPause();
 	}
@@ -229,6 +231,16 @@ public class CameraFragment extends Fragment {
 				mRecordingSurfaceId = 0;
 			}
 			mRecordButton.setColorFilter(0);	// return to default color
+		}
+	};
+	
+	private final CameraGLView.OnFrameAvailableListener
+		mOnFrameAvailableListener = new CameraGLView.OnFrameAvailableListener() {
+		@Override
+		public void onFrameAvailable() {
+			if (mPostMuxRecorder != null) {
+				mPostMuxRecorder.frameAvailableSoon();
+			}
 		}
 	};
 }

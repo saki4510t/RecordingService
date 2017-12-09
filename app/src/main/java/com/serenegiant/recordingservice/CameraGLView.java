@@ -47,6 +47,8 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -59,6 +61,10 @@ public final class CameraGLView extends GLSurfaceView {
 	private static final boolean DEBUG = false; // TODO set false on release
 	private static final String TAG = CameraGLView.class.getSimpleName();
 
+	public interface OnFrameAvailableListener {
+		public void onFrameAvailable();
+	}
+	
 	private static final int CAMERA_ID = 0;
 
 	private static final int SCALE_STRETCH_FIT = 0;
@@ -67,6 +73,8 @@ public final class CameraGLView extends GLSurfaceView {
 	private static final int SCALE_CROP_CENTER = 3;
 
 	private final CameraSurfaceRenderer mRenderer;
+	private final Set<OnFrameAvailableListener> mListeners
+		= new CopyOnWriteArraySet<OnFrameAvailableListener>();
 	private boolean mHasSurface;
 	private CameraHandler mCameraHandler = null;
 	private int mVideoWidth, mVideoHeight;
@@ -117,6 +125,16 @@ public final class CameraGLView extends GLSurfaceView {
 		super.onPause();
 	}
 
+	public void addListener(final OnFrameAvailableListener listener) {
+		if (listener != null) {
+			mListeners.add(listener);
+		}
+	}
+	
+	public void removeListener(final OnFrameAvailableListener listener) {
+		mListeners.remove(listener);
+	}
+	
 	public void setScaleMode(final int mode) {
 		if (mScaleMode != mode) {
 			mScaleMode = mode;
@@ -202,7 +220,13 @@ public final class CameraGLView extends GLSurfaceView {
 		
 		@Override
 		public void onFrameAvailable() {
-			
+			for (final OnFrameAvailableListener listener: mListeners) {
+				try {
+					listener.onFrameAvailable();
+				} catch (final Exception e) {
+					mListeners.remove(listener);
+				}
+			}
 		}
 		
 		@Override

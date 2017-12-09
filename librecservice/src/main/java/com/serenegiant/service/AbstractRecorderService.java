@@ -198,19 +198,23 @@ public abstract class AbstractRecorderService extends BaseService {
 			mState = newState;
 			mSync.notifyAll();
 		}
-		if (changed) {
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					for (final StateChangeListener listener: mListeners) {
-						try {
-							listener.onStateChanged(AbstractRecorderService.this, newState);
-						} catch (final Exception e) {
-							mListeners.remove(listener);
+		if (changed && !isDestroyed()) {
+			try {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						for (final StateChangeListener listener: mListeners) {
+							try {
+								listener.onStateChanged(AbstractRecorderService.this, newState);
+							} catch (final Exception e) {
+								mListeners.remove(listener);
+							}
 						}
 					}
-				}
-			});
+				});
+			} catch (final Exception e) {
+				Log.w(TAG, e);
+			}
 		}
 	}
 
@@ -223,16 +227,21 @@ public abstract class AbstractRecorderService extends BaseService {
 	protected void checkStopSelf() {
 		if (DEBUG) Log.v(TAG, "checkStopSelf:");
 		synchronized (mSync) {
-			if (canStopSelf(mIsBind | isRunning())) {
+			if (!isDestroyed() && canStopSelf(mIsBind | isRunning())) {
 				if (DEBUG) Log.v(TAG, "stopSelf");
 				setState(STATE_RELEASING);
-				queueEvent(new Runnable() {
-					@Override
-					public void run() {
-						showNotification(getString(R.string.notification_service));
-						stopSelf();
-					}
-				});
+				try {
+					queueEvent(new Runnable() {
+						@Override
+						public void run() {
+							showNotification(getString(R.string.notification_service));
+							stopSelf();
+						}
+					});
+				} catch (final Exception e) {
+					setState(STATE_UNINITIALIZED);
+					Log.w(TAG, e);
+				}
 			}
 		}
 	}
@@ -313,6 +322,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	protected void internalPrepare(final int width, final int height,
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
+		if (DEBUG) Log.v(TAG, "internalPrepare:");
 	}
 	
 	/**
@@ -350,6 +360,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		mVideoEncoder.start();
 		mVideoReaper = new MediaReaper.VideoReaper(mVideoEncoder, mReaperListener,
 			width, height);
+		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
 
 	/**
@@ -557,6 +568,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.v(TAG, "getInputSurface:");
 		synchronized (mSync) {
 			if (mState == STATE_PREPARED) {
+				frameAvailableSoon();
 				return mInputSurface;
 			} else {
 				throw new IllegalStateException();
