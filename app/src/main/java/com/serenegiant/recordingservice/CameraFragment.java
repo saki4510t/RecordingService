@@ -206,6 +206,7 @@ public class CameraFragment extends Fragment {
 			}
 		}
 		
+		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public void onReady() {
 			if (mPostMuxRecorder != null) {
@@ -215,7 +216,7 @@ public class CameraFragment extends Fragment {
 							Environment.DIRECTORY_MOVIES),
 						"RecordingService");
 					dir.mkdirs();
-					mPostMuxRecorder.start(new File(dir, FileUtils.getDateTimeString() + ".mp4").toString());
+					mPostMuxRecorder.start(dir.toString(), FileUtils.getDateTimeString());
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも

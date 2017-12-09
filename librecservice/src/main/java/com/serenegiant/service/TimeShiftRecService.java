@@ -16,15 +16,16 @@
 
 package com.serenegiant.service;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Binder;
-import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -34,8 +35,8 @@ import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
 import com.serenegiant.media.VideoMuxer;
-import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.SDUtils;
+import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -154,10 +155,14 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputPath
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @param videoFormat
+	 * @param audioFormat
 	 * @throws IOException
 	 */
-	protected void internalStart(@NonNull final String outputPath,
+	protected void internalStart(@NonNull final String outputDir,
+		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 
@@ -167,7 +172,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		}
 		// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
 		final IMuxer muxer = new MediaMuxerWrapper(
-			outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+			outputDir, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 		final int trackIndex = muxer.addTrack(videoFormat);
 		mRecordingTask = new RecordingTask(muxer, trackIndex);
 		new Thread(mRecordingTask, "RecordingTask").start();
@@ -177,10 +182,15 @@ public class TimeShiftRecService extends AbstractRecorderService {
 
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param accessId
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @param videoFormat
+	 * @param audioFormat
 	 * @throws IOException
 	 */
-	protected void internalStart(final int accessId,
+	@SuppressLint("NewApi")
+	protected void internalStart(@NonNull final DocumentFile outputDir,
+		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 	
@@ -189,23 +199,26 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			throw new IllegalStateException("not started");
 		}
 		// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
-		final IMuxer muxer;
-		if ((accessId > 0) && SDUtils.hasStorageAccess(this, accessId)) {
-			// FIXME Oreoの場合の処理を追加
-			mOutputPath = FileUtils.getCaptureFile(this,
-				Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, accessId).toString();
-			final String file_name = FileUtils.getDateTimeString() + EXT_VIDEO;
-			final int fd = SDUtils.createStorageFileFD(this, accessId, "*/*", file_name);
-			muxer = new VideoMuxer(fd);
+		final DocumentFile output = outputDir.createFile("*/*", name + ".mp4");
+		IMuxer muxer = null;
+		if (BuildCheck.isOreo()) {
+			muxer = new MediaMuxerWrapper(getContentResolver()
+				.openFileDescriptor(output.getUri(), "rw").getFileDescriptor(),
+				MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 		} else {
-			// 通常のファイルパスへの出力にフォールバック
-			try {
-				mOutputPath = FileUtils.getCaptureFile(this,
-					Environment.DIRECTORY_MOVIES, null, EXT_VIDEO, 0).toString();
-			} catch (final Exception e) {
-				throw new IOException("This app has no permission of writing external storage");
+			final String path = UriHelper.getPath(this, output.getUri());
+			final File f = new File(UriHelper.getPath(this, output.getUri()));
+			if (/*!f.exists() &&*/ f.canWrite()) {
+				// 書き込めるファイルパスを取得できればそれを使う
+				muxer = new MediaMuxerWrapper(path,
+					MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+			} else {
+				Log.w(TAG, "cant't write to the file, try to use VideoMuxer instead");
 			}
-			muxer = new MediaMuxerWrapper(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+		}
+		if (muxer == null) {
+			muxer = new VideoMuxer(getContentResolver()
+				.openFileDescriptor(output.getUri(), "rw").getFd());
 		}
 		final int trackIndex = muxer.addTrack(videoFormat);
 		mRecordingTask = new RecordingTask(muxer, trackIndex);

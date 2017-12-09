@@ -25,8 +25,6 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.serenegiant.utils.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -75,18 +73,20 @@ public class MediaRawFileMuxer implements IMuxer {
 	/**
 	 * コンストラクタ
 	 * @param context
+	 * @param outputDir 最終出力ディレクトリ
+	 * @param name 出つ力ファイル名(拡張子なし)
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
-		@NonNull final String outputDir,
+		@NonNull final String outputDir, @NonNull final String name,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
 		mOutputDir = outputDir;
-		mOutputName = FileUtils.getDateTimeString();	// XXX prefix付きも設定できたほうがいいかも
+		mOutputName = name;
 		mConfigFormatVideo = configFormatVideo;
 		mConfigFormatAudio = configFormatAudio;
 	}
@@ -146,9 +146,8 @@ public class MediaRawFileMuxer implements IMuxer {
 		final String tempDir = getTempDir();
 		if (DEBUG) Log.v(TAG, "build:tempDir=" + tempDir);
 		try {
-			final PostMuxBuilder builder
-				= new PostMuxBuilder(tempDir, outputPath);
-			builder.build();
+			final PostMuxBuilder builder = new PostMuxBuilder();
+			builder.build(tempDir, outputPath);
 		} finally {
 			delete(new File(tempDir));
 		}

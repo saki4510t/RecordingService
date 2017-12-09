@@ -15,12 +15,14 @@
  */
 package com.serenegiant.service;
 
+import android.annotation.SuppressLint;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
 import com.serenegiant.media.MediaRawFileMuxer;
@@ -64,14 +66,24 @@ public class PostMuxRecService extends AbstractRecorderService {
 		return mBinder;
 	}
 	
+	/**
+	 * startの実態
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @param videoFormat
+	 * @param audioFormat
+	 * @throws IOException
+	 */
 	@Override
-	protected void internalStart(@NonNull final String outputPath,
+	protected void internalStart(@NonNull final String outputDir,
+		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 		
-		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputPath);
+		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputDir);
 		if (mMuxer == null) {
-			mMuxer = new MediaRawFileMuxer(this, outputPath, videoFormat, audioFormat);
+			mMuxer = new MediaRawFileMuxer(this, outputDir, name,
+				videoFormat, audioFormat);
 			if (videoFormat != null) {
 				mVideoTrackIx = mMuxer.addTrack(videoFormat);
 			}
@@ -82,12 +94,22 @@ public class PostMuxRecService extends AbstractRecorderService {
 		}
 	}
 	
+	/**
+	 * startの実態
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @param videoFormat
+	 * @param audioFormat
+	 * @throws IOException
+	 */
+	@SuppressLint("NewApi")
 	@Override
-	protected void internalStart(final int accessId,
+	protected void internalStart(@NonNull final DocumentFile outputDir,
+		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 		
-		if (DEBUG) Log.v(TAG, "internalStart:accessId=" + accessId);
+		if (DEBUG) Log.v(TAG, "internalStart:output=" + outputDir);
 		// FIXME 未実装
 		throw new UnsupportedOperationException("not implemented yet.");
 	}

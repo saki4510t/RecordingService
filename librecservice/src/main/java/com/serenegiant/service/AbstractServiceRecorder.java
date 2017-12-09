@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
 
@@ -135,35 +136,37 @@ public abstract class AbstractServiceRecorder {
 
 	/**
 	 * 録画開始
-	 * @param outputPath 出力ファイル名
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void start(final String outputPath)
+	public void start(@NonNull final String outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:outputPath=" + outputPath);
+		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.start(outputPath);
+			service.start(outputDir, name);
 		}
 	}
 
 	/**
 	 * 録画開始
-	 * @param accessId 出力ファイル名
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void start(final int accessId)
+	public void start(@NonNull final DocumentFile outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
 		if (DEBUG) Log.v(TAG, "start:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.start(accessId);
+			service.start(outputDir, name);
 		}
 	}
 

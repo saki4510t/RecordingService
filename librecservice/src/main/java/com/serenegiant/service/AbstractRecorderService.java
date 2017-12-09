@@ -28,6 +28,7 @@ import android.media.MediaScannerConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
 
@@ -36,6 +37,7 @@ import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
 import com.serenegiant.utils.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Set;
@@ -398,17 +400,23 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	/**
 	 * 録画開始
-	 * @param outputPath
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @throws IllegalStateException
+	 * @throws IOException
 	 */
-	public void start(@NonNull final String outputPath)
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	public void start(@NonNull final String outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:outputPath=" + outputPath);
+		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		synchronized (mSync) {
 			// FIXME 録音は未対応
 			if (mVideoFormat != null) {
 				if (checkFreeSpace(this, 0)) {
-					internalStart(outputPath, mVideoFormat, null);
+					final File dir = new File(outputDir);
+					dir.mkdirs();
+					internalStart(outputDir, name, mVideoFormat, null);
 				} else {
 					throw new IOException();
 				}
@@ -421,9 +429,12 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	/**
 	 * 録画開始
-	 * @param accessId
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @throws IllegalStateException
+	 * @throws IOException
 	 */
-	public void start(final int accessId)
+	public void start(@NonNull final DocumentFile outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
 		if (DEBUG) Log.v(TAG, "start:");
@@ -431,7 +442,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			// FIXME 録音は未対応
 			if (mVideoFormat != null) {
 				if (checkFreeSpace(this, 0)) {
-					internalStart(accessId, mVideoFormat, null);
+					internalStart(outputDir, name, mVideoFormat, null);
 				} else {
 					throw new IOException();
 				}
@@ -444,19 +455,27 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputPath
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @param videoFormat
+	 * @param audioFormat
 	 * @throws IOException
 	 */
-	protected abstract void internalStart(@NonNull final String outputPath,
+	protected abstract void internalStart(@NonNull final String outputDir,
+		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException;
 	
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param accessId
+	 * @param outputDir 出力ディレクトリ
+	 * @param name 出力ファイル名(拡張子なし)
+	 * @param videoFormat
+	 * @param audioFormat
 	 * @throws IOException
 	 */
-	protected abstract void internalStart(final int accessId,
+	protected abstract void internalStart(@NonNull final DocumentFile outputDir,
+		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException;
 	
