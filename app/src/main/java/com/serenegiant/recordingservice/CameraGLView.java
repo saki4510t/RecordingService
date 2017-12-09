@@ -29,6 +29,7 @@ import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Display;
@@ -90,7 +91,7 @@ public final class CameraGLView extends GLSurfaceView {
 	}
 
 	@Override
-	public void onResume() {
+	public synchronized void onResume() {
 		if (DEBUG) Log.v(TAG, "onResume:");
 		super.onResume();
 		mRendererHolder = new RendererHolder(1280, 720, mRenderHolderCallback);
@@ -103,7 +104,7 @@ public final class CameraGLView extends GLSurfaceView {
 	}
 
 	@Override
-	public void onPause() {
+	public synchronized void onPause() {
 		if (DEBUG) Log.v(TAG, "onPause:");
 		if (mCameraHandler != null) {
 			// just request stop prviewing
@@ -157,7 +158,22 @@ public final class CameraGLView extends GLSurfaceView {
 		return mVideoHeight;
 	}
 
-	public SurfaceTexture getSurfaceTexture() {
+	public synchronized void addSurface(final int id, final Object surface,
+		final boolean isRecordable) {
+		
+		if (mRendererHolder != null) {
+			mRendererHolder.addSurface(id, surface, isRecordable);
+		}
+	}
+	
+	public synchronized void removeSurface(final int id) {
+		if (mRendererHolder != null) {
+			mRendererHolder.removeSurface(id);
+		}
+	}
+	
+	@Nullable
+	private SurfaceTexture getSurfaceTexture() {
 		if (DEBUG) Log.v(TAG, "getSurfaceTexture:");
 		return mRenderer != null ? mRenderer.mSTexture : null;
 	}
