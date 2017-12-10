@@ -276,6 +276,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @return 終了可能であればtrue
 	 */
 	protected boolean canStopSelf(final boolean isRunning) {
+		if (DEBUG) Log.v(TAG, "canStopSelf:isRunning=" + isRunning
+			+ ",isDestroyed=" + isDestroyed());
 		return !isRunning;
 	}
 	

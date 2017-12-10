@@ -209,6 +209,7 @@ public class CameraFragment extends Fragment {
 		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public void onReady() {
+			if (DEBUG) Log.v(TAG, "onReady:");
 			if (mPostMuxRecorder != null) {
 				try {
 					final File dir = new File(
