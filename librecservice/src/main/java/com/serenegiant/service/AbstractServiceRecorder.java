@@ -32,24 +32,12 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 /**
- * Created by saki on 2017/12/05.
+ * 録画サービスへアクセスするためのヘルパークラスのベースクラス
  *
  */
-public abstract class AbstractServiceRecorder {
+public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	private static final boolean DEBUG = true;	// FIXME set false on production
 	private static final String TAG = AbstractServiceRecorder.class.getSimpleName();
-
-	private static final int STATE_UNINITIALIZED = 0;
-	private static final int STATE_BINDING = 1;
-	private static final int STATE_BIND = 2;
-	private static final int STATE_UNBINDING = 3;
-
-	public interface Callback {
-		public void onConnected();
-		public void onPrepared();
-		public void onReady();
-		public void onDisconnected();
-	}
 
 	private final WeakReference<Context> mWeakContext;
 	private final Callback mCallback;
@@ -96,6 +84,7 @@ public abstract class AbstractServiceRecorder {
 	 * 実際に破棄される時に１回だけ呼び出す時は#releaseの代わりに
 	 * #internalReleaseを使う
 	 */
+	@Override
 	public void release() {
 		if (!mReleased) {
 			if (DEBUG) Log.v(TAG, "release:");
@@ -108,6 +97,7 @@ public abstract class AbstractServiceRecorder {
 	 * サービスとバインドして使用可能になっているかどうかを取得
 	 * @return
 	 */
+	@Override
 	public boolean isReady() {
 		synchronized (mServiceSync) {
 			return !mReleased && (mService != null);
@@ -118,6 +108,7 @@ public abstract class AbstractServiceRecorder {
 	 * 録画中かどうかを取得
 	 * @return
 	 */
+	@Override
 	public boolean isRecording() {
 		final AbstractRecorderService service = peekService();
 		return !mReleased && (service != null) && service.isRecording();
@@ -132,6 +123,7 @@ public abstract class AbstractServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
+	@Override
 	public void prepare(final int width, final int height,
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
@@ -151,6 +143,7 @@ public abstract class AbstractServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
+	@Override
 	public void start(@NonNull final String outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
@@ -169,6 +162,7 @@ public abstract class AbstractServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
+	@Override
 	public void start(@NonNull final DocumentFile outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
@@ -183,6 +177,7 @@ public abstract class AbstractServiceRecorder {
 	/**
 	 * 録画終了
 	 */
+	@Override
 	public void stop() {
 		if (DEBUG) Log.v(TAG, "stop:");
 		final AbstractRecorderService service = getService();
@@ -195,6 +190,7 @@ public abstract class AbstractServiceRecorder {
 	 * 録画用の映像を入力するためのSurfaceを取得
 	 * @return
 	 */
+	@Override
 	public Surface getInputSurface() {
 		if (DEBUG) Log.v(TAG, "getInputSurface:");
 		checkReleased();
@@ -203,8 +199,9 @@ public abstract class AbstractServiceRecorder {
 	}
 	
 	/**
-	 * 録画用の映像フレームが準備できた時に呼び出す
+	 * 録画用の映像フレームが準備できた時に録画サービスへ通知するためのメソッド
 	 */
+	@Override
 	public void frameAvailableSoon() {
 		checkReleased();
 		final AbstractRecorderService service = getService();

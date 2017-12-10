@@ -26,7 +26,9 @@ import java.io.IOException;
  * タイムシフト録画サービスアクセス用のヘルパークラス
  * #prepare => #startTimeShift => [#start => #stop] => #stopTimeShift => #release
  */
-public class TimeShiftRecorder extends AbstractServiceRecorder {
+public class TimeShiftRecorder extends AbstractServiceRecorder
+	implements ITimeShiftRecorder {
+
 	private static final boolean DEBUG = true;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecorder.class.getSimpleName();
 
@@ -41,6 +43,7 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	/**
 	 * タイムシフトバッファリング開始
 	 */
+	@Override
 	public void startTimeShift() throws IOException {
 		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		final AbstractRecorderService service = getService();
@@ -52,6 +55,7 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	/**
 	 * タイムシフトバッファリング終了
 	 */
+	@Override
 	public void stopTimeShift() {
 		if (DEBUG) Log.v(TAG, "stopTimeShift:");
 		final AbstractRecorderService service = getService();
@@ -64,6 +68,7 @@ public class TimeShiftRecorder extends AbstractServiceRecorder {
 	 * タイムシフトバッファリング中かどうかを取得
 	 * @return
 	 */
+	@Override
 	public boolean isTimeShift() {
 		final AbstractRecorderService service = getService();
 		return (service instanceof TimeShiftRecService)
