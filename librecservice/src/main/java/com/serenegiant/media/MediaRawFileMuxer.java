@@ -18,10 +18,12 @@ package com.serenegiant.media;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.media.MediaScannerConnection;
 import android.os.Environment;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -63,10 +65,15 @@ public class MediaRawFileMuxer implements IMuxer {
 	 */
 	private final MediaFormat mConfigFormatAudio;
 	/**
-	 * mp4ファイルの出力ディレクトリ
+	 * mp4ファイルの出力ディレクトリ(絶対パス文字列)
 	 */
-	@NonNull
+	@Nullable
 	private final String mOutputDir;
+	/**
+	 * mp4ファイルの出力ディレクトリ(DocumentFile)
+	 */
+	@Nullable
+	private final DocumentFile mOutputDoc;
 	/**
 	 * 最終出力ファイル名 = 一時ファイルを保存するディレクトリ名
 	 * 	= インスタンス生成時の日時文字列
@@ -100,11 +107,34 @@ public class MediaRawFileMuxer implements IMuxer {
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
 		mOutputDir = outputDir;
+		mOutputDoc = null;
 		mOutputName = name;
 		mConfigFormatVideo = configFormatVideo;
 		mConfigFormatAudio = configFormatAudio;
 	}
 	
+	/**
+	 * コンストラクタ
+	 * @param context
+	 * @param outputDir 最終出力ディレクトリ
+	 * @param name 出つ力ファイル名(拡張子なし)
+	 * @param configFormatVideo
+	 * @param configFormatAudio
+	 */
+	public MediaRawFileMuxer(@NonNull final Context context,
+		@NonNull final DocumentFile outputDir, @NonNull final String name,
+		@Nullable final MediaFormat configFormatVideo,
+		@Nullable final MediaFormat configFormatAudio) {
+
+		if (DEBUG) Log.v(TAG, "コンストラクタ:");
+		mWeakContext = new WeakReference<Context>(context);
+		mOutputDir = null;
+		mOutputDoc = outputDir;
+		mOutputName = name;
+		mConfigFormatVideo = configFormatVideo;
+		mConfigFormatAudio = configFormatAudio;
+	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		try {
@@ -169,20 +199,43 @@ public class MediaRawFileMuxer implements IMuxer {
 	
 	/**
 	 * 一時rawファイルからmp4ファイルを生成する・
-	 * mp4ファイル終了まで返らないので注意
+	 * mp4ファイル生成終了まで返らないので注意
 	 */
 	public void build() throws IOException {
 		if (DEBUG) Log.v(TAG, "build:");
-		final String outputPath
-			= mOutputDir + (mOutputDir.endsWith("/")
-				? mOutputName : "/" + mOutputName) + ".mp4";
+		final Context context = mWeakContext.get();
 		final String tempDir = getTempDir();
 		if (DEBUG) Log.v(TAG, "build:tempDir=" + tempDir);
-		try {
-			final PostMuxBuilder builder = new PostMuxBuilder();
-			builder.build(tempDir, outputPath);
-		} finally {
-			delete(new File(tempDir));
+		if (!TextUtils.isEmpty(mOutputDir)) {
+			final String outputPath
+				= mOutputDir + (mOutputDir.endsWith("/")
+					? mOutputName : "/" + mOutputName) + ".mp4";
+			try {
+				final PostMuxBuilder builder = new PostMuxBuilder();
+				builder.build(context, tempDir, outputPath);
+			} finally {
+				delete(new File(tempDir));
+			}
+			// MediaScannerConnection#scanFileの呼び出しは
+			// アプリケーションコンテキストでないとだめ
+			try {
+				MediaScannerConnection.scanFile(context.getApplicationContext(),
+					new String[] {outputPath}, null, null);
+			} catch (final Exception e) {
+				Log.w(TAG, e);
+			}
+		} else if (mOutputDir != null) {
+			final DocumentFile output = mOutputDoc.createFile(
+				"*/*", mOutputName + ".mp4");
+			try {
+				final PostMuxBuilder builder = new PostMuxBuilder();
+				builder.build(context, tempDir, output);
+			} finally {
+				delete(new File(tempDir));
+			}
+		} else {
+			// ここには来ないはず
+			throw new IOException("unexpected output file");
 		}
 		if (DEBUG) Log.v(TAG, "build:finished");
 	}
