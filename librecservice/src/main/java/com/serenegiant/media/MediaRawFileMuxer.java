@@ -33,7 +33,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
 /**
- * Created by saki on 2017/12/08.
  * Rawファイル形式でエンコードデータをファイルに書き出すためのIMuxer実装
  * 実際のファイルへの出力はMediaRawFilerWriterで行う。
  * 実際のmp4ファイルへの出力は別途PostMuxBuilderで行う。
@@ -53,21 +52,36 @@ public class MediaRawFileMuxer implements IMuxer {
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
+	/**
+	 * MediaCodecの動画エンコーダーの設定
+	 * 最終のmp4ファイル出力時に必要なため保持しておく
+	 */
+	private final MediaFormat mConfigFormatVideo;
+	/**
+	 * MediaCodecの音声エンコーダーの設定
+	 * 最終のmp4ファイル出力時に必要なため保持しておく
+	 */
+	private final MediaFormat mConfigFormatAudio;
+	/**
+	 * mp4ファイルの出力ディレクトリ
+	 */
 	@NonNull
 	private final String mOutputDir;
-	private final MediaFormat mConfigFormatVideo;
-	private final MediaFormat mConfigFormatAudio;
 	/**
 	 * 最終出力ファイル名 = 一時ファイルを保存するディレクトリ名
 	 * 	= インスタンス生成時の日時文字列
 	 */
 	@NonNull
 	private final String mOutputName;
+	/** 実行中フラグ */
 	private volatile boolean mIsRunning;
 	private boolean mReleased;
 	private int mLastTrackIndex = -1;
+	/** エンコード済み映像データのrawファイル出力用 */
 	private MediaRawFileWriter mVideoWriter;
+	/** エンコード済み音声データのrawファイル出力用 */
 	private MediaRawFileWriter mAudioWriter;
+	/** トラックインデックスからMediaRawFileWriterを参照するための配列 */
 	private MediaRawFileWriter[] mMediaRawFileWriters = new MediaRawFileWriter[2];
 	
 	/**
@@ -100,6 +114,9 @@ public class MediaRawFileMuxer implements IMuxer {
 		}
 	}
 	
+	/**
+	 * 関連するリソースを破棄する
+	 */
 	@Override
 	public void release() {
 		synchronized (mSync) {
@@ -120,6 +137,9 @@ public class MediaRawFileMuxer implements IMuxer {
 		if (DEBUG) Log.v(TAG, "release:finished");
 	}
 	
+	/**
+	 * IMuxerを開始する
+	 */
 	@Override
 	public void start() {
 		if (DEBUG) Log.v(TAG, "start:");
@@ -135,6 +155,9 @@ public class MediaRawFileMuxer implements IMuxer {
 		}
 	}
 	
+	/**
+	 * IMuxerを停止する
+	 */
 	@Override
 	public void stop() {
 		if (DEBUG) Log.v(TAG, "stop:");
@@ -145,7 +168,8 @@ public class MediaRawFileMuxer implements IMuxer {
 	}
 	
 	/**
-	 * 一時rawファイルからmp4ファイルを生成する
+	 * 一時rawファイルからmp4ファイルを生成する・
+	 * mp4ファイル終了まで返らないので注意
 	 */
 	public void build() throws IOException {
 		if (DEBUG) Log.v(TAG, "build:");
@@ -163,13 +187,24 @@ public class MediaRawFileMuxer implements IMuxer {
 		if (DEBUG) Log.v(TAG, "build:finished");
 	}
 	
+	/**
+	 * 実行中かどうかを取得
+	 * @return
+	 */
 	@Override
 	public boolean isStarted() {
 		synchronized (mSync) {
 			return !mReleased && mIsRunning;
 		}
 	}
-
+	
+	/**
+	 * MediaCodecのエンコーダーの準備ができた時のトラック追加処理
+	 * @param format
+	 * @return
+	 * @throws IllegalArgumentException
+	 * @throws IllegalStateException
+	 */
 	@Override
 	public int addTrack(@NonNull final MediaFormat format)
 		throws IllegalArgumentException, IllegalStateException {
@@ -233,6 +268,13 @@ public class MediaRawFileMuxer implements IMuxer {
 		}
 	}
 	
+	/**
+	 * エンコード済みデータの出力処理
+	 * 実際の処理はMediaRawFileWriterで行う
+	 * @param trackIndex
+	 * @param buffer
+	 * @param info
+	 */
 	@Override
 	public void writeSampleData(final int trackIndex,
 		@NonNull final ByteBuffer buffer,
@@ -266,6 +308,10 @@ public class MediaRawFileMuxer implements IMuxer {
 		}
 	}
 	
+	/**
+	 * 破棄されたかどうかをチェックして破棄されていればIllegalStateExceptionを投げる
+	 * @throws IllegalStateException
+	 */
 	private void checkReleased() throws IllegalStateException {
 		synchronized (mSync) {
 			if (mReleased) {
@@ -291,7 +337,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	}
 
 	/**
-	 * delete specific file/directory recursively
+	 * 再帰的に指定したファイル・ディレクトリを削除する
 	 * @param path
 	 */
 	@SuppressWarnings("ResultOfMethodCallIgnored")

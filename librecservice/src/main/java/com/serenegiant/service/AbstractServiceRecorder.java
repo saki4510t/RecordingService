@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
@@ -217,6 +218,11 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		doUnBindService();
 	}
 	
+	/**
+	 * Contextを取得する。
+	 * @return
+	 */
+	@Nullable
 	protected Context getContext() {
 		return mWeakContext.get();
 	}
@@ -249,9 +255,6 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	protected void doUnBindService() {
 		final boolean needUnbind;
 		synchronized (mServiceSync) {
-//			if (mService != null) {
-//				mService.removeCallback(mISensorCallback);
-//			}
 			needUnbind = mService != null;
 			mService = null;
 			if (mState == STATE_BIND) {
@@ -267,7 +270,13 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 			}
 		}
 	}
-
+	
+	/**
+	 * 接続中の録画サービスを取得する。
+	 * バインド中なら待機する。
+	 * @return
+	 */
+	@Nullable
 	protected AbstractRecorderService getService() {
 //		if (DEBUG) Log.v(TAG, "getService:");
 		AbstractRecorderService result = null;
@@ -286,19 +295,33 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 //		if (DEBUG) Log.v(TAG, "getService:finished:" + result);
 		return result;
 	}
-
+	
+	/**
+	 * 接続中の録画サービスを取得する。
+	 * 接続中でも待機しない。
+	 * @return
+	 */
+	@Nullable
 	protected AbstractRecorderService peekService() {
 		synchronized (mServiceSync) {
 			return mService;
 		}
 	}
-
-	protected void checkReleased() {
+	
+	/**
+	 * Releaseされたかどうかをチェックして、
+	 * ReleaseされていればIllegalStateExceptionを投げる
+	 * @throws IllegalStateException
+	 */
+	protected void checkReleased() throws IllegalStateException {
 		if (mReleased) {
 			throw new IllegalStateException("already released");
 		}
 	}
-
+	
+	/**
+	 * 録画サービスとの接続状態取得用のリスナーの実装
+	 */
 	private final ServiceConnection mServiceConnection = new ServiceConnection() {
 		@Override
 		public void onServiceConnected(final ComponentName name, final IBinder service) {
@@ -330,9 +353,19 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 			}
 		}
 	};
-
+	
+	/**
+	 * 録画サービスと接続した際にIBinderからAbstractRecorderService
+	 * (またはその継承クラス)を取得するためのメソッド
+	 * @param service
+	 * @return
+	 */
+	@NonNull
 	protected abstract AbstractRecorderService getService(final IBinder service);
 	
+	/**
+	 * 録画サービスの状態が変化したときのコールバックリスナーの実装
+	 */
 	private final AbstractRecorderService.StateChangeListener
 		mStateChangeListener = new AbstractRecorderService.StateChangeListener() {
 		@Override

@@ -33,8 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.Locale;
 
 /**
- * Created by saki on 2017/12/09.
- *
+ * PostMux録画サービス関係の共通処理クラス
  */
 public class PostMuxCommon {
 	private static final boolean DEBUG = true; // FIXME set false on production

@@ -15,6 +15,8 @@ package com.serenegiant.service;
  * limitations under the License.
  */
 
+import android.support.annotation.NonNull;
+
 import java.io.IOException;
 
 /**
@@ -36,4 +38,23 @@ public interface ITimeShiftRecorder extends IServiceRecorder {
 	 * @return
 	 */
 	public boolean isTimeShift();
+	
+	/**
+	 * キャッシュサイズを指定
+	 * @param cacheSize
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 */
+	public void setCacheSize(final int cacheSize)
+		throws IllegalStateException, IllegalArgumentException;
+
+	/**
+	 * キャッシュ場所を指定, パーミッションが有ってアプリから書き込めること
+	 * @param cacheDir
+	 * @throws IllegalStateException prepareよりも後には呼べない
+	 * @throws IllegalArgumentException パーミッションが無い
+	 * 									あるいは存在しない場所など書き込めない時
+	 */
+	public void setCacheDir(@NonNull final String cacheDir)
+		throws IllegalStateException, IllegalArgumentException;
 }

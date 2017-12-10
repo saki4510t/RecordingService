@@ -178,21 +178,36 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 //================================================================================
 	/**
-	 * 録画中かどうかを取得
+	 * 録画中かどうかを取得する。
+	 * このクラスでは#isRunningと同じ値を返すがこちらは
+	 * オーバーライド不可
 	 * @return
 	 */
-	public boolean isRecording() {
+	public final boolean isRecording() {
 		synchronized (mSync) {
 			return (getState() == STATE_RECORDING);
 		}
 	}
-
+	
+	/**
+	 * 録画サービスの処理を実行中かどうかを返す
+	 * このクラスでは#isRecordingと同じクラスを返す。
+	 * こちらはオーバーライド可能でサービスの自己終了判定に使う。
+	 * 録画中では無いが録画の前後処理中などで録画サービスを
+	 * 終了しないようにしたい時に下位クラスでオーバーライドする。
+	 * @return true: サービスの自己終了しない
+	 */
 	public boolean isRunning() {
 		synchronized (mSync) {
 			return getState() == STATE_RECORDING;
 		}
 	}
 	
+	/**
+	 * 録画サービスの状態をセット
+	 * 状態が変化したときにはコールバックを呼び出す
+	 * @param newState
+	 */
 	protected void setState(final int newState) {
 		boolean changed;
 		synchronized (mSync) {
@@ -219,13 +234,21 @@ public abstract class AbstractRecorderService extends BaseService {
 			}
 		}
 	}
-
+	
+	/**
+	 * 録画サービスの現在の状態フラグを取得
+	 * @return
+	 */
 	protected int getState() {
 		synchronized (mSync) {
 			return mState;
 		}
 	}
-
+	
+	/**
+	 * 録画サービスを自己終了できるかどうかを確認して
+	 * 終了可能であればService#stopSelfを呼び出す
+	 */
 	protected void checkStopSelf() {
 		if (DEBUG) Log.v(TAG, "checkStopSelf:");
 		synchronized (mSync) {
@@ -256,6 +279,11 @@ public abstract class AbstractRecorderService extends BaseService {
 		return !isRunning;
 	}
 	
+	/**
+	 * フォアグラウンドサービスとして実行するために
+	 * ノティフィケーションを表示する
+	 * @param text
+	 */
 	@SuppressWarnings("deprecation")
 	protected void showNotification(final CharSequence text) {
 		final PendingIntent intent = createPendingIntent();
@@ -280,7 +308,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	/**
-	 * サービスのティフィケーションを選択した時に実行されるPendingIntentの生成
+	 * サービスノティフィケーションを選択した時に実行されるPendingIntentの生成
 	 * 普通はMainActivityを起動させる。
 	 * デフォルトはnullを返すだけでノティフィケーションを選択しても何も実行されない。
 	 * @return
@@ -321,6 +349,15 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 	}
 	
+	/**
+	 * 録画準備の実態, mSyncをロックして呼び出される
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	protected void internalPrepare(final int width, final int height,
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
@@ -362,6 +399,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		mVideoEncoder.start();
 		mVideoReaper = new MediaReaper.VideoReaper(mVideoEncoder, mReaperListener,
 			width, height);
+		// FIXME 録音は未対応
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
 
@@ -596,6 +634,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	/**
+	 * 入力映像が準備できた時に録画サービスへ通知するためのメソッド
 	 * MediaReaper#frameAvailableSoonを呼ぶためのヘルパーメソッド
 	 */
 	public void frameAvailableSoon() {

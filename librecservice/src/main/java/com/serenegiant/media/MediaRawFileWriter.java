@@ -28,8 +28,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * Created by saki on 2017/12/08.
- * MediaCodecからのエンコード済みのフレームデータをファイルへ出力するクラス
+ * MediaCodecからのエンコード済みのフレームデータをrawファイルへ出力するクラス
  */
 abstract class MediaRawFileWriter extends PostMuxCommon {
 	private static final boolean DEBUG = true; // FIXME set false on production
@@ -144,7 +143,15 @@ abstract class MediaRawFileWriter extends PostMuxCommon {
 		}
 	}
 	
+	/** リアロケーション避けにワーク用byte配列を保持する */
 	private byte[] temp;
+	
+	/**
+	 * エンコード済みのフレームデータの出力処理
+	 * @param buffer
+	 * @param info
+	 * @throws IOException
+	 */
 	public synchronized void writeSampleData(
 		@NonNull final ByteBuffer buffer,
 		@NonNull final MediaCodec.BufferInfo info) throws IOException {

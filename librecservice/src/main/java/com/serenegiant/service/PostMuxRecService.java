@@ -53,7 +53,11 @@ public class PostMuxRecService extends AbstractRecorderService {
 	private MediaRawFileMuxer mMuxer;
 	private int mVideoTrackIx = -1;
 	private int mAudioTrackIx = -1;
-
+	
+	/**
+	 * 録画サービスの処理を実行中かどうかを返す
+	 * @return true: サービスの自己終了しない
+	 */
 	@Override
 	public boolean isRunning() {
 		synchronized (mSync) {

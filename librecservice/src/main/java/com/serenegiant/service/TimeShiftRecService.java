@@ -102,11 +102,15 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 */
 	public void stopTimeShift() {
 		if (DEBUG) Log.v(TAG, "stopTimeShift:");
-		stop();
 		internalStopTimeShift();
+		stop();
 		checkStopSelf();
 	}
-
+	
+	/**
+	 * 録画サービスの処理を実行中かどうかを返す
+	 * @return true: サービスの自己終了しない
+	 */
 	@Override
 	public boolean isRunning() {
 		synchronized (mSync) {
@@ -284,7 +288,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * @throws IllegalArgumentException パーミッションが無い
 	 * 									あるいは存在しない場所など書き込めない時
 	 */
-	public void setCacheDir(final String cacheDir)
+	public void setCacheDir(@NonNull final String cacheDir)
 		throws IllegalStateException, IllegalArgumentException {
 
 		synchronized (mSync) {
@@ -342,7 +346,12 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		releaseCache();
 		super.releaseEncoder();
 	}
-
+	
+	/**
+	 * 録画サービス起動時のインテントに最大タイムシフト時間の指定があれば
+	 * その値を返す。指定がなければDEFAULT_MAX_SHIFT_MS(10秒)を返す。
+	 * @return
+	 */
 	private long getMaxShiftMs() {
 		final Intent intent = getIntent();
 		return (intent != null)

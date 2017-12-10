@@ -31,8 +31,13 @@ public class TimeShiftRecorder extends AbstractServiceRecorder
 
 	private static final boolean DEBUG = true;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecorder.class.getSimpleName();
-
-
+	
+	/**
+	 * コンストラクタ
+	 * @param context
+	 * @param serviceClazz
+	 * @param callback
+	 */
 	public TimeShiftRecorder(final Context context,
 		@NonNull Class<? extends TimeShiftRecService> serviceClazz,
 		@NonNull final Callback callback) {
@@ -75,12 +80,55 @@ public class TimeShiftRecorder extends AbstractServiceRecorder
 			&& ((TimeShiftRecService) service).isTimeShift();
 	}
 
+	/**
+	 * キャッシュサイズを指定
+	 * @param cacheSize
+	 * @throws IllegalStateException
+	 * @throws IllegalArgumentException
+	 */
+	@Override
+	public void setCacheSize(final int cacheSize)
+		throws IllegalStateException, IllegalArgumentException {
+
+		if (DEBUG) Log.v(TAG, "setCacheSize:");
+		final AbstractRecorderService service = getService();
+		if (service instanceof TimeShiftRecService) {
+			((TimeShiftRecService) service).setCacheSize(cacheSize);
+		}
+	}
+
+	/**
+	 * キャッシュ場所を指定, パーミッションが有ってアプリから書き込めること
+	 * @param cacheDir
+	 * @throws IllegalStateException prepareよりも後には呼べない
+	 * @throws IllegalArgumentException パーミッションが無い
+	 * 									あるいは存在しない場所など書き込めない時
+	 */
+	@Override
+	public void setCacheDir(@NonNull final String cacheDir)
+		throws IllegalStateException, IllegalArgumentException {
+
+		if (DEBUG) Log.v(TAG, "setCacheDir:");
+		final AbstractRecorderService service = getService();
+		if (service instanceof TimeShiftRecService) {
+			((TimeShiftRecService) service).setCacheDir(cacheDir);
+		}
+	}
+
 //================================================================================
+	@Override
 	protected void internalRelease() {
 		stopTimeShift();
 		super.internalRelease();
 	}
 	
+	/**
+	 * 録画サービスと接続した際にIBinderからAbstractRecorderService
+	 * (またはその継承クラス)を取得するためのメソッド
+	 * @param service
+	 * @return
+	 */
+	@NonNull
 	@Override
 	protected AbstractRecorderService getService(final IBinder service) {
 		return ((TimeShiftRecService.LocalBinder)service).getService();

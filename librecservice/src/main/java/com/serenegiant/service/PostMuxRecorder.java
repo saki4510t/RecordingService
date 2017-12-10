@@ -27,6 +27,12 @@ public class PostMuxRecorder extends AbstractServiceRecorder {
 	private static final boolean DEBUG = true;	// FIXME set false on production
 	private static final String TAG = PostMuxRecorder.class.getSimpleName();
 	
+	/**
+	 * コンストラクタ
+	 * @param context
+	 * @param serviceClazz
+	 * @param callback
+	 */
 	public PostMuxRecorder(final Context context,
 		@NonNull Class<? extends PostMuxRecService> serviceClazz,
 		@NonNull final Callback callback) {
@@ -34,6 +40,13 @@ public class PostMuxRecorder extends AbstractServiceRecorder {
 		super(context, serviceClazz, callback);
 	}
 
+	/**
+	 * 録画サービスと接続した際にIBinderからAbstractRecorderService
+	 * (またはその継承クラス)を取得するためのメソッド
+	 * @param service
+	 * @return
+	 */
+	@NonNull
 	@Override
 	protected AbstractRecorderService getService(final IBinder service) {
 		return ((PostMuxRecService.LocalBinder)service).getService();

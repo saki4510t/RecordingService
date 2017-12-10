@@ -30,8 +30,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * Created by saki on 2017/12/08.
- *
+ * rawファイルに書き出したエンコード済みの録画・音声データから
+ * mp4ファイルを生成するためのヘルパークラス
  */
 class PostMuxBuilder extends PostMuxCommon {
 	private static final boolean DEBUG = true; // FIXME set false on production
