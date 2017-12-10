@@ -36,7 +36,7 @@ ext {
 
 	commonLibVersion= '1.10.0'
 
-	versionCodeNum = 2
-	versionNameString = '0.1.2'
+	versionCodeNum = 3
+	versionNameString = '0.1.3'
 
 }
