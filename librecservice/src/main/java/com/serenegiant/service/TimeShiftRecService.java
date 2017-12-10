@@ -50,7 +50,7 @@ import java.nio.ByteBuffer;
  * #startTimeShift => [#start => #stop] => #stopTimeShift
  */
 public class TimeShiftRecService extends AbstractRecorderService {
-	private static final boolean DEBUG = true;	// FIXME set false on production
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecService.class.getSimpleName();
 
 	private static final long CACHE_SIZE = 1024 * 1024 * 20; // 20MB... 1920x1080@15fpsで20秒強ぐらい

@@ -24,7 +24,7 @@ import android.support.annotation.NonNull;
  * #prepare => #start => #stop => #release
  */
 public class PostMuxRecorder extends AbstractServiceRecorder {
-	private static final boolean DEBUG = true;	// FIXME set false on production
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = PostMuxRecorder.class.getSimpleName();
 	
 	/**

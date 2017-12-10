@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
  * MediaCodecからのエンコード済みのフレームデータをrawファイルへ出力するクラス
  */
 abstract class MediaRawFileWriter extends PostMuxCommon {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaRawFileWriter.class.getSimpleName();
 
 	/**

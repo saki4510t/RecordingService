@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
  *
  */
 public class PostMuxRecService extends AbstractRecorderService {
-	private static final boolean DEBUG = true;	// FIXME set false on production
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = PostMuxRecService.class.getSimpleName();
 
 	public static final int STATE_MUXING = 100;

@@ -105,7 +105,7 @@ import java.util.concurrent.TimeUnit;
  * responding appropriately.
  */
 final class TimeShiftDiskCache implements Closeable {
-	private static final boolean DEBUG = true;	// FIXME 実働時はfalseにすること
+	private static final boolean DEBUG = false;	// FIXME 実働時はfalseにすること
 	private static final String TAG =  TimeShiftDiskCache.class.getSimpleName();
 
 	static final String JOURNAL_FILE = "journal";

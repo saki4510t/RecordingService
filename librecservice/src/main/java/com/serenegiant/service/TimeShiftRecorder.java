@@ -29,7 +29,7 @@ import java.io.IOException;
 public class TimeShiftRecorder extends AbstractServiceRecorder
 	implements ITimeShiftRecorder {
 
-	private static final boolean DEBUG = true;	// FIXME set false on production
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecorder.class.getSimpleName();
 	
 	/**

@@ -20,8 +20,6 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
-import android.media.MediaScannerConnection;
-import android.os.ParcelFileDescriptor;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
@@ -42,7 +40,7 @@ import java.nio.ByteBuffer;
  * mp4ファイルを生成するためのヘルパークラス
  */
 class PostMuxBuilder extends PostMuxCommon {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = PostMuxBuilder.class.getSimpleName();
 	
 	private static final long MSEC30US = 1000000 / 30;

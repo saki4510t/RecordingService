@@ -40,7 +40,7 @@ import java.nio.ByteBuffer;
  * 実際のmp4ファイルへの出力は別途PostMuxBuilderで行う。
  */
 public class MediaRawFileMuxer implements IMuxer {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaRawFileMuxer.class.getSimpleName();
 
 	static final int TYPE_VIDEO = 0;

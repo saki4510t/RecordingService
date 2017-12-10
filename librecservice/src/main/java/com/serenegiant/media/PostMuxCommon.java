@@ -36,7 +36,7 @@ import java.util.Locale;
  * PostMux録画サービス関係の共通処理クラス
  */
 public class PostMuxCommon {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = PostMuxCommon.class.getSimpleName();
 
 	/*package*/ static final String VIDEO_NAME = "video.raw";

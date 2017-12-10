@@ -52,7 +52,7 @@ import static com.serenegiant.media.MediaCodecHelper.selectVideoCodec;
  * FIXME 今は録画のみ。録音は未対応
  */
 public abstract class AbstractRecorderService extends BaseService {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
 	
 	private static final int NOTIFICATION = R.string.notification_service;

@@ -37,7 +37,7 @@ import java.lang.ref.WeakReference;
  *
  */
 public abstract class AbstractServiceRecorder implements IServiceRecorder {
-	private static final boolean DEBUG = true;	// FIXME set false on production
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = AbstractServiceRecorder.class.getSimpleName();
 
 	private final WeakReference<Context> mWeakContext;
