@@ -42,7 +42,12 @@ import java.io.File;
 public class CameraFragment extends Fragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = CameraFragment.class.getSimpleName();
-
+	
+	/**
+	 * video resolution
+	 */
+	private static final int VIDEO_WIDTH = 1280, VIDEO_HEIGHT = 720;
+	
 	/**
 	 * for camera preview display
 	 */
@@ -68,7 +73,7 @@ public class CameraFragment extends Fragment {
 
 		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 		mCameraView = rootView.findViewById(R.id.cameraView);
-		mCameraView.setVideoSize(1280, 720);
+		mCameraView.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		mCameraView.setOnClickListener(mOnClickListener);
 		mScaleModeView = rootView.findViewById(R.id.scalemode_textview);
 		updateScaleModeText();
@@ -140,7 +145,7 @@ public class CameraFragment extends Fragment {
 		if (DEBUG) Log.v(TAG, "startRecording:");
 		mRecordButton.setColorFilter(0xffff0000);	// turn red
 		try {
-			// FIXME 未実装
+			// FIXME 未実装 ちゃんとパーミッションのチェック＆要求をしないとだめ
 			if (mPostMuxRecorder == null) {
 				mPostMuxRecorder = new PostMuxRecorder(getActivity(),
 					PostMuxRecService.class, mCallback);
@@ -158,7 +163,6 @@ public class CameraFragment extends Fragment {
 	private void stopRecording() {
 		if (DEBUG) Log.v(TAG, "stopRecording:");
 		mRecordButton.setColorFilter(0);	// return to default color
-		// FIXME 未実装
 		if (mPostMuxRecorder != null) {
 			mPostMuxRecorder.release();
 			mPostMuxRecorder = null;
@@ -177,7 +181,8 @@ public class CameraFragment extends Fragment {
 			}
 			if (mPostMuxRecorder != null) {
 				try {
-					mPostMuxRecorder.prepare(1280, 720, 30, 0.25f);
+					mPostMuxRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, 30, 0.25f);
+					mPostMuxRecorder.prepare();
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
