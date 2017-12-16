@@ -19,7 +19,10 @@ import android.support.annotation.NonNull;
 import android.support.v4.provider.DocumentFile;
 import android.view.Surface;
 
+import com.serenegiant.media.IAudioSampler;
+
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * 録画サービスへアクセスするためのインターフェース
@@ -56,7 +59,7 @@ public interface IServiceRecorder {
 	public boolean isRecording();
 
 	/**
-	 * 録画の準備
+	 * 録画設定をセット
 	 * @param width
 	 * @param height
 	 * @param frameRate
@@ -64,9 +67,16 @@ public interface IServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void prepare(final int width, final int height,
-		final int frameRate, final float bpp)
-			throws IllegalStateException, IOException;
+	public void setVideoSettings(final int width, final int height,
+		final int frameRate, final float bpp);
+	
+	/**
+	 * 録画録音の準備
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
+	public void prepare() throws IllegalStateException, IOException;
+
 	/**
 	 * 録画開始
 	 * @param outputDir 出力ディレクトリ
@@ -103,4 +113,19 @@ public interface IServiceRecorder {
 	 */
 	public void frameAvailableSoon();
 	
+	/**
+	 * 録音用のIAudioSamplerをセット
+	 * #writeAudioFrameと排他使用
+	 * @param sampler
+	 */
+	public void setAudioSampler(@NonNull final IAudioSampler sampler);
+	
+	/**
+	 * 録音用の音声データを書き込む
+	 * #setAudioSamplerと排他使用
+	 * @param buffer
+	 * @param presentationTimeUs
+	 */
+	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
+		final long presentationTimeUs);
 }

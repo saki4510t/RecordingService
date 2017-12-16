@@ -27,10 +27,12 @@ import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
 
+import com.serenegiant.media.IAudioSampler;
 import com.serenegiant.utils.BuildCheck;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 
 /**
  * 録画サービスへアクセスするためのヘルパークラスのベースクラス
@@ -125,18 +127,32 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	 * @throws IOException
 	 */
 	@Override
-	public void prepare(final int width, final int height,
-		final int frameRate, final float bpp)
-			throws IllegalStateException, IOException {
+	public void setVideoSettings(final int width, final int height,
+		final int frameRate, final float bpp) {
 
+		if (DEBUG) Log.v(TAG, "setVideoSettings:");
+
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.setVideoSettings(width, height, frameRate, bpp);
+		}
+	}
+	
+	/**
+	 * 録画録音の準備
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
+	@Override
+	public void prepare() throws IllegalStateException, IOException {
 		if (DEBUG) Log.v(TAG, "prepare:");
 
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.prepare(width, height, frameRate, bpp);
+			service.prepare();
 		}
 	}
-
+	
 	/**
 	 * 録画開始
 	 * @param outputDir 出力ディレクトリ
@@ -210,8 +226,28 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 			service.frameAvailableSoon();
 		}
 	}
+	
+	@Override
+	public void setAudioSampler(@NonNull final IAudioSampler sampler) {
+		checkReleased();
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.setAudioSampler(sampler);
+		}
+	}
+	
+	@Override
+	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
+		final long presentationTimeUs) {
 
-//================================================================================
+		checkReleased();
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.writeAudioFrame(buffer, presentationTimeUs);
+		}
+	}
+	
+	//================================================================================
 	protected void internalRelease() {
 		mCallback.onDisconnected();
 		stop();

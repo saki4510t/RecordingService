@@ -33,6 +33,8 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.serenegiant.librecservice.R;
+import com.serenegiant.media.AudioSampler;
+import com.serenegiant.media.IAudioSampler;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
 import com.serenegiant.utils.FileUtils;
@@ -57,6 +59,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	
 	private static final int NOTIFICATION = R.string.notification_service;
 	protected static final int TIMEOUT_MS = 10;
+	protected static final int TIMEOUT_USEC = 10000;	// 10ミリ秒
 
 	// ステート定数, XXX 継承クラスは100以降を使う
 	public static final int STATE_UNINITIALIZED = -1;
@@ -79,10 +82,21 @@ public abstract class AbstractRecorderService extends BaseService {
 	private Intent mIntent;
 	private int mState = STATE_UNINITIALIZED;
 	private boolean mIsBind;
+	/** 動画のサイズ(録画する場合) */
+	private int mWidth, mHeight;
+	private int mFrameRate;
+	private float mBpp;
 	private MediaFormat mVideoFormat;
 	private MediaCodec mVideoEncoder;
 	private Surface mInputSurface;
 	private MediaReaper.VideoReaper mVideoReaper;
+
+	private IAudioSampler mAudioSampler;
+	private int mSampleRate, mChannelCount;
+	private MediaFormat mAudioFormat;
+	private MediaCodec mAudioEncoder;
+	private MediaReaper.AudioReaper mAudioReaper;
+	private volatile boolean mIsEos;
 
 	@Override
 	public void onCreate() {
@@ -91,6 +105,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		synchronized (mSync) {
 			mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		}
+		internalResetSettings();
 	}
 
 	@Override
@@ -158,6 +173,37 @@ public abstract class AbstractRecorderService extends BaseService {
 		mListeners.remove(listener);
 	}
 	
+	public void setVideoSettings(final int width, final int height,
+		final int frameRate, final float bpp) {
+		
+		mWidth = width;
+		mHeight = height;
+		mFrameRate = frameRate;
+		mBpp = bpp;
+	}
+
+	/**
+	 * 録音用のIAudioSamplerをセット
+	 * #writeAudioFrameと排他使用
+	 * @param sampler
+	 */
+	public void setAudioSampler(@NonNull final IAudioSampler sampler) {
+		// FIXME 未実装
+	}
+	
+	/**
+	 * 録音用の音声データを書き込む
+	 * #setAudioSamplerと排他使用
+	 * @param buffer position/limitを正しくセットしておくこと
+	 * @param presentationTimeUs
+	 */
+	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
+		final long presentationTimeUs) {
+		
+		// FIXME 未実装
+	}
+	
+
 	@Override
 	protected IntentFilter createIntentFilter() {
 		return null;
@@ -255,6 +301,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			if (!isDestroyed() && canStopSelf(mIsBind | isRunning())) {
 				if (DEBUG) Log.v(TAG, "stopSelf");
 				setState(STATE_RELEASING);
+				internalResetSettings();
 				try {
 					queueEvent(new Runnable() {
 						@Override
@@ -322,16 +369,11 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	/**
 	 * 録画の準備
-	 * @param width
-	 * @param height
-	 * @param frameRate
-	 * @param bpp
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void prepare(final int width, final int height,
-		final int frameRate, final float bpp)
-			throws IllegalStateException, IOException {
+	public void prepare()
+		throws IllegalStateException, IOException {
 
 		if (DEBUG) Log.v(TAG, "prepare:");
 		synchronized (mSync) {
@@ -340,9 +382,27 @@ public abstract class AbstractRecorderService extends BaseService {
 			}
 			setState(STATE_PREPARING);
 			try {
-				internalPrepare(width, height, frameRate, bpp);
-				createEncoder(width, height, frameRate, bpp);
-				// MediaReaper.ReaperListener#onOutputFormatChangedへ移動
+				if ((mWidth > 0) && (mHeight > 0)) {
+					// 録画する時
+					if (mFrameRate <= 0) {
+						mFrameRate = VideoConfig.getCaptureFps();
+					}
+					if (mBpp <= 0) {
+						mBpp = VideoConfig.getBitrate(mWidth, mHeight);
+					}
+					internalPrepare(mWidth, mHeight, mFrameRate, mBpp);
+					createEncoder(mWidth, mHeight, mFrameRate, mBpp);
+				}
+				if (mAudioSampler != null) {
+					mSampleRate = mAudioSampler.getSamplingFrequency();
+					mChannelCount = mAudioSampler.getChannels();
+				}
+				if ((mSampleRate > 0)
+					&& (mChannelCount == 1) || (mChannelCount == 2)) {
+					// 録音する時
+					internalPrepare(mSampleRate, mChannelCount);
+					createEncoder(mSampleRate, mChannelCount);
+				}
 				setState(STATE_PREPARED);
 			} catch (final IllegalStateException | IOException e) {
 				releaseEncoder();
@@ -367,7 +427,19 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 	
 	/**
-	 * MediaCodecのエンコーダーを生成
+	 * 録音準備の実態, mSyncをロックして呼び出される
+	 * @param sampleRate
+	 * @param channelCount
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
+	protected void internalPrepare(final int sampleRate, final int channelCount)
+		throws IllegalStateException, IOException {
+		if (DEBUG) Log.v(TAG, "internalPrepare:");
+	}
+	
+	/**
+	 * 録画用のMediaCodecのエンコーダーを生成
 	 * @param width
 	 * @param height
 	 * @param frameRate
@@ -401,10 +473,38 @@ public abstract class AbstractRecorderService extends BaseService {
 		mVideoEncoder.start();
 		mVideoReaper = new MediaReaper.VideoReaper(mVideoEncoder, mReaperListener,
 			width, height);
-		// FIXME 録音は未対応
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
+	
+	private static final String AUDIO_MIME_TYPE = "audio/mp4a-latm";
+	/**
+	 * 録音用のMediaCodecエンコーダーを生成
+	 * @param sampleRate
+	 * @param channelCount
+	 */
+	protected void createEncoder(final int sampleRate, final int channelCount)
+		throws IOException {
 
+		if (DEBUG) Log.v(TAG, "createEncoder:");
+		final MediaCodecInfo codecInfo = selectVideoCodec(AUDIO_MIME_TYPE);
+		if (codecInfo == null) {
+			throw new IOException("Unable to find an appropriate codec for " + AUDIO_MIME_TYPE);
+		}
+		final MediaFormat format = MediaFormat.createAudioFormat(
+			AUDIO_MIME_TYPE, sampleRate, channelCount);
+		// MediaCodecに適用するパラメータを設定する。
+		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
+		if (DEBUG) Log.d(TAG, "format: " + format);
+
+		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
+		mAudioEncoder = MediaCodec.createEncoderByType(AUDIO_MIME_TYPE);
+		mAudioEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+		mAudioEncoder.start();
+		mAudioReaper = new MediaReaper.AudioReaper(mAudioEncoder, mReaperListener,
+			sampleRate, channelCount);
+		if (DEBUG) Log.v(TAG, "createEncoder:finished");
+	}
+	
 	/**
 	 * 前回MediaCodecへのエンコード時に使ったpresentationTimeUs
 	 */
@@ -435,6 +535,12 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 		mVideoEncoder = null;
 		mInputSurface = null;
+		if (mAudioReaper != null) {
+			mAudioReaper.release();
+			mAudioReaper = null;
+		}
+		mAudioEncoder = null;
+		internalResetSettings();
 		if (DEBUG) Log.v(TAG, "releaseEncoder:finished");
 	}
 
@@ -451,12 +557,11 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		synchronized (mSync) {
-			// FIXME 録音は未対応
-			if (mVideoFormat != null) {
+			if ((mVideoFormat != null) || (mAudioFormat != null)) {
 				if (checkFreeSpace(this, 0)) {
 					final File dir = new File(outputDir);
 					dir.mkdirs();
-					internalStart(outputDir, name, mVideoFormat, null);
+					internalStart(outputDir, name, mVideoFormat, mAudioFormat);
 				} else {
 					throw new IOException();
 				}
@@ -479,10 +584,9 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			// FIXME 録音は未対応
-			if (mVideoFormat != null) {
+			if ((mVideoFormat != null) || (mAudioFormat != null)) {
 				if (checkFreeSpace(this, 0)) {
-					internalStart(outputDir, name, mVideoFormat, null);
+					internalStart(outputDir, name, mVideoFormat, mAudioFormat);
 				} else {
 					throw new IOException();
 				}
@@ -569,8 +673,14 @@ public abstract class AbstractRecorderService extends BaseService {
 			@NonNull final MediaFormat format) {
 
 			if (DEBUG) Log.v(TAG, "onOutputFormatChanged:");
-			// FIXME 録音は未対応
-			mVideoFormat = format;	// そのまま代入するだけでいいんかなぁ
+			switch (reaper.reaperType()) {
+			case MediaReaper.REAPER_VIDEO:
+				mVideoFormat = format;
+				break;
+			case MediaReaper.REAPER_AUDIO:
+				mAudioFormat = format;
+				break;
+			}
 			setState(STATE_READY);
 		}
 
@@ -597,7 +707,11 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void stop() {
 		if (DEBUG) Log.v(TAG, "stop:");
 		synchronized (mSync) {
+			if (mAudioEncoder != null) {
+				signalEndOfInputStream(mAudioEncoder);
+			}
 			internalStop();
+			internalResetSettings();
 		}
 	}
 	
@@ -605,6 +719,14 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * 録画終了の実態, mSyncをロックして呼ばれる
 	 */
 	protected abstract void internalStop();
+	
+	protected void internalResetSettings() {
+		mWidth = mHeight = mFrameRate = -1;
+		mBpp = -1.0f;
+		mAudioSampler = null;
+		mSampleRate = mChannelCount = -1;
+		mIsEos = false;
+	}
 	
 	/**
 	 * MediaScannerConnection.scanFileを呼び出す
@@ -647,4 +769,83 @@ public abstract class AbstractRecorderService extends BaseService {
 			mSync.notifyAll();
 		}
 	}
+
+	/**
+	 * AudioSampleからのコールバックリスナー
+	 */
+	private final AudioSampler.SoundSamplerCallback mSoundSamplerCallback
+		= new AudioSampler.SoundSamplerCallback() {
+
+		@Override
+		public void onData(final ByteBuffer buffer, final int size, final long presentationTimeUs) {
+			final MediaReaper.AudioReaper reaper;
+			final MediaCodec encoder;
+    		synchronized (mSync) {
+    			// 既に終了しているか終了指示が出てれば何もしない
+				reaper = mAudioReaper;
+				encoder = mAudioEncoder;
+        		if (!isRunning() || (reaper == null) || (encoder == null)) return;
+    		}
+			if (size > 0) {
+				// 音声データを受け取った時はエンコーダーへ書き込む
+				try {
+					encode(encoder, buffer, size, presentationTimeUs);
+					reaper.frameAvailableSoon();
+				} catch (final Exception e) {
+					//
+				}
+			}
+		}
+
+		@Override
+		public void onError(final Exception e) {
+		}
+	};
+
+	/**
+	 * バイト配列をエンコードする場合
+	 * @param buffer
+	 * @param length　書き込むバイト配列の長さ。0ならBUFFER_FLAG_END_OF_STREAMフラグをセットする
+	 * @param presentationTimeUs [マイクロ秒]
+	 */
+	private void encode(@NonNull final MediaCodec encoder,
+		@Nullable final ByteBuffer buffer, final int length, final long presentationTimeUs) {
+
+		@SuppressWarnings("deprecation")
+		final ByteBuffer[] inputBuffers = encoder.getInputBuffers();
+		while (isRunning() && !mIsEos) {
+			final int inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_USEC);
+			if (inputBufferIndex >= 0) {
+				final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+				inputBuffer.clear();
+				if (buffer != null) {
+					inputBuffer.put(buffer);
+				}
+//	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
+				if (length <= 0) {
+          		// エンコード要求サイズが0の時はEOSを送信
+          			mIsEos = true;
+//	            	if (DEBUG) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
+					encoder.queueInputBuffer(inputBufferIndex, 0, 0,
+          				presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+          		} else {
+					encoder.queueInputBuffer(inputBufferIndex, 0, length,
+          				presentationTimeUs, 0);
+          		}
+          		break;
+			} else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+	        	// 送れるようになるまでループする
+	        	// MediaCodec#dequeueInputBufferにタイムアウト(10ミリ秒)をセットしているのでここでは待機しない
+			}
+		}
+	}
+
+	private void signalEndOfInputStream(@NonNull final MediaCodec encoder) {
+//		if (DEBUG) Log.i(TAG, "signalEndOfInputStream:encoder=" + this);
+        // MediaCodec#signalEndOfInputStreamはBUFFER_FLAG_END_OF_STREAMフラグを付けて
+        // 空のバッファをセットするのと等価である
+    	// ・・・らしいので空バッファを送る。encode内でBUFFER_FLAG_END_OF_STREAMを付けてセットする
+        encode(encoder, null, 0, getInputPTSUs());
+	}
+
 }
