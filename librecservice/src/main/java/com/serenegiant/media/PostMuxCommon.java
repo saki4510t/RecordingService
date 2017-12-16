@@ -19,6 +19,7 @@ import android.annotation.SuppressLint;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -45,7 +46,9 @@ public class PostMuxCommon {
 	/**
 	 * write MediaFormat data into intermediate file
 	 * @param out
+	 * @param codecFormat
 	 * @param outputFormat
+	 * @throws IOException
 	 */
 	/*package*/ static final void writeFormat(
 		@NonNull final DataOutputStream out,
@@ -62,7 +65,12 @@ public class PostMuxCommon {
 		out.writeUTF(codecFormatStr);
 		out.writeUTF(outputFormatStr);
 	}
-
+	
+	/**
+	 * read MediaFormat from intermediate file
+	 * @param in
+	 * @return
+	 */
 	/*package*/ static MediaFormat readFormat(@NonNull final DataInputStream in) {
 		if (DEBUG) Log.v(TAG, "readFormat:");
 		MediaFormat format = null;
@@ -83,7 +91,7 @@ public class PostMuxCommon {
 	 * @return
 	 */
 	@SuppressLint("InlinedApi")
-	/*package*/ static final String asString(final MediaFormat format) {
+	/*package*/ static final String asString(@NonNull final MediaFormat format) {
 		final JSONObject map = new JSONObject();
 		try {
 			if (format.containsKey(MediaFormat.KEY_MIME))
@@ -158,7 +166,7 @@ public class PostMuxCommon {
 	 * @return
 	 */
 	@SuppressLint("InlinedApi")
-	/*package*/ static final MediaFormat asMediaFormat(final String format_str) {
+	/*package*/ static final MediaFormat asMediaFormat(@NonNull final String format_str) {
 		MediaFormat format = new MediaFormat();
 		try {
 			final JSONObject map = new JSONObject(format_str);
@@ -283,19 +291,35 @@ public class PostMuxCommon {
 		public long presentationTimeUs;
 		public int size;
 		public int flags;
-
+		
+		/**
+		 * フレームヘッダーの内容をMediaCodec.BufferInfoとして取得
+		 * @return
+		 */
+		@NonNull
 		public MediaCodec.BufferInfo asBufferInfo() {
 			final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 			info.set(0, size, presentationTimeUs, flags);
 			return info;
 		}
-	
-		public MediaCodec.BufferInfo asBufferInfo(final MediaCodec.BufferInfo info) {
+		
+		/**
+		 * フレームヘッダーの内容をMediaCodec.BufferInfoとして取得
+		 * @param info
+		 * @return
+		 */
+		@NonNull
+		public MediaCodec.BufferInfo asBufferInfo(@NonNull final MediaCodec.BufferInfo info) {
 			info.set(0, size, presentationTimeUs, flags);
 			return info;
 		}
-	
-		public void writeTo(final DataOutputStream out) throws IOException {
+		
+		/**
+		 * フレームヘッダーを中間ファイルへ出力
+ 		 * @param out
+		 * @throws IOException
+		 */
+		public void writeTo(@NonNull final DataOutputStream out) throws IOException {
 			out.writeInt(sequence);
 			out.writeInt(frameNumber);
 			out.writeLong(presentationTimeUs);
@@ -321,7 +345,8 @@ public class PostMuxCommon {
 	 */
 	/*package*/ static void writeHeader(@NonNull final DataOutputStream out,
 		final int sequence, final int frame_number,
-		final long presentation_time_us, final int size, final int flag) throws IOException {
+		final long presentation_time_us, final int size, final int flag)
+			throws IOException {
 
 		out.writeInt(sequence);
 		out.writeInt(frame_number);
@@ -351,7 +376,13 @@ public class PostMuxCommon {
 		in.skipBytes(40);	// long x 5
 		return header;
 	}
-
+	
+	/**
+	 * フレームヘッダーを読み込む
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
 	/*package*/ static MediaFrameHeader readHeader(@NonNull final DataInputStream in)
 		throws IOException {
 
@@ -360,7 +391,7 @@ public class PostMuxCommon {
 	}
 
 	/**
-	 * read frame header and only returns size of frame
+	 * フレームヘッダーを読み込んでフレームサイズを返す
 	 * @param in
 	 * @return
 	 * @throws IOException
@@ -386,7 +417,8 @@ public class PostMuxCommon {
 	/*package*/ static final void writeStream(@NonNull final DataOutputStream out,
 		final int sequence, final int frameNumber,
 		@NonNull final MediaCodec.BufferInfo info,
-		@NonNull final ByteBuffer buffer, @NonNull byte[] work) throws IOException {
+		@NonNull final ByteBuffer buffer,
+		@NonNull byte[] work) throws IOException {
 
 		buffer.position(info.offset);
 		buffer.get(work, 0, info.size);	// will throw BufferUnderflowException
@@ -408,9 +440,11 @@ public class PostMuxCommon {
 	 * @throws IOException
 	 * @throws BufferOverflowException
 	 */
-	/*package*/ static ByteBuffer readStream(final DataInputStream in,
-		final MediaFrameHeader header,
-		ByteBuffer buffer, final byte[] readBuffer) throws IOException {
+	/*package*/ static ByteBuffer readStream(
+		@NonNull final DataInputStream in,
+		@NonNull final MediaFrameHeader header,
+		@Nullable ByteBuffer buffer,
+		@NonNull final byte[] readBuffer) throws IOException {
 
 		readHeader(in, header);
 		if ((buffer == null) || header.size > buffer.capacity()) {

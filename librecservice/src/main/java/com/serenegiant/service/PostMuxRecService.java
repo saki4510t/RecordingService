@@ -71,7 +71,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 	}
 	
 	/**
-	 * startの実態
+	 * #startの実態, mSyncをロックして呼ばれる
 	 * @param outputDir 出力ディレクトリ
 	 * @param name 出力ファイル名(拡張子なし)
 	 * @param videoFormat
@@ -99,7 +99,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 	}
 	
 	/**
-	 * startの実態
+	 * #startの実態, mSyncをロックして呼ばれる
 	 * @param outputDir 出力ディレクトリ
 	 * @param name 出力ファイル名(拡張子なし)
 	 * @param videoFormat
@@ -118,6 +118,9 @@ public class PostMuxRecService extends AbstractRecorderService {
 		throw new UnsupportedOperationException("not implemented yet.");
 	}
 	
+	/**
+	 * 録画終了の実態, mSyncをロックして呼ばれる
+	 */
 	@Override
 	protected void internalStop() {
 		if (DEBUG) Log.v(TAG, "internalStop:muxer=" + mMuxer);
