@@ -15,6 +15,7 @@ package com.serenegiant.service;
  * limitations under the License.
  */
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -37,6 +38,7 @@ import com.serenegiant.media.AudioSampler;
 import com.serenegiant.media.IAudioSampler;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
+import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.FileUtils;
 
 import java.io.File;
@@ -811,35 +813,80 @@ public abstract class AbstractRecorderService extends BaseService {
 	private void encode(@NonNull final MediaCodec encoder,
 		@Nullable final ByteBuffer buffer, final int length, final long presentationTimeUs) {
 
-		@SuppressWarnings("deprecation")
-		final ByteBuffer[] inputBuffers = encoder.getInputBuffers();
-		while (isRunning() && !mIsEos) {
+		if (BuildCheck.isLollipop()) {
+			encodeV21(encoder, buffer, length, presentationTimeUs);
+		} else {
+			@SuppressWarnings("deprecation")
+			final ByteBuffer[] inputBuffers = encoder.getInputBuffers();
+			for ( ; isRunning() && !mIsEos ;) {
+				final int inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_USEC);
+				if (inputBufferIndex >= 0) {
+					final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+					inputBuffer.clear();
+					if (buffer != null) {
+						inputBuffer.put(buffer);
+					}
+//	            	if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
+					if (length <= 0) {
+					// エンコード要求サイズが0の時はEOSを送信
+						mIsEos = true;
+//		            	if (DEBUG) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
+						encoder.queueInputBuffer(inputBufferIndex, 0, 0,
+							presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+					} else {
+						encoder.queueInputBuffer(inputBufferIndex, 0, length,
+							presentationTimeUs, 0);
+					}
+					break;
+//				} else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+					// 送れるようになるまでループする
+					// MediaCodec#dequeueInputBufferにタイムアウト(10ミリ秒)をセットしているのでここでは待機しない
+				}
+			}
+		}
+	}
+	
+	/**
+	 * バイト配列をエンコードする場合(API21/Android5以降)
+	 * @param buffer
+	 * @param length　書き込むバイト配列の長さ。0ならBUFFER_FLAG_END_OF_STREAMフラグをセットする
+	 * @param presentationTimeUs [マイクロ秒]
+	 */
+	@SuppressLint("NewApi")
+	private void encodeV21(@NonNull final MediaCodec encoder,
+		@Nullable final ByteBuffer buffer, final int length, final long presentationTimeUs) {
+	
+		for ( ; isRunning() && !mIsEos ;) {
 			final int inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_USEC);
 			if (inputBufferIndex >= 0) {
-				final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+				final ByteBuffer inputBuffer = encoder.getInputBuffer(inputBufferIndex);
 				inputBuffer.clear();
 				if (buffer != null) {
 					inputBuffer.put(buffer);
 				}
 //	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
 				if (length <= 0) {
-          		// エンコード要求サイズが0の時はEOSを送信
-          			mIsEos = true;
+				// エンコード要求サイズが0の時はEOSを送信
+					mIsEos = true;
 //	            	if (DEBUG) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
 					encoder.queueInputBuffer(inputBufferIndex, 0, 0,
-          				presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-          		} else {
+						presentationTimeUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+				} else {
 					encoder.queueInputBuffer(inputBufferIndex, 0, length,
-          				presentationTimeUs, 0);
-          		}
-          		break;
-			} else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
-	        	// 送れるようになるまでループする
-	        	// MediaCodec#dequeueInputBufferにタイムアウト(10ミリ秒)をセットしているのでここでは待機しない
+						presentationTimeUs, 0);
+				}
+				break;
+//			} else if (inputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
+				// 送れるようになるまでループする
+				// MediaCodec#dequeueInputBufferにタイムアウト(10ミリ秒)をセットしているのでここでは待機しない
 			}
 		}
 	}
 
+	/**
+	 * 指定したMediaCodecエンコーダーへEOSを送る(音声エンコーダー用)
+	 * @param encoder
+	 */
 	private void signalEndOfInputStream(@NonNull final MediaCodec encoder) {
 //		if (DEBUG) Log.i(TAG, "signalEndOfInputStream:encoder=" + this);
         // MediaCodec#signalEndOfInputStreamはBUFFER_FLAG_END_OF_STREAMフラグを付けて
