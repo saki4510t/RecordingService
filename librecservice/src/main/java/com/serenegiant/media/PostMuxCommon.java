@@ -23,6 +23,8 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.serenegiant.io.ChannelHelper;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,6 +33,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.util.Locale;
 
 /**
@@ -67,6 +70,29 @@ public class PostMuxCommon {
 	}
 	
 	/**
+	 * write MediaFormat data into intermediate file
+	 * @param out
+	 * @param codecFormat
+	 * @param outputFormat
+	 * @throws IOException
+	 */
+	/*package*/ static final void writeFormat(
+		@NonNull final ByteChannel out,
+		@NonNull final MediaFormat codecFormat,
+		@NonNull final MediaFormat outputFormat) throws IOException {
+
+		if (DEBUG) Log.v(TAG, "writeFormat:format=" + outputFormat);
+		final String codecFormatStr = asString(codecFormat);
+		final String outputFormatStr = asString(outputFormat);
+		final int size = (TextUtils.isEmpty(codecFormatStr) ? 0 : codecFormatStr.length())
+			+ (TextUtils.isEmpty(outputFormatStr) ? 0 : outputFormatStr.length());
+
+		writeHeader(out, 0, 0, -1, size, 0);
+		ChannelHelper.write(out, codecFormatStr);
+		ChannelHelper.write(out, outputFormatStr);
+	}
+
+	/**
 	 * read MediaFormat from intermediate file
 	 * @param in
 	 * @return
@@ -78,6 +104,25 @@ public class PostMuxCommon {
 			readHeader(in);
 			in.readUTF();	// skip MediaFormat data for configure
 			format = asMediaFormat(in.readUTF());
+		} catch (final IOException e) {
+			Log.e(TAG, "readFormat:", e);
+		}
+		if (DEBUG) Log.v(TAG, "readFormat:format=" + format);
+		return format;
+	}
+
+	/**
+	 * read MediaFormat from intermediate file
+	 * @param in
+	 * @return
+	 */
+	/*package*/ static MediaFormat readFormat(@NonNull final ByteChannel in) {
+		if (DEBUG) Log.v(TAG, "readFormat:");
+		MediaFormat format = null;
+		try {
+			readHeader(in);
+			ChannelHelper.readString(in); // skip MediaFormat data for configure
+			format = asMediaFormat(ChannelHelper.readString(in));
 		} catch (final IOException e) {
 			Log.e(TAG, "readFormat:", e);
 		}
@@ -329,6 +374,22 @@ public class PostMuxCommon {
 			out.write(RESERVED, 0, 40);
 		}
 		
+		/**
+		 * フレームヘッダーを中間ファイルへ出力
+ 		 * @param out
+		 * @throws IOException
+		 */
+		public void writeTo(@NonNull final ByteChannel out) throws IOException {
+			ChannelHelper.write(out, sequence);
+			ChannelHelper.write(out, sequence);
+			ChannelHelper.write(out, frameNumber);
+			ChannelHelper.write(out, presentationTimeUs);
+			ChannelHelper.write(out, size);
+			ChannelHelper.write(out, flags);
+			//
+			ChannelHelper.write(out, RESERVED);
+		}
+
 		@Override
 		public String toString() {
 			return String.format(Locale.US,
@@ -339,8 +400,11 @@ public class PostMuxCommon {
 
 	/**
 	 * フレームヘッダーを書き込む
+	 * @param sequence
+	 * @param frame_number
 	 * @param presentation_time_us
 	 * @param size
+	 * @param flag
 	 * @throws IOException
 	 */
 	/*package*/ static void writeHeader(@NonNull final DataOutputStream out,
@@ -355,6 +419,29 @@ public class PostMuxCommon {
 		out.writeInt(flag);
 		//
 		out.write(RESERVED, 0, 40);
+	}
+	
+	/**
+	 * フレームヘッダーを書き込む
+	 * @param sequence
+	 * @param frame_number
+	 * @param presentation_time_us
+	 * @param size
+	 * @param flag
+	 * @throws IOException
+	 */
+	/*package*/ static void writeHeader(@NonNull final ByteChannel out,
+		final int sequence, final int frame_number,
+		final long presentation_time_us, final int size, final int flag)
+			throws IOException {
+
+		ChannelHelper.write(out, sequence);
+		ChannelHelper.write(out, frame_number);
+		ChannelHelper.write(out, presentation_time_us);
+		ChannelHelper.write(out, size);
+		ChannelHelper.write(out, flag);
+		//
+		ChannelHelper.write(out, RESERVED);
 	}
 	
 	/**
@@ -391,6 +478,39 @@ public class PostMuxCommon {
 	}
 
 	/**
+	 * フレームヘッダーを読み込む
+	 * @param in
+	 * @param header
+	 * @return
+	 * @throws IOException
+	 */
+	/*package*/ static MediaFrameHeader readHeader(@NonNull final ByteChannel in,
+		@NonNull final MediaFrameHeader header) throws IOException {
+
+		header.size = 0;
+		header.sequence = ChannelHelper.readInt(in);
+		header.frameNumber = ChannelHelper.readInt(in);	// frame number
+		header.presentationTimeUs = ChannelHelper.readLong(in);
+		header.size = ChannelHelper.readInt(in);
+		header.flags = ChannelHelper.readInt(in);
+		ChannelHelper.readByteArray(in);
+		return header;
+	}
+
+	/**
+	 * フレームヘッダーを読み込む
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
+	/*package*/ static MediaFrameHeader readHeader(@NonNull final ByteChannel in)
+		throws IOException {
+
+		final MediaFrameHeader header = new MediaFrameHeader();
+		return readHeader(in, header);
+	}
+
+	/**
 	 * フレームヘッダーを読み込んでフレームサイズを返す
 	 * @param in
 	 * @return
@@ -403,6 +523,18 @@ public class PostMuxCommon {
 		return header.size;
 	}
 
+	/**
+	 * フレームヘッダーを読み込んでフレームサイズを返す
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
+	/*package*/ static int readFrameSize(@NonNull final ByteChannel in)
+		throws IOException {
+
+		final MediaFrameHeader header = readHeader(in);
+		return header.size;
+	}
 
 	/**
 	 * MediaCodecでエンコード済みのフレームデータをファイルに書き込む
@@ -426,6 +558,31 @@ public class PostMuxCommon {
 			writeHeader(out, sequence, frameNumber,
 				info.presentationTimeUs, info.size, info.flags);
 			out.write(work, 0, info.size);
+		} catch (IOException e) {
+			throw e;
+		}
+	}
+
+	/**
+	 * MediaCodecでエンコード済みのフレームデータをファイルに書き込む
+	 * @param out
+	 * @param sequence
+	 * @param frameNumber
+	 * @param info
+	 * @param buffer
+	 * @throws IOException
+	 */
+	/*package*/ static final void writeStream(@NonNull final ByteChannel out,
+		final int sequence, final int frameNumber,
+		@NonNull final MediaCodec.BufferInfo info,
+		@NonNull final ByteBuffer buffer) throws IOException {
+
+		buffer.position(info.offset);
+		buffer.limit(info.offset + info.size);
+		try {
+			writeHeader(out, sequence, frameNumber,
+				info.presentationTimeUs, info.size, info.flags);
+			ChannelHelper.write(out, buffer);
 		} catch (IOException e) {
 			throw e;
 		}
@@ -459,6 +616,28 @@ public class PostMuxCommon {
 			buffer.put(readBuffer, 0, read_bytes);
 		}
 		buffer.flip();
+		return buffer;
+	}
+
+	/**
+	 * read raw bit stream from specific intermediate file
+	 * @param in
+	 * @param header
+	 * @param buffer
+	 * @throws IOException
+	 * @throws BufferOverflowException
+	 */
+	/*package*/ static ByteBuffer readStream(
+		@NonNull final ByteChannel in,
+		@NonNull final MediaFrameHeader header,
+		@Nullable ByteBuffer buffer) throws IOException {
+
+		readHeader(in, header);
+		if ((buffer == null) || header.size > buffer.capacity()) {
+			buffer = ByteBuffer.allocateDirect(header.size);
+		}
+		buffer.clear();
+		ChannelHelper.readByteBuffer(in, buffer);
 		return buffer;
 	}
 }
