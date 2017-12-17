@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
  * 実際のファイルへの出力はMediaRawFilerWriterで行う。
  * 実際のmp4ファイルへの出力は別途PostMuxBuilderで行う。
  */
-public class MediaRawFileMuxer implements IMuxer {
+public class MediaRawFileMuxer implements IPostMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaRawFileMuxer.class.getSimpleName();
 
@@ -189,6 +189,7 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * 一時rawファイルからmp4ファイルを生成する・
 	 * mp4ファイル生成終了まで返らないので注意
 	 */
+	@Override
 	public void build() throws IOException {
 		if (DEBUG) Log.v(TAG, "build:");
 		final Context context = mWeakContext.get();

@@ -25,6 +25,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
+import com.serenegiant.media.IPostMuxer;
 import com.serenegiant.media.MediaRawFileMuxer;
 import com.serenegiant.media.MediaReaper;
 
@@ -50,7 +51,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 
 	/** binder instance to access this local service */
 	private final IBinder mBinder = new LocalBinder();
-	private MediaRawFileMuxer mMuxer;
+	private IPostMuxer mMuxer;
 	private int mVideoTrackIx = -1;
 	private int mAudioTrackIx = -1;
 	
@@ -124,7 +125,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 	@Override
 	protected void internalStop() {
 		if (DEBUG) Log.v(TAG, "internalStop:muxer=" + mMuxer);
-		final MediaRawFileMuxer muxer = mMuxer;
+		final IPostMuxer muxer = mMuxer;
 		mMuxer = null;
 		if (getState() == STATE_RECORDING) {
 			releaseEncoder();

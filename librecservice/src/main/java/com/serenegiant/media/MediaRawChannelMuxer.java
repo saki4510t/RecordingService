@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
  * 実際のファイルへの出力はMediaRawFilerWriterで行う。
  * 実際のmp4ファイルへの出力は別途PostMuxBuilderで行う。
  */
-public class MediaRawChannelMuxer implements IMuxer {
+public class MediaRawChannelMuxer implements IPostMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaRawChannelMuxer.class.getSimpleName();
 
@@ -88,9 +88,9 @@ public class MediaRawChannelMuxer implements IMuxer {
 	 * @param configFormatAudio
 	 */
 	public MediaRawChannelMuxer(@NonNull final Context context,
-								@NonNull final String outputDir, @NonNull final String name,
-								@Nullable final MediaFormat configFormatVideo,
-								@Nullable final MediaFormat configFormatAudio) {
+		@NonNull final String outputDir, @NonNull final String name,
+		@Nullable final MediaFormat configFormatVideo,
+		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
@@ -110,9 +110,9 @@ public class MediaRawChannelMuxer implements IMuxer {
 	 * @param configFormatAudio
 	 */
 	public MediaRawChannelMuxer(@NonNull final Context context,
-								@NonNull final DocumentFile outputDir, @NonNull final String name,
-								@Nullable final MediaFormat configFormatVideo,
-								@Nullable final MediaFormat configFormatAudio) {
+		@NonNull final DocumentFile outputDir, @NonNull final String name,
+		@Nullable final MediaFormat configFormatVideo,
+		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
@@ -189,6 +189,7 @@ public class MediaRawChannelMuxer implements IMuxer {
 	 * 一時rawファイルからmp4ファイルを生成する・
 	 * mp4ファイル生成終了まで返らないので注意
 	 */
+	@Override
 	public void build() throws IOException {
 		if (DEBUG) Log.v(TAG, "buildFromRawFile:");
 		final Context context = mWeakContext.get();
