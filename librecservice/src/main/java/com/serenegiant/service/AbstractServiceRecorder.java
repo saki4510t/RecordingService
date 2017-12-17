@@ -59,8 +59,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		mWeakContext = new WeakReference<Context>(context);
 		mServiceClazz = serviceClazz;
 		mCallback = callback;
-		final Intent serviceIntent = new Intent(serviceClazz.getName());
-		serviceIntent.setPackage(context.getPackageName());
+		final Intent serviceIntent = createServiceIntent(context, serviceClazz);
 		if (BuildCheck.isOreo()) {
 			context.startForegroundService(serviceIntent);
 		} else {
@@ -247,7 +246,15 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		}
 	}
 	
-	//================================================================================
+//================================================================================
+	@NonNull
+	protected Intent createServiceIntent(
+		@NonNull Context context,
+		@NonNull final Class<? extends AbstractRecorderService> serviceClazz) {
+		return new Intent(serviceClazz.getName())
+			.setPackage(context.getPackageName());
+	}
+
 	protected void internalRelease() {
 		mCallback.onDisconnected();
 		stop();

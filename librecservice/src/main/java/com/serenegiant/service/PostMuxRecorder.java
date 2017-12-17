@@ -16,8 +16,11 @@ package com.serenegiant.service;
  */
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+
+import com.serenegiant.service.PostMuxRecService.MuxIntermediateType;
 
 /**
  * PostMux録画サービスアクセス用のヘルパークラス
@@ -27,19 +30,90 @@ public class PostMuxRecorder extends AbstractServiceRecorder {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = PostMuxRecorder.class.getSimpleName();
 	
+	public static PostMuxRecorder newInstance(@NonNull final Context context,
+		@NonNull final Class<? extends PostMuxRecService> serviceClazz,
+		@NonNull final Callback callback) {
+
+		return new PostMuxFileRecorder(context, serviceClazz, callback);
+	}
+
+	public static PostMuxRecorder newInstance(@NonNull final Context context,
+		@NonNull final Class<? extends PostMuxRecService> serviceClazz,
+		@NonNull final Callback callback,
+		@MuxIntermediateType final int muxIntermediateType) {
+
+		switch (muxIntermediateType) {
+		case PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL:
+			return new PostMuxChannelRecorder(context, serviceClazz, callback);
+		case PostMuxRecService.MUX_INTERMEDIATE_TYPE_FILE:
+		default:
+			return new PostMuxFileRecorder(context, serviceClazz, callback);
+		}
+	}
+	
+	private static class PostMuxFileRecorder extends PostMuxRecorder {
+		/**
+		 * コンストラクタ
+		 * @param context
+		 * @param serviceClazz
+		 * @param callback
+		 */
+		public PostMuxFileRecorder(@NonNull final Context context,
+			@NonNull final Class<? extends PostMuxRecService> serviceClazz,
+			@NonNull final Callback callback) {
+
+			super(context, serviceClazz, callback);
+		}
+
+		@Override
+		@NonNull
+		protected Intent createServiceIntent(@NonNull final Context context,
+			@NonNull final Class<? extends AbstractRecorderService> serviceClazz) {
+	
+			return super.createServiceIntent(context, serviceClazz)
+				.putExtra(PostMuxRecService.KEY_MUX_INTERMEDIATE_TYPE,
+					PostMuxRecService.MUX_INTERMEDIATE_TYPE_FILE);
+		}
+	}
+	
+	private static class PostMuxChannelRecorder extends PostMuxRecorder {
+		/**
+		 * コンストラクタ
+		 * @param context
+		 * @param serviceClazz
+		 * @param callback
+		 */
+		public PostMuxChannelRecorder(@NonNull final Context context,
+			@NonNull final Class<? extends PostMuxRecService> serviceClazz,
+			@NonNull final Callback callback) {
+
+			super(context, serviceClazz, callback);
+		}
+
+		@Override
+		@NonNull
+		protected Intent createServiceIntent(@NonNull final Context context,
+			@NonNull final Class<? extends AbstractRecorderService> serviceClazz) {
+	
+			return super.createServiceIntent(context, serviceClazz)
+				.putExtra(PostMuxRecService.KEY_MUX_INTERMEDIATE_TYPE,
+					PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL);
+		}
+	}
+
 	/**
 	 * コンストラクタ
 	 * @param context
 	 * @param serviceClazz
 	 * @param callback
 	 */
-	public PostMuxRecorder(final Context context,
+	private PostMuxRecorder(@NonNull final Context context,
 		@NonNull Class<? extends PostMuxRecService> serviceClazz,
 		@NonNull final Callback callback) {
 
 		super(context, serviceClazz, callback);
 	}
-
+	
 	/**
 	 * 録画サービスと接続した際にIBinderからAbstractRecorderService
 	 * (またはその継承クラス)を取得するためのメソッド

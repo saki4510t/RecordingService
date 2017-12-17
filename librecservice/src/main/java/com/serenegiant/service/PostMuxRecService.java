@@ -16,20 +16,26 @@ package com.serenegiant.service;
  */
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
 import com.serenegiant.media.IPostMuxer;
+import com.serenegiant.media.MediaRawChannelMuxer;
 import com.serenegiant.media.MediaRawFileMuxer;
 import com.serenegiant.media.MediaReaper;
+import com.serenegiant.media.PostMuxCommon;
 
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 
 /**
@@ -41,6 +47,18 @@ public class PostMuxRecService extends AbstractRecorderService {
 	private static final String TAG = PostMuxRecService.class.getSimpleName();
 
 	public static final int STATE_MUXING = 100;
+	
+	public static final String KEY_MUX_INTERMEDIATE_TYPE = "MUX_INTERMEDIATE_TYPE";
+
+	// 中間ファイルの形式
+	public static final int MUX_INTERMEDIATE_TYPE_FILE = 0;
+	public static final int MUX_INTERMEDIATE_TYPE_CHANNEL = 1;
+	
+	@IntDef({MUX_INTERMEDIATE_TYPE_FILE,
+		MUX_INTERMEDIATE_TYPE_CHANNEL,
+	})
+	@Retention(RetentionPolicy.SOURCE)
+	@interface MuxIntermediateType {}
 	
 	/** Binder class to access this local service */
 	public class LocalBinder extends Binder {
@@ -87,8 +105,23 @@ public class PostMuxRecService extends AbstractRecorderService {
 		
 		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputDir);
 		if (mMuxer == null) {
-			mMuxer = new MediaRawFileMuxer(this, outputDir, name,
-				videoFormat, audioFormat);
+			final Intent intent = getIntent();
+			@MuxIntermediateType
+			final int type = intent != null
+				? intent.getIntExtra(KEY_MUX_INTERMEDIATE_TYPE,
+					MUX_INTERMEDIATE_TYPE_FILE)
+				: MUX_INTERMEDIATE_TYPE_FILE;
+			switch (type) {
+			case MUX_INTERMEDIATE_TYPE_CHANNEL:
+				mMuxer = new MediaRawChannelMuxer(this, outputDir, name,
+					videoFormat, audioFormat);
+				break;
+			case MUX_INTERMEDIATE_TYPE_FILE:
+			default:
+				mMuxer = new MediaRawFileMuxer(this, outputDir, name,
+					videoFormat, audioFormat);
+				break;
+			}
 			if (videoFormat != null) {
 				mVideoTrackIx = mMuxer.addTrack(videoFormat);
 			}
