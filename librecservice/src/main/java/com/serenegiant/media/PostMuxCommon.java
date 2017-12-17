@@ -18,6 +18,7 @@ package com.serenegiant.media;
 import android.annotation.SuppressLint;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -31,6 +32,8 @@ import org.json.JSONObject;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
@@ -42,6 +45,15 @@ import java.util.Locale;
 public class PostMuxCommon {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = PostMuxCommon.class.getSimpleName();
+
+	static final int TYPE_VIDEO = 0;
+	static final int TYPE_AUDIO = 1;
+
+	@IntDef({TYPE_VIDEO,
+		TYPE_AUDIO,
+	})
+	@Retention(RetentionPolicy.SOURCE)
+	@interface MediaType {}
 
 	/*package*/ static final String VIDEO_NAME = "video.raw";
 	/*package*/ static final String AUDIO_NAME = "audio.raw";

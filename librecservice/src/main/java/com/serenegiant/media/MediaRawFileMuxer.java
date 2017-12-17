@@ -20,7 +20,6 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaScannerConnection;
 import android.os.Environment;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
@@ -29,8 +28,6 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
@@ -42,15 +39,6 @@ import java.nio.ByteBuffer;
 public class MediaRawFileMuxer implements IMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaRawFileMuxer.class.getSimpleName();
-
-	static final int TYPE_VIDEO = 0;
-	static final int TYPE_AUDIO = 1;
-
-	@IntDef({TYPE_VIDEO,
-		TYPE_AUDIO,
-	})
-	@Retention(RetentionPolicy.SOURCE)
-	@interface MediaType {}
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
@@ -282,7 +270,7 @@ public class MediaRawFileMuxer implements IMuxer {
 						try {
 							mMediaRawFileWriters[trackIndex] = mVideoWriter
 								= MediaRawFileWriter.newInstance(context,
-									TYPE_VIDEO,
+									PostMuxCommon.TYPE_VIDEO,
 									mConfigFormatVideo != null ? mConfigFormatVideo : format,
 									format,
 								tempDir);
@@ -300,7 +288,7 @@ public class MediaRawFileMuxer implements IMuxer {
 						try {
 							mMediaRawFileWriters[trackIndex] = mAudioWriter
 								= MediaRawFileWriter.newInstance(context,
-									TYPE_AUDIO,
+									PostMuxCommon.TYPE_AUDIO,
 									mConfigFormatAudio != null ? mConfigFormatAudio : format,
 									format,
 								tempDir);

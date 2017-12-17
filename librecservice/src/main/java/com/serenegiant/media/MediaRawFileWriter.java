@@ -46,15 +46,15 @@ abstract class MediaRawFileWriter extends PostMuxCommon {
 	 */
 	public static MediaRawFileWriter newInstance(
 		@NonNull final Context context,
-		@MediaRawFileMuxer.MediaType final int mediaType,
+		@PostMuxCommon.MediaType final int mediaType,
 		@NonNull final MediaFormat configFormat,
 		@NonNull final MediaFormat outputFormat,
 		@NonNull final String tempDir) throws IOException {
 
 		switch (mediaType) {
-		case MediaRawFileMuxer.TYPE_VIDEO:
+		case PostMuxCommon.TYPE_VIDEO:
 			return new MediaRawVideoWriter(context, configFormat, outputFormat, tempDir);
-		case MediaRawFileMuxer.TYPE_AUDIO:
+		case PostMuxCommon.TYPE_AUDIO:
 			return new MediaRawAudioWriter(context, configFormat, outputFormat, tempDir);
 		default:
 			throw new IOException("Unexpected media type=" + mediaType);
