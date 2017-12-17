@@ -148,7 +148,8 @@ public class CameraFragment extends Fragment {
 			// FIXME 未実装 ちゃんとパーミッションのチェック＆要求をしないとだめ
 			if (mPostMuxRecorder == null) {
 				mPostMuxRecorder = PostMuxRecorder.newInstance(getActivity(),
-					PostMuxRecService.class, mCallback);
+					PostMuxRecService.class, mCallback,
+					PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL);
 				
 			}
 		} catch (final Exception e) {
