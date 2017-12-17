@@ -36,9 +36,9 @@ import java.nio.ByteBuffer;
  * 実際のファイルへの出力はMediaRawFilerWriterで行う。
  * 実際のmp4ファイルへの出力は別途PostMuxBuilderで行う。
  */
-public class MediaRawFileMuxer implements IMuxer {
+public class MediaRawChannelMuxer implements IMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
-	private static final String TAG = MediaRawFileMuxer.class.getSimpleName();
+	private static final String TAG = MediaRawChannelMuxer.class.getSimpleName();
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
@@ -73,11 +73,11 @@ public class MediaRawFileMuxer implements IMuxer {
 	private boolean mReleased;
 	private int mLastTrackIndex = -1;
 	/** エンコード済み映像データのrawファイル出力用 */
-	private MediaRawFileWriter mVideoWriter;
+	private MediaRawChannelWriter mVideoWriter;
 	/** エンコード済み音声データのrawファイル出力用 */
-	private MediaRawFileWriter mAudioWriter;
+	private MediaRawChannelWriter mAudioWriter;
 	/** トラックインデックスからMediaRawFileWriterを参照するための配列 */
-	private MediaRawFileWriter[] mMediaRawFileWriters = new MediaRawFileWriter[2];
+	private MediaRawChannelWriter[] mMediaRawFileWriters = new MediaRawChannelWriter[2];
 	
 	/**
 	 * コンストラクタ
@@ -87,10 +87,10 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
-	public MediaRawFileMuxer(@NonNull final Context context,
-		@NonNull final String outputDir, @NonNull final String name,
-		@Nullable final MediaFormat configFormatVideo,
-		@Nullable final MediaFormat configFormatAudio) {
+	public MediaRawChannelMuxer(@NonNull final Context context,
+								@NonNull final String outputDir, @NonNull final String name,
+								@Nullable final MediaFormat configFormatVideo,
+								@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
@@ -109,10 +109,10 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
-	public MediaRawFileMuxer(@NonNull final Context context,
-		@NonNull final DocumentFile outputDir, @NonNull final String name,
-		@Nullable final MediaFormat configFormatVideo,
-		@Nullable final MediaFormat configFormatAudio) {
+	public MediaRawChannelMuxer(@NonNull final Context context,
+								@NonNull final DocumentFile outputDir, @NonNull final String name,
+								@Nullable final MediaFormat configFormatVideo,
+								@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
@@ -190,17 +190,17 @@ public class MediaRawFileMuxer implements IMuxer {
 	 * mp4ファイル生成終了まで返らないので注意
 	 */
 	public void build() throws IOException {
-		if (DEBUG) Log.v(TAG, "build:");
+		if (DEBUG) Log.v(TAG, "buildFromRawFile:");
 		final Context context = mWeakContext.get();
 		final String tempDir = getTempDir();
-		if (DEBUG) Log.v(TAG, "build:tempDir=" + tempDir);
+		if (DEBUG) Log.v(TAG, "buildFromRawFile:tempDir=" + tempDir);
 		if (!TextUtils.isEmpty(mOutputDir)) {
 			final String outputPath
 				= mOutputDir + (mOutputDir.endsWith("/")
 					? mOutputName : "/" + mOutputName) + ".mp4";
 			try {
 				final PostMuxBuilder builder = new PostMuxBuilder();
-				builder.buildFromRawFile(context, tempDir, outputPath);
+				builder.buildFromRawChannel(context, tempDir, outputPath);
 			} finally {
 				delete(new File(tempDir));
 			}
@@ -217,7 +217,7 @@ public class MediaRawFileMuxer implements IMuxer {
 				"*/*", mOutputName + ".mp4");
 			try {
 				final PostMuxBuilder builder = new PostMuxBuilder();
-				builder.buildFromRawFile(context, tempDir, output);
+				builder.buildFromRawChannel(context, tempDir, output);
 			} finally {
 				delete(new File(tempDir));
 			}
@@ -225,7 +225,7 @@ public class MediaRawFileMuxer implements IMuxer {
 			// ここには来ないはず
 			throw new IOException("unexpected output file");
 		}
-		if (DEBUG) Log.v(TAG, "build:finished");
+		if (DEBUG) Log.v(TAG, "buildFromRawFile:finished");
 	}
 	
 	/**
@@ -269,7 +269,7 @@ public class MediaRawFileMuxer implements IMuxer {
 					if (mVideoWriter == null) {
 						try {
 							mMediaRawFileWriters[trackIndex] = mVideoWriter
-								= MediaRawFileWriter.newInstance(context,
+								= MediaRawChannelWriter.newInstance(context,
 									PostMuxCommon.TYPE_VIDEO,
 									mConfigFormatVideo != null ? mConfigFormatVideo : format,
 									format,
@@ -287,7 +287,7 @@ public class MediaRawFileMuxer implements IMuxer {
 					if (mAudioWriter == null) {
 						try {
 							mMediaRawFileWriters[trackIndex] = mAudioWriter
-								= MediaRawFileWriter.newInstance(context,
+								= MediaRawChannelWriter.newInstance(context,
 									PostMuxCommon.TYPE_AUDIO,
 									mConfigFormatAudio != null ? mConfigFormatAudio : format,
 									format,
@@ -336,7 +336,7 @@ public class MediaRawFileMuxer implements IMuxer {
 				" valid buffer offset, size and presentation time");
 		}
 
-		final MediaRawFileWriter writer;
+		final MediaRawChannelWriter writer;
 		synchronized (mSync) {
 			writer = mMediaRawFileWriters[trackIndex];
 		}
