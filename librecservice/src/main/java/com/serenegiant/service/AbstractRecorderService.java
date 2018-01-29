@@ -16,8 +16,6 @@ package com.serenegiant.service;
  */
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -77,10 +75,8 @@ public abstract class AbstractRecorderService extends BaseService {
 			final int state);
 	}
 	
-	protected final Object mSync = new Object();
 	private final Set<StateChangeListener> mListeners
 		= new CopyOnWriteArraySet<StateChangeListener>();
-	private NotificationManager mNotificationManager;
 	private Intent mIntent;
 	private int mState = STATE_UNINITIALIZED;
 	private boolean mIsBind;
@@ -104,9 +100,6 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void onCreate() {
 		super.onCreate();
 		if (DEBUG) Log.v(TAG, "onCreate:");
-		synchronized (mSync) {
-			mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		}
 		internalResetSettings();
 	}
 
@@ -116,11 +109,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		synchronized (mSync) {
 			mState = STATE_UNINITIALIZED;
 			mIsBind = false;
-			stopForeground(true/*removeNotification*/);
-			if (mNotificationManager != null) {
-				mNotificationManager.cancel(NOTIFICATION);
-				mNotificationManager = null;
-			}
+			releaseNotification();
 			mListeners.clear();
 		}
 		super.onDestroy();
@@ -138,7 +127,11 @@ public abstract class AbstractRecorderService extends BaseService {
 	public IBinder onBind(final Intent intent) {
 		if (DEBUG) Log.v(TAG, "onBind:intent=" + intent);
 		if (intent != null) {
-			showNotification(getString(R.string.notification_service));
+			showNotification(NOTIFICATION,
+				getString(R.string.notification_service),
+				R.mipmap.ic_recording_service, R.mipmap.ic_recording_service,
+				R.string.notification_service, R.string.time_shift,
+				contextIntent());
 			synchronized (mSync) {
 				if (mState == STATE_UNINITIALIZED) {
 					setState(STATE_INITIALIZED);
@@ -308,7 +301,10 @@ public abstract class AbstractRecorderService extends BaseService {
 					queueEvent(new Runnable() {
 						@Override
 						public void run() {
-							showNotification(getString(R.string.notification_service));
+							releaseNotification(NOTIFICATION,
+								getString(R.string.notification_service),
+								R.mipmap.ic_recording_service, R.mipmap.ic_recording_service,
+								R.string.notification_service, R.string.time_shift);
 							stopSelf();
 						}
 					});
@@ -330,34 +326,6 @@ public abstract class AbstractRecorderService extends BaseService {
 		return !isRunning;
 	}
 	
-	/**
-	 * フォアグラウンドサービスとして実行するために
-	 * ノティフィケーションを表示する
-	 * @param text
-	 */
-	@SuppressWarnings("deprecation")
-	protected void showNotification(final CharSequence text) {
-		final PendingIntent intent = contextIntent();
-		final Notification.Builder builder
-		 	= new Notification.Builder(this)
-			.setSmallIcon(R.mipmap.ic_recording_service)  // the status icon
-			.setTicker(text)  // the status text
-			.setWhen(System.currentTimeMillis())  // the time stamp
-			.setContentTitle(getText(R.string.time_shift))  // the label of the entry
-			.setContentText(text);  // the contents of the entry
-		if (intent != null) {
-			builder.setContentIntent(intent);  // The intent to send when the entry is clicked
-		}
-		// Send the notification.
-		final Notification notification = builder.build();
-		synchronized (mSync) {
-			if (mNotificationManager != null) {
-				startForeground(NOTIFICATION, notification);
-				mNotificationManager.notify(NOTIFICATION, notification);
-			}
-		}
-	}
-
 	/**
 	 * サービスノティフィケーションを選択した時に実行されるPendingIntentの生成
 	 * 普通はMainActivityを起動させる。
