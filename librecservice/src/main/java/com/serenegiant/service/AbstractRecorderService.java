@@ -337,7 +337,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	@SuppressWarnings("deprecation")
 	protected void showNotification(final CharSequence text) {
-		final PendingIntent intent = createPendingIntent();
+		final PendingIntent intent = contextIntent();
 		final Notification.Builder builder
 		 	= new Notification.Builder(this)
 			.setSmallIcon(R.mipmap.ic_recording_service)  // the status icon
@@ -364,8 +364,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * デフォルトはnullを返すだけでノティフィケーションを選択しても何も実行されない。
 	 * @return
 	 */
-	@Nullable
-	protected PendingIntent createPendingIntent() {
+	@Override
+	protected PendingIntent contextIntent() {
 		return null;
 	}
 
