@@ -29,14 +29,14 @@ ext {
 	javaSourceCompatibility = JavaVersion.VERSION_1_7
 	javaTargetCompatibility = JavaVersion.VERSION_1_7
 
-	supportLibVersion = '26.1.0'  // variable that can be referenced to keep support libs consistent
-	versionBuildTool = "26.0.2"
-	versionCompiler = 26
-	versionTarget = 23
+	supportLibVersion = '27.0.2'  // variable that can be referenced to keep support libs consistent
+	versionBuildTool = "27.0.3"
+	versionCompiler = 27
+	versionTarget = 27
 
-	commonLibVersion= '1.12.13'
+	commonLibVersion= '1.15.2'
 
-	versionCodeNum = 4
-	versionNameString = '0.1.4'
+	versionCodeNum = 5
+	versionNameString = '0.1.5'
 
 }
