@@ -130,7 +130,8 @@ public abstract class AbstractRecorderService extends BaseService {
 			showNotification(NOTIFICATION,
 				getString(R.string.notification_service),
 				R.mipmap.ic_recording_service, R.mipmap.ic_recording_service,
-				R.string.notification_service, R.string.time_shift,
+				getString(R.string.notification_service),
+				getString(R.string.time_shift),
 				contextIntent());
 			synchronized (mSync) {
 				if (mState == STATE_UNINITIALIZED) {
@@ -304,7 +305,8 @@ public abstract class AbstractRecorderService extends BaseService {
 							releaseNotification(NOTIFICATION,
 								getString(R.string.notification_service),
 								R.mipmap.ic_recording_service, R.mipmap.ic_recording_service,
-								R.string.notification_service, R.string.time_shift);
+								getString(R.string.notification_service),
+								getString(R.string.time_shift));
 							stopSelf();
 						}
 					});
