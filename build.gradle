@@ -34,7 +34,7 @@ ext {
 	versionCompiler = 27
 	versionTarget = 27
 
-	commonLibVersion= '1.16.1'
+	commonLibVersion= '1.16.3'
 
 	versionCodeNum = 6
 	versionNameString = '0.1.6'

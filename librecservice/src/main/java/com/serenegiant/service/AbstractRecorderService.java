@@ -1,6 +1,6 @@
 package com.serenegiant.service;
 /*
- * Copyright (c) 2016-2017.  saki t_saki@serenegiant.com
+ * Copyright (c) 2016-2018.  saki t_saki@serenegiant.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import static com.serenegiant.media.MediaCodecHelper.MIME_AVC;
 import static com.serenegiant.media.MediaCodecHelper.selectVideoCodec;
 
 /**
- * Created by saki on 2017/12/05.
  * TimeShiftRecServiceから流用できそうな部分を切り出し
  * FIXME 今は録画のみ。録音は未対応
  */
