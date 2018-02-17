@@ -97,7 +97,7 @@ public abstract class AbstractCameraFragment extends Fragment {
 	public View onCreateView(final LayoutInflater inflater,
 		final ViewGroup container, final Bundle savedInstanceState) {
 
-		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+		final View rootView = inflater.inflate(R.layout.fragment_camera, container, false);
 		mCameraView = rootView.findViewById(R.id.cameraView);
 		mCameraView.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		mCameraView.setOnClickListener(mOnClickListener);
