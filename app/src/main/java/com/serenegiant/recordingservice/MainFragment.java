@@ -20,17 +20,70 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.app.FragmentManager;
 import android.app.ListFragment;
+import android.content.Context;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import java.util.Locale;
 
 /**
  * 他のFragmentを起動するためのメニュー表示用Fragment
  */
 public class MainFragment extends ListFragment {
 
+	private static final Item[] ITEMS = {
+		new Item(0, "PostMuxRec"),
+		new Item(1, "SplitRec"),
+	};
+	
+	private ItemListAdapter mAdapter;
+	
 	public MainFragment() {
 		super();
+	}
+	
+	@Override
+	public void onCreate(@Nullable final Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		if (mAdapter == null) {
+			mAdapter = new ItemListAdapter(getActivity(),
+				R.layout.list_item_item, ITEMS);
+			setListAdapter(mAdapter);
+		}
+	}
+	
+	@Override
+	public void onListItemClick(final ListView listView,
+		final View view, final int position, final long id) {
+		super.onListItemClick(listView, view, position, id);	// do nothing
+		
+		final FragmentManager fm = getFragmentManager();
+		switch (position) {
+		case 0:
+			fm.beginTransaction()
+				.addToBackStack(null)
+				.replace(R.id.container,
+				new PostMuxRecFragment()).commit();
+			break;
+		case 1:
+			fm.beginTransaction()
+				.addToBackStack(null)
+				.replace(R.id.container,
+				new SplitRecFragment()).commit();
+			break;
+		}
 	}
 	
 	public static class Item implements Parcelable {
@@ -69,5 +122,45 @@ public class MainFragment extends ListFragment {
 			dest.writeInt(mId);
 			dest.writeString(mName);
 		}
+	}
+
+	public static class ItemListAdapter extends ArrayAdapter<Item> {
+		private final LayoutInflater mInflater;
+		
+		public ItemListAdapter(@NonNull final Context context,
+			@LayoutRes final int resource,
+			@NonNull final Item[] objects) {
+
+			super(context, resource, objects);
+			mInflater = LayoutInflater.from(getContext());
+		}
+		
+		@NonNull
+		@Override
+		public View getView(final int position,
+			@Nullable final View convertView,
+			@NonNull final ViewGroup parent) {
+
+			View view = convertView;
+			if (view == null) {
+				view = mInflater.inflate(R.layout.list_item_item, parent, false);
+			}
+			ViewHolder holder = (ViewHolder)view.getTag();
+			if (holder == null) {
+				holder = new ViewHolder();
+				holder.idTv = view.findViewById(R.id.id);
+				holder.nameTv = view.findViewById(R.id.name);
+				view.setTag(holder);
+			}
+			final Item item = getItem(position);
+			holder.idTv.setText(String.format(Locale.US, "%d", item.mId));
+			holder.nameTv.setText(item.mName);
+			return view;
+		}
+	}
+	
+	private static class ViewHolder {
+		private TextView idTv;
+		private TextView nameTv;
 	}
 }
