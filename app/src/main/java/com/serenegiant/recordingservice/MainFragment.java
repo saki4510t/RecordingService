@@ -65,6 +65,12 @@ public class MainFragment extends ListFragment {
 	}
 	
 	@Override
+	public void onStart() {
+		super.onStart();
+		getActivity().setTitle(R.string.app_name);
+	}
+	
+	@Override
 	public void onListItemClick(final ListView listView,
 		final View view, final int position, final long id) {
 		super.onListItemClick(listView, view, position, id);	// do nothing

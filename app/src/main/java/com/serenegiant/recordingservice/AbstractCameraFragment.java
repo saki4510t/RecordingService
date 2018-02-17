@@ -20,6 +20,7 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.os.Handler;
@@ -69,6 +70,13 @@ public abstract class AbstractCameraFragment extends Fragment {
 	public AbstractCameraFragment() {
 		super();
 		// デフォルトコンストラクタが必要
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public void onAttach(final Activity activity) {
+		super.onAttach(activity);
+		activity.setTitle(this.getClass().getSimpleName());
 	}
 	
 	@Override
