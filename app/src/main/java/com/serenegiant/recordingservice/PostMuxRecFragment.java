@@ -3,7 +3,7 @@ package com.serenegiant.recordingservice;
  *
  * Copyright (c) 2016-2018 saki t_saki@serenegiant.com
  *
- * File name: CameraFragment.java
+ * File name: PostMuxRecFragment.java
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@ import com.serenegiant.utils.FileUtils;
 
 import java.io.File;
 
-public class CameraFragment extends AbstractCameraFragment {
+public class PostMuxRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
-	private static final String TAG = CameraFragment.class.getSimpleName();
+	private static final String TAG = PostMuxRecFragment.class.getSimpleName();
 	
 	private PostMuxRecorder mPostMuxRecorder;
 	
-	public CameraFragment() {
+	public PostMuxRecFragment() {
 		super();
 		// need default constructor
 	}

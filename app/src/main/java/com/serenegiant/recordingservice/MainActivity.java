@@ -17,8 +17,6 @@ package com.serenegiant.recordingservice;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 
 public class MainActivity extends Activity {
 	
@@ -29,7 +27,7 @@ public class MainActivity extends Activity {
 
 		if (savedInstanceState == null) {
 			getFragmentManager().beginTransaction()
-				.add(R.id.container, new CameraFragment()).commit();
+				.add(R.id.container, new PostMuxRecFragment()).commit();
 		}
 	}
 

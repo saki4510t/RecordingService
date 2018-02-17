@@ -24,7 +24,7 @@
     android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.serenegiant.recordingservice.CameraFragment" >
+    tools:context="com.serenegiant.recordingservice.PostMuxRecFragment" >
 
 	<com.serenegiant.recordingservice.CameraGLView
 		android:id="@+id/cameraView"
