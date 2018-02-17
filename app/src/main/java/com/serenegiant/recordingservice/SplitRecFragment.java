@@ -75,6 +75,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		} else {
 			throw new IOException("could not access storage");
 		}
+		if (DEBUG) Log.v(TAG, "internalStartRecording:finished");
 	}
 	
 	@Override
@@ -169,6 +170,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 				throw e;
 			}
 		}
+		if (DEBUG) Log.v(TAG, "startEncoder:finished");
 	}
 
 	private void stopEncoder() {
@@ -178,6 +180,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 			mEncoderSurface = null;
 		}
 		mVideoEncoder = null;
+		if (DEBUG) Log.v(TAG, "stopEncoder:finished");
 	}
 
 	/**
@@ -193,7 +196,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		final int audio_source, final int audio_channels,
 		final boolean align16, final int saveTreeId) throws IOException {
 
-		if (DEBUG) Log.v(TAG, "createRecorder:basePath=" + basePath);
+		if (DEBUG) Log.v(TAG, "createRecorder:basePath=" + basePath.getUri());
 		final SplitMediaAVRecorder recorder;
 		recorder = new SplitMediaAVRecorder(getActivity(),
 		mRecorderCallback, basePath, FileUtils.getDateTimeString(), MAX_FILE_SIZE);
@@ -202,6 +205,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		mVideoEncoder = new SurfaceEncoder(recorder, mEncoderListener); // API>=18
 		mVideoEncoder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		((SurfaceEncoder)mVideoEncoder).setVideoConfig(-1, 30, 10);
+		if (DEBUG) Log.v(TAG, "createRecorder:finished");
 		return recorder;
 	}
 
@@ -209,12 +213,15 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		final int id = surface != null ? surface.hashCode() : 0;
 		if (DEBUG) Log.d(TAG, "addSurface:id=" + id);
 		synchronized (mSync) {
-			if (isReleased()) return;
+			if (isReleased()) {
+				Log.d(TAG, "already released!");
+				return;
+			}
 			if (mCameraView != null) {
 				mCameraView.addSurface(id, surface, false);
 			}
 		}
-		if (DEBUG) Log.v(TAG, "removeSurface:finished");
+		if (DEBUG) Log.v(TAG, "addSurface:finished");
 	}
 	
 	/**
@@ -268,6 +275,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 					Log.w(TAG, e1);
 				}
 			}
+			if (DEBUG) Log.v(TAG, "onPrepared:finished");
 		}
 		
 		@Override
