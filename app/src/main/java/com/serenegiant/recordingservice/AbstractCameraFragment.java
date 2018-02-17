@@ -33,6 +33,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.serenegiant.utils.FileUtils;
 import com.serenegiant.utils.HandlerThreadHandler;
 import com.serenegiant.utils.Stacktrace;
 
@@ -79,6 +80,7 @@ public abstract class AbstractCameraFragment extends Fragment {
 	public void onAttach(final Activity activity) {
 		super.onAttach(activity);
 		activity.setTitle(this.getClass().getSimpleName());
+		FileUtils.DIR_NAME = APP_DIR_NAME;
 	}
 	
 	@Override
