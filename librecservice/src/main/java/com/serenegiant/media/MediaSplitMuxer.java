@@ -200,6 +200,7 @@ public class MediaSplitMuxer implements IMuxer {
 
 	@Override
 	public synchronized void start() throws IllegalStateException {
+		if (DEBUG) Log.v(TAG, "start:");
 		if (!mReleased && !mIsRunning) {
 			if ((mConfigFormatVideo != null)
 				|| (mConfigFormatAudio != null)) {
@@ -214,6 +215,7 @@ public class MediaSplitMuxer implements IMuxer {
 		} else {
 			throw new IllegalStateException("already released or started");
 		}
+		if (DEBUG) Log.v(TAG, "start:finished");
 	}
 	
 	/**
@@ -234,6 +236,7 @@ public class MediaSplitMuxer implements IMuxer {
 	public int addTrack(@NonNull final MediaFormat format)
 		throws IllegalArgumentException, IllegalStateException {
 
+		if (DEBUG) Log.v(TAG, "addTrack:" + format);
 		int result = mLastTrackIndex;
 		switch (mLastTrackIndex) {
 		case 0:
@@ -261,6 +264,7 @@ public class MediaSplitMuxer implements IMuxer {
 		default:
 			throw new IllegalArgumentException();
 		}
+		if (DEBUG) Log.v(TAG, "addTrack:finished,result=" + result);
 		return result;
 	}
 	
@@ -269,6 +273,7 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final ByteBuffer buffer,
 		@NonNull final MediaCodec.BufferInfo info) {
 	
+		if (DEBUG) Log.v(TAG, "writeSampleData:");
 		if (mIsRunning && !mRequestStop) {
 			final IRecycleBuffer buf = mQueue.obtain();
 			if (buf instanceof RecycleMediaData) {
@@ -281,6 +286,7 @@ public class MediaSplitMuxer implements IMuxer {
 	private final class MuxTask implements Runnable {
 		@Override
 		public void run() {
+			if (DEBUG) Log.v(TAG, "MuxTask#run:");
 			final Context context = getContext();
 			if (context != null) {
 				IMuxer muxer = null;
@@ -288,6 +294,7 @@ public class MediaSplitMuxer implements IMuxer {
 				int ix = 0, cnt = 0;
 				for ( ; mIsRunning ; ) {
 					if (muxer == null) {
+						if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
 						// muxerが無ければ生成する
 						try {
 							if (mOutputDoc != null) {
@@ -314,6 +321,7 @@ public class MediaSplitMuxer implements IMuxer {
 						}
 					}
 					if (muxer != null) {
+						if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
 						for ( ; mIsRunning ; ) {
 							try {
 								final IRecycleBuffer buf = mQueue.poll(10, TimeUnit.MILLISECONDS);
@@ -338,10 +346,12 @@ public class MediaSplitMuxer implements IMuxer {
 						muxer.stop();
 						muxer.release();
 						muxer = null;
+						if (DEBUG) Log.v(TAG, "MuxTask#run:muxing finished");
 					}
 				}
 			}
 			mIsRunning = false;
+			if (DEBUG) Log.v(TAG, "MuxTask#run:finished");
 		}
 		
 	}
@@ -354,6 +364,7 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final String path,
 		@NonNull final String name, final int segment) {
 		
+		if (DEBUG) Log.v(TAG, "createOutputDoc:path=" + path);
 		final File _dir = new File(path);
 		final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
 		return DocumentFile.fromFile(
@@ -365,6 +376,7 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final DocumentFile path,
 		@NonNull final String name, final int segment) {
 		
+		if (DEBUG) Log.v(TAG, "createOutputDoc:path=" + path.getUri());
 		final DocumentFile dir = path.isDirectory() ? path : path.getParentFile();
 		return dir.createFile(null,
 			String.format(Locale.US, "%s ps%d.mp4", name, segment + 1));
@@ -374,6 +386,7 @@ public class MediaSplitMuxer implements IMuxer {
 	private static IMuxer createMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile file) throws IOException {
 
+		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
 		IMuxer result = null;
 		if (sUseMediaMuxer) {
 			if (BuildCheck.isOreo()) {
@@ -396,6 +409,7 @@ public class MediaSplitMuxer implements IMuxer {
 			result = new VideoMuxer(context.getContentResolver()
 				.openFileDescriptor(file.getUri(), "rw").getFd());
 		}
+		if (DEBUG) Log.v(TAG, "createMuxer:finished," + result);
 		return result;
 	}
 }

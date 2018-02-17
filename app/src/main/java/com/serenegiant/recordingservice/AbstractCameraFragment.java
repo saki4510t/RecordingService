@@ -335,7 +335,7 @@ public abstract class AbstractCameraFragment extends Fragment {
 				root = DocumentFile.fromFile(captureDir);
 			}
 		}
-		if (DEBUG) Log.v(TAG, "getRecordingRoot:finished" + root);
+		if (DEBUG) Log.v(TAG, "getRecordingRoot:finished," + root);
 		return root;
 	}
 }

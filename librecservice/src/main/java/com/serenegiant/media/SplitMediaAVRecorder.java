@@ -24,6 +24,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
+import android.util.Log;
 
 import com.serenegiant.utils.FileUtils;
 import com.serenegiant.utils.SDUtils;
@@ -56,6 +57,7 @@ public class SplitMediaAVRecorder extends Recorder {
 		final long splitSize) throws IOException {
 
 		super(callback);
+		if (DEBUG) Log.v(TAG, "コンストラクタ");
 		mWeakContext = new WeakReference<Context>(context);
 		mSaveTreeId = 0;
 		mOutputDirPath = null;
@@ -98,6 +100,7 @@ public class SplitMediaAVRecorder extends Recorder {
 		@NonNull final String name,
 		final long splitSize)  throws IOException {
 		
+		if (DEBUG) Log.v(TAG, "setupMuxer");
 		setMuxer(new MediaSplitMuxer(context, output, name, splitSize));
 	}
 	
