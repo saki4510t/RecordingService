@@ -20,8 +20,6 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.content.Context;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
@@ -35,10 +33,7 @@ import com.serenegiant.media.Recorder;
 import com.serenegiant.media.SplitMediaAVRecorder;
 import com.serenegiant.media.SurfaceEncoder;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.PermissionCheck;
-import com.serenegiant.utils.SDUtils;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -47,9 +42,6 @@ import java.io.IOException;
 public class SplitRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true; // FIXME set false on production
 	private static final String TAG = SplitRecFragment.class.getSimpleName();
-
-	/** access code for secondary storage etc. */
-	private static final int REQUEST_ACCESS_SD = 12345;
 
 	private static final long MAX_FILE_SIZE = 4000000000L;
 
@@ -98,47 +90,6 @@ public class SplitRecFragment extends AbstractCameraFragment {
 	private IRecorder mRecorder;
 	private volatile IVideoEncoder mVideoEncoder;
 
-	public static DocumentFile getRecordingRoot(@NonNull final Context context) {
-		if (DEBUG) Log.v(TAG, "getRecordingRoot:");
-		DocumentFile root = null;
-		if (SDUtils.hasStorageAccess(context, REQUEST_ACCESS_SD)) {
-			try {
-				root = SDUtils.getStorage(context, REQUEST_ACCESS_SD);
-				if ((root != null) && root.exists() && root.canWrite()) {
-					final DocumentFile appDir = root.findFile(APP_DIR_NAME);
-					if (appDir == null) {
-						// create app dir if it does not exist yet
-						root = root.createDirectory(APP_DIR_NAME);	// "${document root}/Pupil Mobile"
-					} else {
-						root = appDir;
-					}
-				} else {
-					root = null;
-					Log.d(TAG, "path will be wrong, will already be removed,"
-						+ (root != null ? root.getUri() : null));
-				}
-			} catch (final IOException | IllegalStateException e) {
-				root = null;
-				Log.d(TAG, "path is wrong, will already be removed.", e);
-			}
-		}
-		if (root == null) {
-			// remove permission to access secondary (external) storage,
-			// because app can't access it and it will already be removed.
-			SDUtils.releaseStorageAccessPermission(context, REQUEST_ACCESS_SD);
-		}
-		if ((root == null) && PermissionCheck.hasWriteExternalStorage(context)) {
-			// fallback to primary external storage if app has permission
-			final File captureDir
-				= FileUtils.getCaptureDir(context, Environment.DIRECTORY_MOVIES, 0);
-			if ((captureDir != null) && captureDir.canWrite()) {
-				root = DocumentFile.fromFile(captureDir);
-			}
-		}
-		if (DEBUG) Log.v(TAG, "getRecordingRoot:finished" + root);
-		return root;
-	}
-
 	/**
 	 * create IRecorder instance for recording and prepare, start
 	 * @param basePath
@@ -156,7 +107,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		if (recorder == null) {
 			try {
 				recorder = createRecorder(basePath,
-					audio_source, audio_channels, align16, REQUEST_ACCESS_SD);
+					audio_source, audio_channels, align16);
 				recorder.prepare();
 				recorder.startRecording();
 				mRecorder = recorder;
@@ -194,7 +145,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 	 */
 	protected Recorder createRecorder(@NonNull final DocumentFile basePath,
 		final int audio_source, final int audio_channels,
-		final boolean align16, final int saveTreeId) throws IOException {
+		final boolean align16) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createRecorder:basePath=" + basePath.getUri());
 		final SplitMediaAVRecorder recorder;
