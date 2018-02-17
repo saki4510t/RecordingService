@@ -22,12 +22,18 @@ package com.serenegiant.recordingservice;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import com.serenegiant.utils.HandlerThreadHandler;
+import com.serenegiant.utils.Stacktrace;
 
 /**
  * 内蔵カメラへアクセスして表示するための基本クラス
@@ -42,6 +48,10 @@ public abstract class AbstractCameraFragment extends Fragment {
 	 */
 	protected static final int VIDEO_WIDTH = 1280, VIDEO_HEIGHT = 720;
 	
+	private final Object mHandlerSync = new Object();
+	private Handler mAsyncHandler;
+	private final Handler mUIHandler = new Handler(Looper.getMainLooper());
+
 	/**
 	 * for camera preview display
 	 */
@@ -59,10 +69,32 @@ public abstract class AbstractCameraFragment extends Fragment {
 		super();
 		// デフォルトコンストラクタが必要
 	}
-
+	
+	@Override
+	public void onCreate(@Nullable final Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		mAsyncHandler = HandlerThreadHandler.createHandler("AsyncHandler");
+	}
+	
+	@Override
+	public void onDestroy() {
+		mUIHandler.removeCallbacksAndMessages(null);
+		synchronized (mHandlerSync) {
+			if (mAsyncHandler != null) {
+				try {
+					mAsyncHandler.getLooper().quit();
+				} catch (final Exception e) {
+					// ignore
+				}
+				mAsyncHandler = null;
+			}
+		}
+		super.onDestroy();
+	}
+	
 	@Override
 	public View onCreateView(final LayoutInflater inflater,
-							 final ViewGroup container, final Bundle savedInstanceState) {
+		final ViewGroup container, final Bundle savedInstanceState) {
 
 		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 		mCameraView = rootView.findViewById(R.id.cameraView);
@@ -92,6 +124,83 @@ public abstract class AbstractCameraFragment extends Fragment {
 		super.onPause();
 	}
 
+//================================================================================
+	protected boolean isReleased() {
+		synchronized (mHandlerSync) {
+			return mAsyncHandler == null;
+		}
+	}
+	
+	protected void checkReleased() throws IllegalStateException {
+		if (isReleased()) {
+			Stacktrace.print();
+			throw new IllegalStateException("already released");
+		}
+	}
+	
+	protected void runOnUIThread(final Runnable task)
+		throws IllegalStateException{
+		
+		if (task == null) return;
+		checkReleased();
+		runOnUIThread(task, 0);
+	}
+	
+	protected void runOnUIThread(final Runnable task, final long delayMs) {
+		if (task == null) return;
+		checkReleased();
+		try {
+			mUIHandler.removeCallbacks(task);
+			if (delayMs > 0) {
+				mUIHandler.postDelayed(task, delayMs);
+			} else {
+				mUIHandler.post(task);
+			}
+		} catch (final Exception e) {
+			Log.w(TAG, e);
+		}
+	}
+	
+	protected void removeFromUIThread(final Runnable task) {
+		try {
+			mUIHandler.removeCallbacks(task);
+		} catch (final Exception e) {
+			// ignore
+		}
+	}
+
+	protected void queueEvent(final Runnable task) throws IllegalStateException {
+		if (task == null) return;
+		queueEvent(task, 0);
+	}
+
+	protected void queueEvent(final Runnable task, final long delay)
+		throws IllegalStateException {
+
+		if (task == null) return;
+		synchronized (mHandlerSync) {
+			if (mAsyncHandler != null) {
+				mAsyncHandler.removeCallbacks(task);
+				if (delay > 0) {
+					mAsyncHandler.postDelayed(task, delay);
+				} else {
+					mAsyncHandler.post(task);
+				}
+			} else {
+				throw new IllegalStateException("already released");
+			}
+		}
+	}
+
+	protected void removeEvent(final Runnable task) {
+		synchronized (mHandlerSync) {
+			if (mAsyncHandler != null) {
+				mAsyncHandler.removeCallbacks(task);
+			}
+		}
+	}
+
+//================================================================================
 	/**
 	 * method when touch record button
 	 */
