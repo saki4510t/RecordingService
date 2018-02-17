@@ -86,7 +86,7 @@ public class MainFragment extends ListFragment {
 		}
 	}
 	
-	public static class Item implements Parcelable {
+	private static class Item implements Parcelable {
 		private int mId;
 		private String mName;
 
@@ -124,7 +124,7 @@ public class MainFragment extends ListFragment {
 		}
 	}
 
-	public static class ItemListAdapter extends ArrayAdapter<Item> {
+	private static class ItemListAdapter extends ArrayAdapter<Item> {
 		private final LayoutInflater mInflater;
 		
 		public ItemListAdapter(@NonNull final Context context,
