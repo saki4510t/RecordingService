@@ -122,8 +122,7 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 				try {
 					final File dir = new File(
 						Environment.getExternalStoragePublicDirectory(
-							Environment.DIRECTORY_MOVIES),
-						"RecordingService");
+							Environment.DIRECTORY_MOVIES), APP_DIR_NAME);
 					dir.mkdirs();
 					mPostMuxRecorder.start(dir.toString(), FileUtils.getDateTimeString());
 				} catch (final Exception e) {

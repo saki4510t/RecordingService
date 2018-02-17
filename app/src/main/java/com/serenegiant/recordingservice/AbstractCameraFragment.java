@@ -47,6 +47,7 @@ public abstract class AbstractCameraFragment extends Fragment {
 	 * video resolution
 	 */
 	protected static final int VIDEO_WIDTH = 1280, VIDEO_HEIGHT = 720;
+	protected static final String APP_DIR_NAME = "RecordingService";
 	
 	private final Object mHandlerSync = new Object();
 	private Handler mAsyncHandler;
