@@ -1,3 +1,5 @@
 <resources>
 	<string name="app_name">RecordingService</string>
+
+	<string name="empty">No item</string>
 </resources>
