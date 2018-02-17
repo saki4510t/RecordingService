@@ -67,12 +67,13 @@ public class SplitRecFragment extends AbstractCameraFragment {
 	}
 	
 	@Override
-	protected void internalStartRecording() {
+	protected void internalStartRecording() throws IOException {
 		if (DEBUG) Log.v(TAG, "internalStartRecording:");
-		try {
-			startEncoder(getRecordingRoot(getActivity()), 0, 0, false);
-		} catch (final IOException e) {
-			Log.w(TAG, e);
+		final DocumentFile recRoot = getRecordingRoot(getActivity());
+		if (recRoot != null) {
+			startEncoder(recRoot, 0, 0, false);
+		} else {
+			throw new IOException("could not access storage");
 		}
 	}
 	

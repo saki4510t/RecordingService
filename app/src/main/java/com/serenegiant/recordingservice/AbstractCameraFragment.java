@@ -36,6 +36,8 @@ import android.widget.TextView;
 import com.serenegiant.utils.HandlerThreadHandler;
 import com.serenegiant.utils.Stacktrace;
 
+import java.io.IOException;
+
 /**
  * 内蔵カメラへアクセスして表示するための基本クラス
  * 録画の開始/停止の実際の処理以外を実装
@@ -262,7 +264,7 @@ public abstract class AbstractCameraFragment extends Fragment {
 		}
 	}
 
-	protected abstract void internalStartRecording();
+	protected abstract void internalStartRecording() throws IOException;
 	
 	/**
 	 * request stop recording
