@@ -54,15 +54,12 @@ public class MediaSplitMuxer implements IMuxer {
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
 	/**
-	 * MediaCodecの動画エンコーダーの設定
+	 * MediaCodecのエンコーダーの設定
 	 * 最終のmp4ファイル出力時に必要なため保持しておく
 	 */
-	private MediaFormat mConfigFormatVideo;
-	/**
-	 * MediaCodecの音声エンコーダーの設定
-	 * 最終のmp4ファイル出力時に必要なため保持しておく
-	 */
-	private MediaFormat mConfigFormatAudio;
+	private MediaFormat[] mMediaFormats = new MediaFormat[2];
+	private int mVideoTrackIx = -1;
+	private int mAudioTrackIx = -1;
 	/**
 	 * mp4ファイルの出力ディレクトリ(絶対パス文字列)
 	 */
@@ -207,8 +204,8 @@ public class MediaSplitMuxer implements IMuxer {
 	public synchronized void start() throws IllegalStateException {
 		if (DEBUG) Log.v(TAG, "start:");
 		if (!mReleased && !mIsRunning) {
-			if ((mConfigFormatVideo != null)
-				|| (mConfigFormatAudio != null)) {
+			if ((mMediaFormats[0] != null)
+				|| (mMediaFormats[1] != null)) {
 
 				mIsRunning = true;
 				mRequestStop = false;
@@ -232,7 +229,8 @@ public class MediaSplitMuxer implements IMuxer {
 		synchronized (mSync) {
 			mRequestStop = true;
 			mMuxTask = null;
-			mLastTrackIndex = -1;
+			mLastTrackIndex = mVideoTrackIx = mAudioTrackIx = -1;
+			mMediaFormats[0] = mMediaFormats[1] = null;
 		}
 		if (DEBUG) Log.v(TAG, "stop:finished");
 	}
@@ -257,19 +255,13 @@ public class MediaSplitMuxer implements IMuxer {
 			if (format.containsKey(MediaFormat.KEY_MIME)) {
 				final String mime = format.getString(MediaFormat.KEY_MIME);
 				if (mime.startsWith("video/")) {
-					if (mConfigFormatVideo == null) {
-						result = mMuxer.addTrack(format);
-						mConfigFormatVideo = format;
-					} else {
-						throw new IllegalArgumentException("video format is already set!");
-					}
+					result = mVideoTrackIx = mMuxer.addTrack(format);
+					mMediaFormats[result] = format;
 				} else if (mime.startsWith("audio/")) {
-					if (mConfigFormatAudio == null) {
-						result = mMuxer.addTrack(format);
-						mConfigFormatAudio = format;
-					} else {
-						throw new IllegalArgumentException("audio format is already set!");
-					}
+					result = mAudioTrackIx = mMuxer.addTrack(format);
+					mMediaFormats[result] = format;
+				} else {
+					throw new IllegalArgumentException("un-expected mime type");
 				}
 			} else {
 				throw new IllegalArgumentException("has no mime type");
@@ -426,13 +418,15 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	protected IMuxer setupMuxer(final int segment) throws IOException {
 		final IMuxer result = createMuxer(segment);
-		if (mConfigFormatVideo != null) {
-			final int trackIx = result.addTrack(mConfigFormatVideo);
-			if (DEBUG) Log.v(TAG, "add video track," + trackIx);
+		if (mMediaFormats[0] != null) {
+			final int trackIx = result.addTrack(mMediaFormats[0]);
+			if (DEBUG) Log.v(TAG, "add track," + trackIx
+				+ ",video=" + mVideoTrackIx + ",audio=" + mAudioTrackIx);
 		}
-		if (mConfigFormatAudio != null) {
-			final int trackIx = result.addTrack(mConfigFormatAudio);
-			if (DEBUG) Log.v(TAG, "add audio track," + trackIx);
+		if (mMediaFormats[1] != null) {
+			final int trackIx = result.addTrack(mMediaFormats[1]);
+			if (DEBUG) Log.v(TAG, "add track," + trackIx
+				+ ",video=" + mVideoTrackIx + ",audio=" + mAudioTrackIx);
 		}
 		result.start();
 		return result;
