@@ -340,6 +340,7 @@ public class MediaSplitMuxer implements IMuxer {
 									((RecycleMediaData) buf).get(info);
 									muxer.writeSampleData(((RecycleMediaData) buf).trackIx,
 										((RecycleMediaData) buf).mBuffer, info);
+									mQueue.recycle(buf);
 								} else if (mRequestStop) {
 									mIsRunning = false;
 									break;
