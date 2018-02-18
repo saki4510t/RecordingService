@@ -95,14 +95,14 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param context
 	 * @param outputDir 最終出力ディレクトリ
 	 * @param name 出力ファイル名(拡張子なし)
-	 * @param limitSize 出力ファイルサイズ
+	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final String outputDir, @NonNull final String name,
-		final long limitSize) {
+		final long splitSize) {
 		
 		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
-			outputDir, name, limitSize);
+			outputDir, name, splitSize);
 	}
 	
 	/**
@@ -111,7 +111,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param queue バッファリング用IMediaQueue
 	 * @param outputDir 最終出力ディレクトリ
 	 * @param name 出力ファイル名(拡張子なし)
-	 * @param splitSize 出力ファイルサイズ, 0以下ならデフォルト値
+	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final IMediaQueue queue,
@@ -132,7 +132,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param context
 	 * @param outputDir 最終出力ディレクトリ
 	 * @param name 出つ力ファイル名(拡張子なし)
-	 * @param splitSize 出力ファイルサイズ, 0以下ならデフォルト値
+	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
@@ -148,7 +148,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param queue バッファリング用IMediaQueue
 	 * @param outputDir 最終出力ディレクトリ
 	 * @param name 出力ファイル名(拡張子なし)
-	 * @param splitSize 出力ファイルサイズ, 0以下ならデフォルト値
+	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final IMediaQueue queue,
@@ -234,11 +234,20 @@ public class MediaSplitMuxer implements IMuxer {
 		if (DEBUG) Log.v(TAG, "stop:finished");
 	}
 	
+	/**
+	 * 映像/音声トラックを追加
+	 * それぞれ最大で１つずつしか追加できない
+ 	 * @param format
+	 * @return
+	 * @throws IllegalArgumentException
+	 * @throws IllegalStateException
+	 */
 	@Override
 	public int addTrack(@NonNull final MediaFormat format)
 		throws IllegalArgumentException, IllegalStateException {
 
 		if (DEBUG) Log.v(TAG, "addTrack:" + format);
+		// FIXME とりあえず来た順に0,1とトラック番号を返すようにしているけど最初のIMuxerを生成して実際に追加したほうがいいかもしれない
 		int result = mLastTrackIndex + 1;
 		switch (result) {
 		case 0:
@@ -294,6 +303,10 @@ public class MediaSplitMuxer implements IMuxer {
 		}
 	}
 
+	protected Context getContext() {
+		return mWeakContext.get();
+	}
+	
 	private final class MuxTask implements Runnable {
 		@Override
 		public void run() {
@@ -301,11 +314,11 @@ public class MediaSplitMuxer implements IMuxer {
 			final Context context = getContext();
 			if (context != null) {
 				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-				int ix = 0, cnt = 0;
+				int segment = 0, cnt = 0;
 				boolean mRequestChangeFile = false;
 				IMuxer muxer;
 				try {
-					muxer = createMuxer(ix++);
+					muxer = createMuxer(segment++);
 				} catch (final IOException e) {
 					Log.w(TAG, e);
 					return;
@@ -329,7 +342,7 @@ public class MediaSplitMuxer implements IMuxer {
 							// ファイルサイズが超えていてIフレームが来たときにファイルを変更する
 							mRequestChangeFile = false;
 							try {
-								muxer = restartMuxer(muxer, ix++);
+								muxer = restartMuxer(muxer, segment++);
 							} catch (final IOException e) {
 								break;
 							}
@@ -370,12 +383,13 @@ public class MediaSplitMuxer implements IMuxer {
 	
 	/**
 	 * IMuxerの切り替え処理
+	 * 内部で#createMuxerを呼び出す
 	 * @param muxer 今まで使っていたIMuxer
-	 * @param ix 次のセグメント番号
+	 * @param segment 次のセグメント番号
 	 * @return 次のファイル出力用のIMuxer
 	 * @throws IOException
 	 */
-	protected IMuxer restartMuxer(@NonNull final IMuxer muxer, final int ix)
+	protected IMuxer restartMuxer(@NonNull final IMuxer muxer, final int segment)
 		throws IOException {
 
 		if (DEBUG) Log.v(TAG, "restartMuxer:");
@@ -386,22 +400,22 @@ public class MediaSplitMuxer implements IMuxer {
 			throw new IOException(e);
 		}
 		// 次のIMuxerに切り替える
-		return createMuxer(ix);
+		return createMuxer(segment);
 	}
 	
 	/**
 	 * IMuxerを生成する
-	 * @param ix 次のセグメント番号
+	 * @param segment 次のセグメント番号
 	 * @return
 	 * @throws IOException
 	 */
-	protected IMuxer createMuxer(final int ix) throws IOException {
+	protected IMuxer createMuxer(final int segment) throws IOException {
 		if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
 		IMuxer result;
 		if (mOutputDoc != null) {
-			mCurrent = createOutputDoc(mOutputDoc, mOutputName, ix);
+			mCurrent = createOutputDoc(mOutputDoc, mOutputName, segment);
 		} else if (mOutputDir != null) {
-			mCurrent = createOutputDoc(mOutputDir, mOutputName, ix);
+			mCurrent = createOutputDoc(mOutputDir, mOutputName, segment);
 		} else {
 			throw new IOException("output dir not set");
 		}
@@ -418,10 +432,13 @@ public class MediaSplitMuxer implements IMuxer {
 		return result;
 	}
 
-	protected Context getContext() {
-		return mWeakContext.get();
-	}
-
+	/**
+	 * 出力ファイルを示すDocumentFileを生成
+	 * @param path
+	 * @param name
+	 * @param segment
+	 * @return
+	 */
 	protected static DocumentFile createOutputDoc(
 		@NonNull final String path,
 		@NonNull final String name, final int segment) {
@@ -433,7 +450,14 @@ public class MediaSplitMuxer implements IMuxer {
 			new File(dir,
 			String.format(Locale.US, "%s ps%d.mp4", name, segment + 1)));
 	}
-
+	
+	/**
+	 * 出力ファイルを示すDocumentFileを生成
+	 * @param path
+	 * @param name
+	 * @param segment
+	 * @return
+	 */
 	protected static DocumentFile createOutputDoc(
 		@NonNull final DocumentFile path,
 		@NonNull final String name, final int segment) {
@@ -444,6 +468,13 @@ public class MediaSplitMuxer implements IMuxer {
 			String.format(Locale.US, "%s ps%d.mp4", name, segment + 1));
 	}
 	
+	/**
+	 * IMUxer生成処理
+	 * @param context
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 */
 	@SuppressLint("NewApi")
 	protected static IMuxer createMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile file) throws IOException {

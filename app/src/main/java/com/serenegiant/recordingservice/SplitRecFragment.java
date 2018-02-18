@@ -30,7 +30,7 @@ import com.serenegiant.media.EncoderListener;
 import com.serenegiant.media.IRecorder;
 import com.serenegiant.media.IVideoEncoder;
 import com.serenegiant.media.Recorder;
-import com.serenegiant.media.SplitMediaAVRecorder;
+import com.serenegiant.media.MediaAVSplitRecorder;
 import com.serenegiant.media.SurfaceEncoder;
 import com.serenegiant.media.VideoConfig;
 import com.serenegiant.utils.FileUtils;
@@ -152,8 +152,8 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		final boolean align16) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createRecorder:basePath=" + basePath.getUri());
-		final SplitMediaAVRecorder recorder;
-		recorder = new SplitMediaAVRecorder(getActivity(),
+		final MediaAVSplitRecorder recorder;
+		recorder = new MediaAVSplitRecorder(getActivity(),
 			mRecorderCallback, basePath, FileUtils.getDateTimeString(), MAX_FILE_SIZE);
 		// create encoder for video recording
 		if (DEBUG) Log.v(TAG, "create SurfaceEncoder");
@@ -241,8 +241,8 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		@Override
 		public void onStopped(final IRecorder recorder) {
 			if (DEBUG) Log.v(TAG, "mRecorderCallback#onStopped:" + recorder);
-			if ((recorder instanceof SplitMediaAVRecorder)
-				&& ((SplitMediaAVRecorder)recorder).check()) {
+			if ((recorder instanceof MediaAVSplitRecorder)
+				&& ((MediaAVSplitRecorder)recorder).check()) {
 				
 				Log.v(TAG, "File size exceed limit or Free space is too low");
 			}
