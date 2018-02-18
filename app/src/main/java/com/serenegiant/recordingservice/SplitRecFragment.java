@@ -83,7 +83,9 @@ public class SplitRecFragment extends AbstractCameraFragment {
 	
 	@Override
 	protected void onFrameAvailable() {
-		
+		if (mRecorder != null) {
+			mRecorder.frameAvailableSoon();
+		}
 	}
 	
 	private Surface mEncoderSurface;
@@ -150,7 +152,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		if (DEBUG) Log.v(TAG, "createRecorder:basePath=" + basePath.getUri());
 		final SplitMediaAVRecorder recorder;
 		recorder = new SplitMediaAVRecorder(getActivity(),
-		mRecorderCallback, basePath, FileUtils.getDateTimeString(), MAX_FILE_SIZE);
+			mRecorderCallback, basePath, FileUtils.getDateTimeString(), MAX_FILE_SIZE);
 		// create encoder for video recording
 		if (DEBUG) Log.v(TAG, "create SurfaceEncoder");
 		mVideoEncoder = new SurfaceEncoder(recorder, mEncoderListener); // API>=18
@@ -169,7 +171,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 				return;
 			}
 			if (mCameraView != null) {
-				mCameraView.addSurface(id, surface, false);
+				mCameraView.addSurface(id, surface, true);
 			}
 		}
 		if (DEBUG) Log.v(TAG, "addSurface:finished");

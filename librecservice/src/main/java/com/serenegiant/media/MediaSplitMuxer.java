@@ -227,7 +227,7 @@ public class MediaSplitMuxer implements IMuxer {
 		synchronized (mSync) {
 			mRequestStop = true;
 			mMuxTask = null;
-			mLastTrackIndex = 0;
+			mLastTrackIndex = -1;
 		}
 		if (DEBUG) Log.v(TAG, "stop:finished");
 	}
@@ -237,8 +237,8 @@ public class MediaSplitMuxer implements IMuxer {
 		throws IllegalArgumentException, IllegalStateException {
 
 		if (DEBUG) Log.v(TAG, "addTrack:" + format);
-		int result = mLastTrackIndex;
-		switch (mLastTrackIndex) {
+		int result = mLastTrackIndex + 1;
+		switch (result) {
 		case 0:
 		case 1:
 			if (format.containsKey(MediaFormat.KEY_MIME)) {
@@ -268,18 +268,27 @@ public class MediaSplitMuxer implements IMuxer {
 		return result;
 	}
 	
+	private int cnt;
 	@Override
 	public void writeSampleData(final int trackIx,
 		@NonNull final ByteBuffer buffer,
 		@NonNull final MediaCodec.BufferInfo info) {
 	
-		if (DEBUG) Log.v(TAG, "writeSampleData:");
 		if (mIsRunning && !mRequestStop) {
 			final IRecycleBuffer buf = mQueue.obtain();
 			if (buf instanceof RecycleMediaData) {
 				((RecycleMediaData) buf).trackIx = trackIx;
 				((RecycleMediaData) buf).set(buffer, info);
+				mQueue.queueFrame(buf);
+				if (DEBUG && (((++cnt) % 100) == 0)) {
+					Log.v(TAG, String.format("writeSampleData:size=%d,offset=%d",
+						info.size, info.offset));
+				}
+			} else if (DEBUG && (buf != null)) {
+				Log.w(TAG, "unexpected buffer class");
 			}
+		} else {
+			if (DEBUG) Log.w(TAG, "not ready!");
 		}
 	}
 
@@ -307,10 +316,12 @@ public class MediaSplitMuxer implements IMuxer {
 							}
 							muxer = createMuxer(context, mCurrent);
 							if (mConfigFormatVideo != null) {
-								muxer.addTrack(mConfigFormatVideo);
+								final int trackIx = muxer.addTrack(mConfigFormatVideo);
+								if (DEBUG) Log.v(TAG, "add video track," + trackIx);
 							}
 							if (mConfigFormatAudio != null) {
-								muxer.addTrack(mConfigFormatAudio);
+								final int trackIx = muxer.addTrack(mConfigFormatAudio);
+								if (DEBUG) Log.v(TAG, "add audio track," + trackIx);
 							}
 							muxer.start();
 							ix++;
@@ -342,13 +353,18 @@ public class MediaSplitMuxer implements IMuxer {
 								mIsRunning = false;
 								break;
 							}
+						} // end of for
+						try {
+							muxer.stop();
+							muxer.release();
+							muxer = null;
+						} catch (final Exception e) {
+							Log.w(TAG, e);
+							break;
 						}
-						muxer.stop();
-						muxer.release();
-						muxer = null;
 						if (DEBUG) Log.v(TAG, "MuxTask#run:muxing finished");
 					}
-				}
+				} // end of for
 			}
 			mIsRunning = false;
 			if (DEBUG) Log.v(TAG, "MuxTask#run:finished");
