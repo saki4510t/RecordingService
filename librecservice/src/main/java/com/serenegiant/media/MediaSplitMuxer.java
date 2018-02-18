@@ -275,7 +275,13 @@ public class MediaSplitMuxer implements IMuxer {
 		return result;
 	}
 	
-	private int cnt;
+	/**
+	 * こっちはキューに追加するだけ
+	 * 実際のファイルへ出力は#internalWriteSampleData
+	 * @param trackIx
+	 * @param buffer
+	 * @param info
+	 */
 	@Override
 	public void writeSampleData(final int trackIx,
 		@NonNull final ByteBuffer buffer,
@@ -287,10 +293,6 @@ public class MediaSplitMuxer implements IMuxer {
 				((RecycleMediaData) buf).trackIx = trackIx;
 				((RecycleMediaData) buf).set(buffer, info);
 				mQueue.queueFrame(buf);
-				if (DEBUG && (((++cnt) % 100) == 0)) {
-					Log.v(TAG, String.format("writeSampleData:size=%d,offset=%d",
-						info.size, info.offset));
-				}
 			} else if (DEBUG && (buf != null)) {
 				Log.w(TAG, "unexpected buffer class");
 			}
@@ -299,6 +301,21 @@ public class MediaSplitMuxer implements IMuxer {
 		}
 	}
 
+	/**
+	 * 実際のファイル出力用にIMuxerへ書き込む
+	 * @param muxer
+	 * @param trackIx
+	 * @param buffer
+	 * @param info
+	 */
+	protected void internalWriteSampleData(@NonNull final IMuxer muxer,
+		final int trackIx,
+		@NonNull final ByteBuffer buffer,
+		@NonNull final MediaCodec.BufferInfo info) throws IOException {
+
+		muxer.writeSampleData(trackIx, buffer, info);
+	}
+	
 	protected Context getContext() {
 		return mWeakContext.get();
 	}
@@ -342,7 +359,7 @@ public class MediaSplitMuxer implements IMuxer {
 							if (mRequestChangeFile
 								&& (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) {
 	
-								// ファイルサイズが超えていてIフレームが来たときにファイルを変更する
+								// ファイルサイズが超えていてIフレームが来たときに出力ファイルを変更する
 								mRequestChangeFile = false;
 								try {
 									muxer = restartMuxer(muxer, segment++);
@@ -350,7 +367,9 @@ public class MediaSplitMuxer implements IMuxer {
 									break;
 								}
 							}
-							muxer.writeSampleData(((RecycleMediaData) buf).trackIx,
+							// 出力ファイルへの書き込み処理
+							internalWriteSampleData(muxer,
+								((RecycleMediaData) buf).trackIx,
 								((RecycleMediaData) buf).mBuffer, info);
 							// 再利用のためにバッファを返す
 							mQueue.recycle(buf);
@@ -418,17 +437,26 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	protected IMuxer setupMuxer(final int segment) throws IOException {
 		final IMuxer result = createMuxer(segment);
-		if (mMediaFormats[0] != null) {
-			final int trackIx = result.addTrack(mMediaFormats[0]);
-			if (DEBUG) Log.v(TAG, "add track," + trackIx
-				+ ",video=" + mVideoTrackIx + ",audio=" + mAudioTrackIx);
+		int n = 0;
+		synchronized (mSync) {
+			if (mMediaFormats[0] != null) {
+				final int trackIx = result.addTrack(mMediaFormats[0]);
+				if (DEBUG) Log.v(TAG, "add track," + trackIx
+					+ ",video=" + mVideoTrackIx + ",audio=" + mAudioTrackIx);
+				n++;
+			}
+			if (mMediaFormats[1] != null) {
+				final int trackIx = result.addTrack(mMediaFormats[1]);
+				if (DEBUG) Log.v(TAG, "add track," + trackIx
+					+ ",video=" + mVideoTrackIx + ",audio=" + mAudioTrackIx);
+				n++;
+			}
 		}
-		if (mMediaFormats[1] != null) {
-			final int trackIx = result.addTrack(mMediaFormats[1]);
-			if (DEBUG) Log.v(TAG, "add track," + trackIx
-				+ ",video=" + mVideoTrackIx + ",audio=" + mAudioTrackIx);
+		if (n > 0) {
+			result.start();
+		} else {
+			throw new IOException("already released?");
 		}
-		result.start();
 		return result;
 	}
 	
