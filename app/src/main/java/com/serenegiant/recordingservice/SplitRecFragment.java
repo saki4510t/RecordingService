@@ -44,7 +44,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true; // FIXME set false on production
 	private static final String TAG = SplitRecFragment.class.getSimpleName();
 
-	private static final long MAX_FILE_SIZE = 4000000000L;
+	private static final long MAX_FILE_SIZE = 1024 * 1024 * 10; // 10MB // 4000000000L;
 
 	private final Object mSync = new Object();
 
