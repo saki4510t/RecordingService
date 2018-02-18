@@ -45,8 +45,6 @@ public class MediaSplitMuxer implements IMuxer {
 	private static final boolean DEBUG = true; // FIXME set false on production
 	private static final String TAG = MediaSplitMuxer.class.getSimpleName();
 
-	public static boolean sUseMediaMuxer = true;
-	
 	private static final int INI_POOL_NUM = 4;
 	private static final int MAX_POOL_NUM = 1000;
 	private static final long DEFAULT_SPLIT_SIZE = 4000000000L;
@@ -316,6 +314,7 @@ public class MediaSplitMuxer implements IMuxer {
 		muxer.writeSampleData(trackIx, buffer, info);
 	}
 	
+	@Nullable
 	protected Context getContext() {
 		return mWeakContext.get();
 	}
@@ -530,7 +529,7 @@ public class MediaSplitMuxer implements IMuxer {
 
 		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
 		IMuxer result = null;
-		if (sUseMediaMuxer) {
+		if (VideoConfig.sUseMediaMuxer) {
 			if (BuildCheck.isOreo()) {
 				result = new MediaMuxerWrapper(context.getContentResolver()
 					.openFileDescriptor(file.getUri(), "rw").getFileDescriptor(),

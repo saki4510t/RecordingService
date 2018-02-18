@@ -192,7 +192,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	@Override
 	public void build() throws IOException {
 		if (DEBUG) Log.v(TAG, "build:");
-		final Context context = mWeakContext.get();
+		final Context context = getContext();
 		final String tempDir = getTempDir();
 		if (DEBUG) Log.v(TAG, "build:tempDir=" + tempDir);
 		if (!TextUtils.isEmpty(mOutputDir)) {
@@ -257,7 +257,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 			throw new IllegalStateException("already started");
 		}
 
-		final Context context = mWeakContext.get();
+		final Context context = getContext();
 		final String tempDir = getTempDir();
 		if (DEBUG) Log.v(TAG, "addTrack:tempDir=" + tempDir);
 		final String mime = format.containsKey(MediaFormat.KEY_MIME)
@@ -350,6 +350,11 @@ public class MediaRawFileMuxer implements IPostMuxer {
 		}
 	}
 	
+	@Nullable
+	protected Context getContext() {
+		return mWeakContext.get();
+	}
+
 	/**
 	 * 破棄されたかどうかをチェックして破棄されていればIllegalStateExceptionを投げる
 	 * @throws IllegalStateException
@@ -368,7 +373,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 */
 	private String getTempDir() {
 		if (DEBUG) Log.v(TAG, "getTempDir:");
-		final Context context = mWeakContext.get();
+		final Context context = getContext();
 		try {
 			return context.getDir(mOutputName, Context.MODE_PRIVATE).getAbsolutePath();
 		} catch (final Exception e) {

@@ -136,7 +136,7 @@ public class MediaAVSplitRecorder extends Recorder {
 	
 	@Override
 	public boolean check() {
-		final Context context = mWeakContext.get();
+		final Context context = getContext();
 		final StorageInfo info = SDUtils.getStorageInfo(context, mOutputDir);
 		if ((info != null) && (info.totalBytes != 0)) {
 			return ((info.freeBytes/ (float)info.totalBytes) < FileUtils.FREE_RATIO)
@@ -160,6 +160,11 @@ public class MediaAVSplitRecorder extends Recorder {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Nullable
+	protected Context getContext() {
+		return mWeakContext.get();
+	}
+
 	protected void setupMuxer(
 		@NonNull final Context context,
 		@Nullable final IMediaQueue queue,
