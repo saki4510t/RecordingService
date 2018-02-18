@@ -264,6 +264,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 				// ignore, will be already released
 				Log.w(TAG, e);
 			}
+			clearRecordingState();
 			if (DEBUG) Log.v(TAG, "mRecorderCallback#onStopped:finished");
 		}
 		

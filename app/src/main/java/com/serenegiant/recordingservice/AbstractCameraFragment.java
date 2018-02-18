@@ -287,7 +287,11 @@ public abstract class AbstractCameraFragment extends Fragment {
 	}
 
 	protected abstract void internalStopRecording();
-	
+
+	protected void clearRecordingState() {
+		mRecordButton.setColorFilter(0);
+	}
+		
 	private final CameraGLView.OnFrameAvailableListener
 		mOnFrameAvailableListener = new CameraGLView.OnFrameAvailableListener() {
 		@Override
