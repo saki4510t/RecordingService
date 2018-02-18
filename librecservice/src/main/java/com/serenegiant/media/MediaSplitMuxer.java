@@ -48,6 +48,7 @@ public class MediaSplitMuxer implements IMuxer {
 	private static final int INI_POOL_NUM = 4;
 	private static final int MAX_POOL_NUM = 1000;
 	private static final long DEFAULT_SPLIT_SIZE = 4000000000L;
+	private static final String EXT_MP4 = "mp4";
 	
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
@@ -319,6 +320,35 @@ public class MediaSplitMuxer implements IMuxer {
 		return mWeakContext.get();
 	}
 	
+	/**
+	 * 出力ファイル名(拡張子なし)を取得
+ 	 * @return
+	 */
+	@NonNull
+	protected String getOutputName() {
+		return mOutputName;
+	}
+	
+	/**
+	 * 出力ディレクトリを取得,
+	 * #getOutputDirPathと#getOutputDirDocはどちらかが必ずnull
+ 	 * @return
+	 */
+	@Nullable
+	protected String getOutputDirPath() {
+		return mOutputDir;
+	}
+	
+	/**
+	 * 出力ディレクトリを取得,
+	 * #getOutputDirPathと#getOutputDirDocはどちらかが必ずnull
+	 * @return
+	 */
+	@Nullable
+	protected DocumentFile getOutputDirDoc() {
+		return mOutputDoc;
+	}
+	
 	private final class MuxTask implements Runnable {
 
 		@Override
@@ -468,13 +498,7 @@ public class MediaSplitMuxer implements IMuxer {
 	protected IMuxer createMuxer(final int segment) throws IOException {
 		if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
 		IMuxer result;
-		if (mOutputDoc != null) {
-			mCurrent = createOutputDoc(mOutputDoc, mOutputName, segment);
-		} else if (mOutputDir != null) {
-			mCurrent = createOutputDoc(mOutputDir, mOutputName, segment);
-		} else {
-			throw new IOException("output dir not set");
-		}
+		mCurrent = createOutputDoc(EXT_MP4, segment);
 		result = MediaSplitMuxer.createMuxer(getContext(), mCurrent);
 		return result;
 	}
@@ -482,42 +506,46 @@ public class MediaSplitMuxer implements IMuxer {
 //--------------------------------------------------------------------------------
 	/**
 	 * 出力ファイルを示すDocumentFileを生成
-	 * @param path
-	 * @param name
+	 * @param ext 拡張子, ドット無し
 	 * @param segment
 	 * @return
+	 * @throws IOException
 	 */
-	protected static DocumentFile createOutputDoc(
-		@NonNull final String path,
-		@NonNull final String name, final int segment) {
+	protected DocumentFile createOutputDoc(
+		@NonNull final String ext, final int segment) throws IOException {
 		
-		if (DEBUG) Log.v(TAG, "createOutputDoc:path=" + path);
-		final File _dir = new File(path);
-		final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
-		return DocumentFile.fromFile(
-			new File(dir,
-			String.format(Locale.US, "%s ps%d.mp4", name, segment + 1)));
+		return createOutputDoc(mOutputName, ext, segment);
 	}
-	
+
 	/**
 	 * 出力ファイルを示すDocumentFileを生成
-	 * @param path
 	 * @param name
+	 * @param ext 拡張子, ドット無し
 	 * @param segment
 	 * @return
 	 */
-	protected static DocumentFile createOutputDoc(
-		@NonNull final DocumentFile path,
-		@NonNull final String name, final int segment) {
-		
-		if (DEBUG) Log.v(TAG, "createOutputDoc:path=" + path.getUri());
-		final DocumentFile dir = path.isDirectory() ? path : path.getParentFile();
-		return dir.createFile(null,
-			String.format(Locale.US, "%s ps%d.mp4", name, segment + 1));
+	protected DocumentFile createOutputDoc(
+		@NonNull final String name,
+		@NonNull final String ext, final int segment) throws IOException {
+		if (mOutputDoc != null) {
+			final DocumentFile dir = mOutputDoc.isDirectory()
+				? mOutputDoc : mOutputDoc.getParentFile();
+			return dir.createFile(null,
+				String.format(Locale.US, "%s ps%d.%s", mOutputName, segment + 1, ext));
+		} else if (mOutputDir != null) {
+			final File _dir = new File(mOutputDir);
+			final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
+			return DocumentFile.fromFile(
+				new File(dir,
+				String.format(Locale.US, "%s ps%d.%s", mOutputName, segment + 1, ext)));
+		} else {
+			throw new IOException("output dir not set");
+		}
 	}
-	
+
+//--------------------------------------------------------------------------------
 	/**
-	 * IMUxer生成処理
+	 * IMuxer生成処理
 	 * @param context
 	 * @param file
 	 * @return
