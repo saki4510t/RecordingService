@@ -36,8 +36,10 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 指定したファイルサイズ以下になるように自動分割してMP4へ出力するためのIMuxer実装
- *
+ * 指定したファイルサイズになるように自動分割してMP4へ出力するためのIMuxer実装
+ * Iフレームが来たときにしか出力ファイルを切り替えることができないため
+ * 確実に指定ファイルサイズ以下になるわけではないので、多少の余裕をもって
+ * 出力ファイルサイズをセットすること
  */
 public class MediaSplitMuxer implements IMuxer {
 	private static final boolean DEBUG = true; // FIXME set false on production
@@ -274,7 +276,7 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final ByteBuffer buffer,
 		@NonNull final MediaCodec.BufferInfo info) {
 	
-		if (mIsRunning && !mRequestStop) {
+		if (!mRequestStop && (trackIx <= mLastTrackIndex)) {
 			final IRecycleBuffer buf = mQueue.obtain();
 			if (buf instanceof RecycleMediaData) {
 				((RecycleMediaData) buf).trackIx = trackIx;
@@ -298,76 +300,67 @@ public class MediaSplitMuxer implements IMuxer {
 			if (DEBUG) Log.v(TAG, "MuxTask#run:");
 			final Context context = getContext();
 			if (context != null) {
-				IMuxer muxer = null;
 				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 				int ix = 0, cnt = 0;
+				boolean mRequestChangeFile = false;
+				IMuxer muxer;
+				try {
+					muxer = createMuxer(ix++);
+				} catch (final IOException e) {
+					Log.w(TAG, e);
+					return;
+				}
+				if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
 				for ( ; mIsRunning ; ) {
-					if (muxer == null) {
-						if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
-						// muxerが無ければ生成する
-						try {
-							if (mOutputDoc != null) {
-								mCurrent = createOutputDoc(mOutputDoc, mOutputName, ix);
-							} else if (mOutputDir != null) {
-								mCurrent = createOutputDoc(mOutputDir, mOutputName, ix);
-							} else {
-								Log.w(TAG, "output dir not set");
-								break;
-							}
-							muxer = createMuxer(context, mCurrent);
-							if (mConfigFormatVideo != null) {
-								final int trackIx = muxer.addTrack(mConfigFormatVideo);
-								if (DEBUG) Log.v(TAG, "add video track," + trackIx);
-							}
-							if (mConfigFormatAudio != null) {
-								final int trackIx = muxer.addTrack(mConfigFormatAudio);
-								if (DEBUG) Log.v(TAG, "add audio track," + trackIx);
-							}
-							muxer.start();
-							ix++;
-							cnt = 0;
-						} catch (final IOException e) {
-							Log.w(TAG, e);
-							break;
-						}
+					// バッファキューからエンコード済みデータを取得する
+					final IRecycleBuffer buf;
+					try {
+						buf = mQueue.poll(10, TimeUnit.MILLISECONDS);
+					} catch (final InterruptedException e) {
+						if (DEBUG) Log.v(TAG, "interrupted");
+						mIsRunning = false;
+						break;
 					}
-					if (muxer != null) {
-						if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
-						for ( ; mIsRunning ; ) {
+					if (buf instanceof RecycleMediaData) {
+						((RecycleMediaData) buf).get(info);
+						if (mRequestChangeFile
+							&& (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) {
+
+							// ファイルサイズが超えていてIフレームが来たときにファイルを変更する
+							mRequestChangeFile = false;
 							try {
-								final IRecycleBuffer buf = mQueue.poll(10, TimeUnit.MILLISECONDS);
-								if (buf instanceof RecycleMediaData) {
-									((RecycleMediaData) buf).get(info);
-									muxer.writeSampleData(((RecycleMediaData) buf).trackIx,
-										((RecycleMediaData) buf).mBuffer, info);
-									mQueue.recycle(buf);
-								} else if (mRequestStop) {
-									mIsRunning = false;
-									break;
-								}
-								if ((((++cnt) % 1000) == 0)
-									&& (mCurrent.length() >= mSplitSize)) {
-									// ファイルサイズが指定値を超えた
-									if (DEBUG) Log.v(TAG, "exceeds file size limit");
-									break;
-								}
-							} catch (final InterruptedException e) {
-								if (DEBUG) Log.v(TAG, "interrupted");
-								mIsRunning = false;
+								muxer = restartMuxer(muxer, ix++);
+							} catch (final IOException e) {
 								break;
 							}
-						} // end of for
-						try {
-							muxer.stop();
-							muxer.release();
-							muxer = null;
-						} catch (final Exception e) {
-							Log.w(TAG, e);
-							break;
 						}
-						if (DEBUG) Log.v(TAG, "MuxTask#run:muxing finished");
+						muxer.writeSampleData(((RecycleMediaData) buf).trackIx,
+							((RecycleMediaData) buf).mBuffer, info);
+						// 再利用のためにバッファを返す
+						mQueue.recycle(buf);
+					} else if (mRequestStop) {
+						mIsRunning = false;
+						break;
+					}
+					if (!mRequestChangeFile
+						&& (((++cnt) % 1000) == 0)
+						&& (mCurrent.length() >= mSplitSize)) {
+						// ファイルサイズが指定値を超えた
+						// ファイルサイズのチェック時はフラグを立てるだけにして
+						// 次のIフレームが来たときに切り替えないと次のファイルの先頭が
+						// 正しく再生できなくなる
+						if (DEBUG) Log.v(TAG, "exceeds file size limit");
+						mRequestChangeFile = true;
 					}
 				} // end of for
+				if (muxer != null) {
+					try {
+						muxer.stop();
+						muxer.release();
+					} catch (final Exception e) {
+						Log.w(TAG, e);
+					}
+				}
 			}
 			mIsRunning = false;
 			if (DEBUG) Log.v(TAG, "MuxTask#run:finished");
@@ -375,11 +368,61 @@ public class MediaSplitMuxer implements IMuxer {
 		
 	}
 	
+	/**
+	 * IMuxerの切り替え処理
+	 * @param muxer 今まで使っていたIMuxer
+	 * @param ix 次のセグメント番号
+	 * @return 次のファイル出力用のIMuxer
+	 * @throws IOException
+	 */
+	protected IMuxer restartMuxer(@NonNull final IMuxer muxer, final int ix)
+		throws IOException {
+
+		if (DEBUG) Log.v(TAG, "restartMuxer:");
+		try {
+			muxer.stop();
+			muxer.release();
+		} catch (final Exception e) {
+			throw new IOException(e);
+		}
+		// 次のIMuxerに切り替える
+		return createMuxer(ix);
+	}
+	
+	/**
+	 * IMuxerを生成する
+	 * @param ix 次のセグメント番号
+	 * @return
+	 * @throws IOException
+	 */
+	protected IMuxer createMuxer(final int ix) throws IOException {
+		if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
+		IMuxer result;
+		if (mOutputDoc != null) {
+			mCurrent = createOutputDoc(mOutputDoc, mOutputName, ix);
+		} else if (mOutputDir != null) {
+			mCurrent = createOutputDoc(mOutputDir, mOutputName, ix);
+		} else {
+			throw new IOException("output dir not set");
+		}
+		result = MediaSplitMuxer.createMuxer(getContext(), mCurrent);
+		if (mConfigFormatVideo != null) {
+			final int trackIx = result.addTrack(mConfigFormatVideo);
+			if (DEBUG) Log.v(TAG, "add video track," + trackIx);
+		}
+		if (mConfigFormatAudio != null) {
+			final int trackIx = result.addTrack(mConfigFormatAudio);
+			if (DEBUG) Log.v(TAG, "add audio track," + trackIx);
+		}
+		result.start();
+		return result;
+	}
+
 	protected Context getContext() {
 		return mWeakContext.get();
 	}
 
-	private static DocumentFile createOutputDoc(
+	protected static DocumentFile createOutputDoc(
 		@NonNull final String path,
 		@NonNull final String name, final int segment) {
 		
@@ -391,7 +434,7 @@ public class MediaSplitMuxer implements IMuxer {
 			String.format(Locale.US, "%s ps%d.mp4", name, segment + 1)));
 	}
 
-	private static DocumentFile createOutputDoc(
+	protected static DocumentFile createOutputDoc(
 		@NonNull final DocumentFile path,
 		@NonNull final String name, final int segment) {
 		
@@ -402,7 +445,7 @@ public class MediaSplitMuxer implements IMuxer {
 	}
 	
 	@SuppressLint("NewApi")
-	private static IMuxer createMuxer(@NonNull final Context context,
+	protected static IMuxer createMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile file) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
