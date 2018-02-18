@@ -348,9 +348,11 @@ public class MediaSplitMuxer implements IMuxer {
 								if ((((++cnt) % 1000) == 0)
 									&& (mCurrent.length() >= mSplitSize)) {
 									// ファイルサイズが指定値を超えた
+									if (DEBUG) Log.v(TAG, "exceeds file size limit");
 									break;
 								}
 							} catch (final InterruptedException e) {
+								if (DEBUG) Log.v(TAG, "interrupted");
 								mIsRunning = false;
 								break;
 							}
