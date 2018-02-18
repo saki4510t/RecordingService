@@ -87,6 +87,7 @@ public class MediaSplitMuxer implements IMuxer {
 	private volatile boolean mRequestStop;
 	private boolean mReleased;
 	private int mLastTrackIndex = -1;
+	private IMuxer mMuxer;
 	private MuxTask mMuxTask;
 	
 	/**
@@ -99,7 +100,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final String outputDir, @NonNull final String name,
-		final long splitSize) {
+		final long splitSize) throws IOException {
 		
 		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
 			outputDir, name, splitSize);
@@ -116,7 +117,7 @@ public class MediaSplitMuxer implements IMuxer {
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final IMediaQueue queue,
 		@NonNull final String outputDir, @NonNull final String name,
-		final long splitSize) {
+		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
@@ -125,6 +126,7 @@ public class MediaSplitMuxer implements IMuxer {
 		mOutputDoc = null;
 		mOutputName = name;
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
+		mMuxer = createMuxer(0);
 	}
 	
 	/**
@@ -136,7 +138,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
-		final long splitSize) {
+		final long splitSize) throws IOException {
 
 		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
 			outputDir, name, splitSize);
@@ -153,7 +155,7 @@ public class MediaSplitMuxer implements IMuxer {
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final IMediaQueue queue,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
-		final long splitSize) {
+		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
@@ -162,6 +164,7 @@ public class MediaSplitMuxer implements IMuxer {
 		mOutputDoc = outputDir;
 		mOutputName = name;
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
+		mMuxer = createMuxer(0);
 	}
 
 	@Override
@@ -247,7 +250,6 @@ public class MediaSplitMuxer implements IMuxer {
 		throws IllegalArgumentException, IllegalStateException {
 
 		if (DEBUG) Log.v(TAG, "addTrack:" + format);
-		// FIXME とりあえず来た順に0,1とトラック番号を返すようにしているけど最初のIMuxerを生成して実際に追加したほうがいいかもしれない
 		int result = mLastTrackIndex + 1;
 		switch (result) {
 		case 0:
@@ -256,12 +258,14 @@ public class MediaSplitMuxer implements IMuxer {
 				final String mime = format.getString(MediaFormat.KEY_MIME);
 				if (mime.startsWith("video/")) {
 					if (mConfigFormatVideo == null) {
+						result = mMuxer.addTrack(format);
 						mConfigFormatVideo = format;
 					} else {
 						throw new IllegalArgumentException("video format is already set!");
 					}
 				} else if (mime.startsWith("audio/")) {
 					if (mConfigFormatAudio == null) {
+						result = mMuxer.addTrack(format);
 						mConfigFormatAudio = format;
 					} else {
 						throw new IllegalArgumentException("audio format is already set!");
@@ -308,64 +312,74 @@ public class MediaSplitMuxer implements IMuxer {
 	}
 	
 	private final class MuxTask implements Runnable {
+
 		@Override
 		public void run() {
 			if (DEBUG) Log.v(TAG, "MuxTask#run:");
 			final Context context = getContext();
 			if (context != null) {
-				final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-				int segment = 0, cnt = 0;
-				boolean mRequestChangeFile = false;
-				IMuxer muxer;
+				IMuxer muxer = mMuxer;
+				mMuxer = null;
 				try {
-					muxer = createMuxer(segment++);
-				} catch (final IOException e) {
-					Log.w(TAG, e);
-					return;
-				}
-				if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
-				for ( ; mIsRunning ; ) {
-					// バッファキューからエンコード済みデータを取得する
-					final IRecycleBuffer buf;
-					try {
-						buf = mQueue.poll(10, TimeUnit.MILLISECONDS);
-					} catch (final InterruptedException e) {
-						if (DEBUG) Log.v(TAG, "interrupted");
-						mIsRunning = false;
-						break;
-					}
-					if (buf instanceof RecycleMediaData) {
-						((RecycleMediaData) buf).get(info);
-						if (mRequestChangeFile
-							&& (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) {
-
-							// ファイルサイズが超えていてIフレームが来たときにファイルを変更する
-							mRequestChangeFile = false;
-							try {
-								muxer = restartMuxer(muxer, segment++);
-							} catch (final IOException e) {
-								break;
-							}
+					if (muxer == null) {
+						try {
+							muxer = setupMuxer(0);
+						} catch (final IOException e) {
+							Log.w(TAG, e);
+							return;
 						}
-						muxer.writeSampleData(((RecycleMediaData) buf).trackIx,
-							((RecycleMediaData) buf).mBuffer, info);
-						// 再利用のためにバッファを返す
-						mQueue.recycle(buf);
-					} else if (mRequestStop) {
-						mIsRunning = false;
-						break;
+					} else {
+						muxer.start();
 					}
-					if (!mRequestChangeFile
-						&& (((++cnt) % 1000) == 0)
-						&& (mCurrent.length() >= mSplitSize)) {
-						// ファイルサイズが指定値を超えた
-						// ファイルサイズのチェック時はフラグを立てるだけにして
-						// 次のIフレームが来たときに切り替えないと次のファイルの先頭が
-						// 正しく再生できなくなる
-						if (DEBUG) Log.v(TAG, "exceeds file size limit");
-						mRequestChangeFile = true;
-					}
-				} // end of for
+					final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+					boolean mRequestChangeFile = false;
+					int segment = 1, cnt = 0;
+					if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
+					for ( ; mIsRunning ; ) {
+						// バッファキューからエンコード済みデータを取得する
+						final IRecycleBuffer buf;
+						try {
+							buf = mQueue.poll(10, TimeUnit.MILLISECONDS);
+						} catch (final InterruptedException e) {
+							if (DEBUG) Log.v(TAG, "interrupted");
+							mIsRunning = false;
+							break;
+						}
+						if (buf instanceof RecycleMediaData) {
+							((RecycleMediaData) buf).get(info);
+							if (mRequestChangeFile
+								&& (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) {
+	
+								// ファイルサイズが超えていてIフレームが来たときにファイルを変更する
+								mRequestChangeFile = false;
+								try {
+									muxer = restartMuxer(muxer, segment++);
+								} catch (final IOException e) {
+									break;
+								}
+							}
+							muxer.writeSampleData(((RecycleMediaData) buf).trackIx,
+								((RecycleMediaData) buf).mBuffer, info);
+							// 再利用のためにバッファを返す
+							mQueue.recycle(buf);
+						} else if (mRequestStop) {
+							mIsRunning = false;
+							break;
+						}
+						if (!mRequestChangeFile
+							&& (((++cnt) % 1000) == 0)
+							&& (mCurrent.length() >= mSplitSize)) {
+							// ファイルサイズが指定値を超えた
+							// ファイルサイズのチェック時はフラグを立てるだけにして
+							// 次のIフレームが来たときに切り替えないと次のファイルの先頭が
+							// 正しく再生できなくなる
+							if (DEBUG) Log.v(TAG, "exceeds file size limit");
+							mRequestChangeFile = true;
+						}
+					} // end of for
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+				}
 				if (muxer != null) {
 					try {
 						muxer.stop();
@@ -383,7 +397,7 @@ public class MediaSplitMuxer implements IMuxer {
 	
 	/**
 	 * IMuxerの切り替え処理
-	 * 内部で#createMuxerを呼び出す
+	 * 内部で#setupMuxerを呼び出す
 	 * @param muxer 今まで使っていたIMuxer
 	 * @param segment 次のセグメント番号
 	 * @return 次のファイル出力用のIMuxer
@@ -400,11 +414,32 @@ public class MediaSplitMuxer implements IMuxer {
 			throw new IOException(e);
 		}
 		// 次のIMuxerに切り替える
-		return createMuxer(segment);
+		return setupMuxer(segment);
 	}
 	
 	/**
-	 * IMuxerを生成する
+	 * createMuxerを呼び出してIMuxerを生成してから
+	 * addTrack, startを呼び出す
+	 * @param segment
+	 * @return
+	 * @throws IOException
+	 */
+	protected IMuxer setupMuxer(final int segment) throws IOException {
+		final IMuxer result = createMuxer(segment);
+		if (mConfigFormatVideo != null) {
+			final int trackIx = result.addTrack(mConfigFormatVideo);
+			if (DEBUG) Log.v(TAG, "add video track," + trackIx);
+		}
+		if (mConfigFormatAudio != null) {
+			final int trackIx = result.addTrack(mConfigFormatAudio);
+			if (DEBUG) Log.v(TAG, "add audio track," + trackIx);
+		}
+		result.start();
+		return result;
+	}
+	
+	/**
+	 * IMuxerを生成する, addTrack, startは呼ばない
 	 * @param segment 次のセグメント番号
 	 * @return
 	 * @throws IOException
@@ -420,18 +455,10 @@ public class MediaSplitMuxer implements IMuxer {
 			throw new IOException("output dir not set");
 		}
 		result = MediaSplitMuxer.createMuxer(getContext(), mCurrent);
-		if (mConfigFormatVideo != null) {
-			final int trackIx = result.addTrack(mConfigFormatVideo);
-			if (DEBUG) Log.v(TAG, "add video track," + trackIx);
-		}
-		if (mConfigFormatAudio != null) {
-			final int trackIx = result.addTrack(mConfigFormatAudio);
-			if (DEBUG) Log.v(TAG, "add audio track," + trackIx);
-		}
-		result.start();
 		return result;
 	}
 
+//--------------------------------------------------------------------------------
 	/**
 	 * 出力ファイルを示すDocumentFileを生成
 	 * @param path
