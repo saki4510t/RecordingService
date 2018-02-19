@@ -373,6 +373,7 @@ public class MediaSplitMuxer implements IMuxer {
 						muxer.start();
 					}
 					final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+					final boolean shouldCheckIFrame = mVideoTrackIx >= 0;
 					boolean mRequestChangeFile = false;
 					int segment = 1, cnt = 0;
 					if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
@@ -389,9 +390,11 @@ public class MediaSplitMuxer implements IMuxer {
 						if (buf instanceof RecycleMediaData) {
 							((RecycleMediaData) buf).get(info);
 							if (mRequestChangeFile
-								&& (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) {
+								&& (!shouldCheckIFrame
+									|| (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) ) {
 	
-								// ファイルサイズが超えていてIフレームが来たときに出力ファイルを変更する
+								// ファイルサイズが超えていて、音声トラックのみかIフレームが来たときに
+								// 出力ファイルを変更する
 								mRequestChangeFile = false;
 								try {
 									muxer = restartMuxer(muxer, segment++);
@@ -406,6 +409,10 @@ public class MediaSplitMuxer implements IMuxer {
 							// 再利用のためにバッファを返す
 							mQueue.recycle(buf);
 						} else if (mRequestStop) {
+							mIsRunning = false;
+							break;
+						} else if (buf != null) {
+							Log.w(TAG, "bug: unexpected buffer type," + buf);
 							mIsRunning = false;
 							break;
 						}
