@@ -45,6 +45,15 @@ import java.util.concurrent.TimeUnit;
 public class MediaSplitMuxer implements IMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaSplitMuxer.class.getSimpleName();
+	
+	/**
+	 * セグメント名のプレフィックス文字列のデフォルト
+	 */
+	public static final String DEFAULT_PREFIX_SEGMENT_NAME = " ps";
+	/**
+	 * セグメント名のプレフィックス文字列, コンストラクタで読み込む
+	 */
+	public static String PREFIX_SEGMENT_NAME = DEFAULT_PREFIX_SEGMENT_NAME;
 
 	private static final int INI_POOL_NUM = 4;
 	private static final int MAX_POOL_NUM = 1000;
@@ -76,6 +85,8 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	@NonNull
 	private final String mOutputName;
+	@NonNull
+	private final String mSegmentPrefix;
 	@NonNull
 	private final IMediaQueue mQueue;
 	private final long mSplitSize;
@@ -125,6 +136,8 @@ public class MediaSplitMuxer implements IMuxer {
 		mOutputDoc = null;
 		mOutputName = name;
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
+		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
+			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
 		mMuxer = createMuxer(0);
 	}
 	
@@ -164,6 +177,8 @@ public class MediaSplitMuxer implements IMuxer {
 		mOutputDoc = outputDir;
 		mOutputName = name;
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
+		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
+			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
 		mMuxer = createMuxer(0);
 	}
 
@@ -551,13 +566,15 @@ public class MediaSplitMuxer implements IMuxer {
 			final DocumentFile dir = mOutputDoc.isDirectory()
 				? mOutputDoc : mOutputDoc.getParentFile();
 			return dir.createFile(null,
-				String.format(Locale.US, "%s ps%d.%s", mOutputName, segment + 1, ext));
+				String.format(Locale.US, "%s%s%d.%s",
+					mOutputName, mSegmentPrefix, segment + 1, ext));
 		} else if (mOutputDir != null) {
 			final File _dir = new File(mOutputDir);
 			final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
 			return DocumentFile.fromFile(
 				new File(dir,
-				String.format(Locale.US, "%s ps%d.%s", mOutputName, segment + 1, ext)));
+				String.format(Locale.US, "%s%s%d.%s",
+					mOutputName, mSegmentPrefix, segment + 1, ext)));
 		} else {
 			throw new IOException("output dir not set");
 		}
