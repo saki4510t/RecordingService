@@ -49,7 +49,7 @@ public class MediaSplitMuxer implements IMuxer {
 	/**
 	 * セグメント名のプレフィックス文字列のデフォルト
 	 */
-	public static final String DEFAULT_PREFIX_SEGMENT_NAME = " ps";
+	public static final String DEFAULT_PREFIX_SEGMENT_NAME = "-";
 	/**
 	 * セグメント名のプレフィックス文字列, コンストラクタで読み込む
 	 */
