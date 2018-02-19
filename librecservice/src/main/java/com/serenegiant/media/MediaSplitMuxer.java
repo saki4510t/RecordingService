@@ -75,6 +75,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	@NonNull
 	private final String mOutputName;
+	@NonNull
 	private final IMediaQueue mQueue;
 	private final long mSplitSize;
 	private DocumentFile mCurrent;
@@ -111,13 +112,14 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
-		@NonNull final IMediaQueue queue,
+		@Nullable final IMediaQueue queue,
 		@NonNull final String outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
-		mQueue = queue;
+		mQueue = queue != null
+			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
 		mOutputDir = outputDir;
 		mOutputDoc = null;
 		mOutputName = name;
@@ -149,13 +151,14 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
-		@NonNull final IMediaQueue queue,
+		@Nullable final IMediaQueue queue,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
-		mQueue = queue;
+		mQueue = queue != null
+			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
 		mOutputDir = null;
 		mOutputDoc = outputDir;
 		mOutputName = name;
