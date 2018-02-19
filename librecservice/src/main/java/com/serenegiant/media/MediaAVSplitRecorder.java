@@ -38,7 +38,7 @@ import java.lang.ref.WeakReference;
  * MP4自動分割録画用IRecorder実装
  */
 public class MediaAVSplitRecorder extends Recorder {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaAVSplitRecorder.class.getSimpleName();
 
 	protected final WeakReference<Context> mWeakContext;

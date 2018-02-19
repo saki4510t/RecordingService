@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * 出力ファイルサイズをセットすること
  */
 public class MediaSplitMuxer implements IMuxer {
-	private static final boolean DEBUG = true; // FIXME set false on production
+	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaSplitMuxer.class.getSimpleName();
 
 	private static final int INI_POOL_NUM = 4;
