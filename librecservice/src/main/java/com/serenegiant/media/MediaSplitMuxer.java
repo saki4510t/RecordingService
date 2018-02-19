@@ -26,6 +26,7 @@ import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
 import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.utils.Time;
 import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
@@ -352,6 +353,8 @@ public class MediaSplitMuxer implements IMuxer {
 		return mOutputDoc;
 	}
 	
+	private static final long MAX_CHECK_INTERVALS_NS = 3 * 1000000000L;	// 3 seconds
+
 	private final class MuxTask implements Runnable {
 
 		@Override
@@ -374,6 +377,7 @@ public class MediaSplitMuxer implements IMuxer {
 					}
 					final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 					final boolean shouldCheckIFrame = mVideoTrackIx >= 0;
+					long prevCheckTime = Time.nanoTime();
 					boolean mRequestChangeFile = false;
 					int segment = 1, cnt = 0;
 					if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
@@ -417,14 +421,20 @@ public class MediaSplitMuxer implements IMuxer {
 							break;
 						}
 						if (!mRequestChangeFile
-							&& (((++cnt) % 1000) == 0)
-							&& (mCurrent.length() >= mSplitSize)) {
-							// ファイルサイズが指定値を超えた
-							// ファイルサイズのチェック時はフラグを立てるだけにして
-							// 次のIフレームが来たときに切り替えないと次のファイルの先頭が
-							// 正しく再生できなくなる
-							if (DEBUG) Log.v(TAG, "exceeds file size limit");
-							mRequestChangeFile = true;
+							&& ( (((++cnt) % 1000) == 0)
+								|| ((Time.nanoTime() - prevCheckTime)
+										> MAX_CHECK_INTERVALS_NS) )) {
+								
+							prevCheckTime = Time.nanoTime();
+
+							if (mCurrent.length() >= mSplitSize) {
+								// ファイルサイズが指定値を超えた
+								// ファイルサイズのチェック時はフラグを立てるだけにして
+								// 次のIフレームが来たときに切り替えないと次のファイルの先頭が
+								// 正しく再生できなくなる
+								if (DEBUG) Log.v(TAG, "exceeds file size limit");
+								mRequestChangeFile = true;
+							}
 						}
 					} // end of for
 				} catch (final Exception e) {
