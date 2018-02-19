@@ -488,10 +488,11 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @return 空き容量が少なければtrueを返す
 	 */
 	protected boolean checkFreespace() {
-		final StorageInfo info;
+		StorageInfo info = null;
 		if (mOutputDoc != null) {
 			info = SDUtils.getStorageInfo(getContext(), mOutputDoc);
-		} else {
+		}
+		if (info == null) {
 			info = FileUtils.getStorageInfo(getContext(),
 				Environment.DIRECTORY_MOVIES, 0);
 		}
