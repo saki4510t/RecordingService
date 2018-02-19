@@ -20,12 +20,16 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
 import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.utils.FileUtils;
+import com.serenegiant.utils.SDUtils;
+import com.serenegiant.utils.StorageInfo;
 import com.serenegiant.utils.Time;
 import com.serenegiant.utils.UriHelper;
 
@@ -432,6 +436,7 @@ public class MediaSplitMuxer implements IMuxer {
 							break;
 						} else if (buf != null) {
 							Log.w(TAG, "bug: unexpected buffer type," + buf);
+							mRequestStop = true;
 							mIsRunning = false;
 							break;
 						}
@@ -449,6 +454,11 @@ public class MediaSplitMuxer implements IMuxer {
 								// 正しく再生できなくなる
 								if (DEBUG) Log.v(TAG, "exceeds file size limit");
 								mRequestChangeFile = true;
+							}
+							if (checkFreespace()) {
+								mRequestStop = true;
+								mIsRunning = false;
+								break;
 							}
 						}
 					} // end of for
@@ -468,6 +478,38 @@ public class MediaSplitMuxer implements IMuxer {
 			if (DEBUG) Log.v(TAG, "MuxTask#run:finished");
 		}
 		
+	}
+	
+	private static final long STORAGE_SIZE_LIMIT = 1024L * 1024L * 1024L * 4L;	// 4GB
+	private static final long MIN_FREE_SPACE = 1024L * 1024L * 16L;	// 16MB
+	
+	/**
+	 * ストレージの空き容量を確認する
+	 * @return 空き容量が少なければtrueを返す
+	 */
+	protected boolean checkFreespace() {
+		final StorageInfo info;
+		if (mOutputDoc != null) {
+			info = SDUtils.getStorageInfo(getContext(), mOutputDoc);
+		} else {
+			info = FileUtils.getStorageInfo(getContext(),
+				Environment.DIRECTORY_MOVIES, 0);
+		}
+		final float rate;
+		final long totalBytes, freeBytes;
+		if ((info != null) && (info.totalBytes > 0)) {
+			rate = info.freeBytes / (float)info.totalBytes;
+			totalBytes = info.totalBytes;
+			freeBytes = info.freeBytes;
+		} else {
+			rate = 0;
+			totalBytes = freeBytes = 0;
+		}
+		
+		return (
+			((rate < FileUtils.FREE_RATIO) && (totalBytes < STORAGE_SIZE_LIMIT))
+			|| (freeBytes < MIN_FREE_SPACE)
+		);
 	}
 	
 	/**
