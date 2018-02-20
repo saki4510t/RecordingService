@@ -202,10 +202,12 @@ public class MediaSplitMuxer implements IMuxer {
 	public void release() {
 		synchronized (mSync) {
 			if (!mReleased) {
-				mIsRunning = false;
 				mReleased = true;
 				if (DEBUG) Log.v(TAG, "release:");
-				stop();
+				if (mIsRunning && !mRequestStop) {
+					stop();
+				}
+				mIsRunning = false;
 				if (DEBUG) Log.v(TAG, "release:finished");
 			}
 		}
