@@ -79,6 +79,7 @@ public class MemMediaQueue implements IMediaQueue {
 	@Override
 	public void clear() {
 		mQueue.clear();
+		mPool.clear();
 	}
 	
 	@Override

@@ -208,6 +208,7 @@ public class MediaSplitMuxer implements IMuxer {
 					stop();
 				}
 				mIsRunning = false;
+				mQueue.clear();
 				if (DEBUG) Log.v(TAG, "release:finished");
 			}
 		}
