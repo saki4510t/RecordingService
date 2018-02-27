@@ -134,6 +134,11 @@ public class MediaAVSplitRecorder extends Recorder {
 		setupMuxer(context, queue, outputDir, name, splitSize);
 	}
 	
+	/**
+	 * 出力ディレクトリの空き容量が足りなくなっていないかどうかを
+	 * チェックするためのヘルパーメソッド
+	 * @return
+	 */
 	@Override
 	public boolean check() {
 		final Context context = getContext();
@@ -148,16 +153,34 @@ public class MediaAVSplitRecorder extends Recorder {
 					VideoConfig.maxDuration, mStartTime, mSaveTreeId));
 	}
 	
+	/**
+	 * このクラスでは無効, UnsupportedOperationExceptionを投げる
+	 * 代わりに出力ディレクトリ取得用の#getOutputDirを使うこと
+	 * @return
+	 */
 	@Nullable
 	@Override
 	public String getOutputPath() {
 		throw new UnsupportedOperationException();
 	}
 	
+	/**
+	 * このクラスでは無効, UnsupportedOperationExceptionを投げる
+	 * 代わりに出力ディレクトリ取得用の#getOutputDirを使うこと
+	 * @return
+	 */
 	@Nullable
 	@Override
 	public DocumentFile getOutputFile() {
 		throw new UnsupportedOperationException();
+	}
+	
+	/**
+	 * 出力ディレクトリを取得
+	 * @return
+	 */
+	public DocumentFile getOutputDir() {
+		return mOutputDir;
 	}
 	
 	@Nullable
