@@ -53,7 +53,7 @@ import java.io.IOException;
  * 内蔵カメラへアクセスして表示するための基本クラス
  * 録画の開始/停止の実際の処理以外を実装
  */
-public abstract class AbstractCameraFragment extends Fragment {
+public abstract class AbstractCameraFragment extends BaseFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = AbstractCameraFragment.class.getSimpleName();
 
@@ -65,10 +65,6 @@ public abstract class AbstractCameraFragment extends Fragment {
 	/** access code for secondary storage etc. */
 	protected static final int REQUEST_ACCESS_SD = 12345;
 	
-	private final Object mHandlerSync = new Object();
-	private Handler mAsyncHandler;
-	private final Handler mUIHandler = new Handler(Looper.getMainLooper());
-
 	/**
 	 * for camera preview display
 	 */
@@ -96,28 +92,6 @@ public abstract class AbstractCameraFragment extends Fragment {
 	}
 	
 	@Override
-	public void onCreate(@Nullable final Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		mAsyncHandler = HandlerThreadHandler.createHandler("AsyncHandler");
-	}
-	
-	@Override
-	public void onDestroy() {
-		mUIHandler.removeCallbacksAndMessages(null);
-		synchronized (mHandlerSync) {
-			if (mAsyncHandler != null) {
-				try {
-					mAsyncHandler.getLooper().quit();
-				} catch (final Exception e) {
-					// ignore
-				}
-				mAsyncHandler = null;
-			}
-		}
-		super.onDestroy();
-	}
-	
-	@Override
 	public View onCreateView(@NonNull final LayoutInflater inflater,
 		final ViewGroup container, final Bundle savedInstanceState) {
 
@@ -136,108 +110,25 @@ public abstract class AbstractCameraFragment extends Fragment {
 	}
 
 	@Override
-	public void onResume() {
-		super.onResume();
-		if (DEBUG) Log.v(TAG, "onResume:");
+	public void internalOnResume() {
+		super.internalOnResume();
+		if (DEBUG) Log.v(TAG, "internalOnResume:");
 		mCameraView.onResume();
 		mCameraView.addListener(mOnFrameAvailableListener);
+		if (!hasPermission()) {
+			popBackStack();
+		}
 	}
 
 	@Override
-	public void onPause() {
-		if (DEBUG) Log.v(TAG, "onPause:");
+	public void internalOnPause() {
+		if (DEBUG) Log.v(TAG, "internalOnPause:");
 		stopRecording();
 		mCameraView.removeListener(mOnFrameAvailableListener);
 		mCameraView.onPause();
-		super.onPause();
+		super.internalOnPause();
 	}
 
-//================================================================================
-	protected boolean isReleased() {
-		synchronized (mHandlerSync) {
-			return mAsyncHandler == null;
-		}
-	}
-	
-	protected void checkReleased() throws IllegalStateException {
-		if (isReleased()) {
-			Stacktrace.print();
-			throw new IllegalStateException("already released");
-		}
-	}
-	
-	protected void runOnUIThread(final Runnable task)
-		throws IllegalStateException{
-		
-		if (task == null) return;
-		checkReleased();
-		runOnUIThread(task, 0);
-	}
-	
-	protected void runOnUIThread(final Runnable task, final long delayMs) {
-		if (task == null) return;
-		checkReleased();
-		try {
-			mUIHandler.removeCallbacks(task);
-			if (delayMs > 0) {
-				mUIHandler.postDelayed(task, delayMs);
-			} else {
-				mUIHandler.post(task);
-			}
-		} catch (final Exception e) {
-			Log.w(TAG, e);
-		}
-	}
-	
-	protected void removeFromUIThread(final Runnable task) {
-		try {
-			mUIHandler.removeCallbacks(task);
-		} catch (final Exception e) {
-			// ignore
-		}
-	}
-
-	protected void queueEvent(final Runnable task) throws IllegalStateException {
-		if (task == null) return;
-		queueEvent(task, 0);
-	}
-
-	protected void queueEvent(final Runnable task, final long delay)
-		throws IllegalStateException {
-
-		if (task == null) return;
-		synchronized (mHandlerSync) {
-			if (mAsyncHandler != null) {
-				mAsyncHandler.removeCallbacks(task);
-				if (delay > 0) {
-					mAsyncHandler.postDelayed(task, delay);
-				} else {
-					mAsyncHandler.post(task);
-				}
-			} else {
-				throw new IllegalStateException("already released");
-			}
-		}
-	}
-
-	protected void removeEvent(final Runnable task) {
-		synchronized (mHandlerSync) {
-			if (mAsyncHandler != null) {
-				mAsyncHandler.removeCallbacks(task);
-			}
-		}
-	}
-
-	@NonNull
-	protected LayoutInflater getThemedLayoutInflater(
-		@NonNull final LayoutInflater inflater, @StyleRes final int layout_style) {
-		
-		final Activity context = getActivity();
-		// create ContextThemeWrapper from the original Activity Context with the custom theme
-		final Context contextThemeWrapper = new ContextThemeWrapper(context, layout_style);
-		// clone the inflater using the ContextThemeWrapper
-		return inflater.cloneInContext(contextThemeWrapper);
-	}
 //================================================================================
 	/**
 	 * method when touch record button

@@ -27,7 +27,6 @@ import android.os.Parcelable;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -42,7 +41,7 @@ import java.util.Locale;
 /**
  * 他のFragmentを起動するためのメニュー表示用Fragment
  */
-public class MainFragment extends Fragment {
+public class MainFragment extends BaseFragment {
 
 	private static final Item[] ITEMS = {
 		new Item(0, "PostMuxRec"),
@@ -78,18 +77,23 @@ public class MainFragment extends Fragment {
 		return rootView;
 	}
 	
-	@Override
-	public void onStart() {
-		super.onStart();
+	protected void internalOnResume() {
+		super.internalOnResume();
 		getActivity().setTitle(R.string.app_name);
 	}
-	
+
 	private final AdapterView.OnItemClickListener mOnItemClickListener
 		= new AdapterView.OnItemClickListener() {
 		@Override
 		public void onItemClick(final AdapterView<?> parent,
 			final View view, final int position, final long id) {
 
+			if (!checkPermissionCamera()
+				|| !checkPermissionWriteExternalStorage()
+				|| !checkPermissionAudio()) {
+				
+				return;
+			}
 			final FragmentManager fm = getFragmentManager();
 			switch (position) {
 			case 0:

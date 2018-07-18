@@ -11,10 +11,10 @@ android {
 
 	defaultConfig {
 		minSdkVersion 18
-		targetSdkVersion 21
-		applicationId "com.serenegiant.recordingservice"
+		targetSdkVersion versionTarget
 		versionCode versionCodeNum
 		versionName versionNameString
+		applicationId "com.serenegiant.recordingservice"
 		testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 	}
 	buildTypes {

@@ -83,6 +83,8 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 					if (surface != null) {
 						mRecordingSurfaceId = surface.hashCode();
 						mCameraView.addSurface(mRecordingSurfaceId, surface, true);
+						// バッファリング開始
+						mRecorder.startTimeShift();
 					} else {
 						Log.w(TAG, "surface is null");
 						stopRecording();	// 非同期で呼ばないとデッドロックするかも
