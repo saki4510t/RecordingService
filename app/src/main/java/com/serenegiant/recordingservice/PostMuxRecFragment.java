@@ -35,7 +35,7 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = PostMuxRecFragment.class.getSimpleName();
 	
-	private PostMuxRecorder mPostMuxRecorder;
+	private PostMuxRecorder mRecorder;
 	
 	public PostMuxRecFragment() {
 		super();
@@ -44,13 +44,13 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 
 	@Override
 	protected boolean isRecording() {
-		return mPostMuxRecorder != null;
+		return mRecorder != null;
 	}
 
 	@Override
 	protected void internalStartRecording() {
-		if (mPostMuxRecorder == null) {
-			mPostMuxRecorder = PostMuxRecorder.newInstance(getActivity(),
+		if (mRecorder == null) {
+			mRecorder = PostMuxRecorder.newInstance(getActivity(),
 				PostMuxRecService.class, mCallback,
 				PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL);
 			
@@ -59,16 +59,16 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 
 	@Override
 	protected void internalStopRecording() {
-		if (mPostMuxRecorder != null) {
-			mPostMuxRecorder.release();
-			mPostMuxRecorder = null;
+		if (mRecorder != null) {
+			mRecorder.release();
+			mRecorder = null;
 		}
 	}
 
 	@Override
 	protected void onFrameAvailable() {
-		if (mPostMuxRecorder != null) {
-			mPostMuxRecorder.frameAvailableSoon();
+		if (mRecorder != null) {
+			mRecorder.frameAvailableSoon();
 		}
 	}
 
@@ -82,10 +82,10 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 				mCameraView.removeSurface(mRecordingSurfaceId);
 				mRecordingSurfaceId = 0;
 			}
-			if (mPostMuxRecorder != null) {
+			if (mRecorder != null) {
 				try {
-					mPostMuxRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, 30, 0.25f);
-					mPostMuxRecorder.prepare();
+					mRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, 30, 0.25f);
+					mRecorder.prepare();
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
@@ -97,9 +97,9 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 		@Override
 		public void onPrepared() {
 			if (DEBUG) Log.v(TAG, "onPrepared:");
-			if (mPostMuxRecorder != null) {
+			if (mRecorder != null) {
 				try {
-					final Surface surface = mPostMuxRecorder.getInputSurface();
+					final Surface surface = mRecorder.getInputSurface();
 					if (surface != null) {
 						mRecordingSurfaceId = surface.hashCode();
 						mCameraView.addSurface(mRecordingSurfaceId, surface, true);
@@ -118,13 +118,13 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 		@Override
 		public void onReady() {
 			if (DEBUG) Log.v(TAG, "onReady:");
-			if (mPostMuxRecorder != null) {
+			if (mRecorder != null) {
 				try {
 					final File dir = new File(
 						Environment.getExternalStoragePublicDirectory(
 							Environment.DIRECTORY_MOVIES), APP_DIR_NAME);
 					dir.mkdirs();
-					mPostMuxRecorder.start(dir.toString(), FileUtils.getDateTimeString());
+					mRecorder.start(dir.toString(), FileUtils.getDateTimeString());
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
