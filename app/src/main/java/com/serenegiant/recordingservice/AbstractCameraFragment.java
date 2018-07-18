@@ -21,16 +21,19 @@ package com.serenegiant.recordingservice;
 */
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StyleRes;
+import android.support.v4.app.Fragment;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -115,10 +118,13 @@ public abstract class AbstractCameraFragment extends Fragment {
 	}
 	
 	@Override
-	public View onCreateView(final LayoutInflater inflater,
+	public View onCreateView(@NonNull final LayoutInflater inflater,
 		final ViewGroup container, final Bundle savedInstanceState) {
 
-		final View rootView = inflater.inflate(R.layout.fragment_camera, container, false);
+		final LayoutInflater custom_inflater
+			= getThemedLayoutInflater(inflater, R.style.AppTheme_Camera);
+		final View rootView
+			= custom_inflater.inflate(R.layout.fragment_camera, container, false);
 		mCameraView = rootView.findViewById(R.id.cameraView);
 		mCameraView.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		mCameraView.setOnClickListener(mOnClickListener);
@@ -222,6 +228,16 @@ public abstract class AbstractCameraFragment extends Fragment {
 		}
 	}
 
+	@NonNull
+	protected LayoutInflater getThemedLayoutInflater(
+		@NonNull final LayoutInflater inflater, @StyleRes final int layout_style) {
+		
+		final Activity context = getActivity();
+		// create ContextThemeWrapper from the original Activity Context with the custom theme
+		final Context contextThemeWrapper = new ContextThemeWrapper(context, layout_style);
+		// clone the inflater using the ContextThemeWrapper
+		return inflater.cloneInContext(contextThemeWrapper);
+	}
 //================================================================================
 	/**
 	 * method when touch record button

@@ -24,6 +24,7 @@
     android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:theme="@style/AppTheme_Camera"
     tools:context="com.serenegiant.recordingservice.PostMuxRecFragment" >
 
 	<com.serenegiant.recordingservice.CameraGLView

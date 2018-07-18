@@ -20,8 +20,6 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.app.FragmentManager;
-import android.app.ListFragment;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -29,9 +27,12 @@ import android.os.Parcelable;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -41,11 +42,12 @@ import java.util.Locale;
 /**
  * 他のFragmentを起動するためのメニュー表示用Fragment
  */
-public class MainFragment extends ListFragment {
+public class MainFragment extends Fragment {
 
 	private static final Item[] ITEMS = {
 		new Item(0, "PostMuxRec"),
-		new Item(1, "SplitRec"),
+		new Item(1, "TimeShiftRec"),
+		new Item(2, "SplitRec"),
 	};
 	
 	private ItemListAdapter mAdapter;
@@ -57,11 +59,23 @@ public class MainFragment extends ListFragment {
 	@Override
 	public void onCreate(@Nullable final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+	}
+	
+	@Override
+	public View onCreateView(@NonNull final LayoutInflater inflater,
+		final ViewGroup container, final Bundle savedInstanceState) {
+
+		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+		final ListView listView = rootView.findViewById(android.R.id.list);
+		final View emptyView = rootView.findViewById(android.R.id.empty);
+		listView.setEmptyView(emptyView);
 		if (mAdapter == null) {
 			mAdapter = new ItemListAdapter(getActivity(),
 				R.layout.list_item_item, ITEMS);
-			setListAdapter(mAdapter);
 		}
+		listView.setAdapter(mAdapter);
+		listView.setOnItemClickListener(mOnItemClickListener);
+		return rootView;
 	}
 	
 	@Override
@@ -70,27 +84,35 @@ public class MainFragment extends ListFragment {
 		getActivity().setTitle(R.string.app_name);
 	}
 	
-	@Override
-	public void onListItemClick(final ListView listView,
-		final View view, final int position, final long id) {
-		super.onListItemClick(listView, view, position, id);	// do nothing
-		
-		final FragmentManager fm = getFragmentManager();
-		switch (position) {
-		case 0:
-			fm.beginTransaction()
-				.addToBackStack(null)
-				.replace(R.id.container,
-				new PostMuxRecFragment()).commit();
-			break;
-		case 1:
-			fm.beginTransaction()
-				.addToBackStack(null)
-				.replace(R.id.container,
-				new SplitRecFragment()).commit();
-			break;
+	private final AdapterView.OnItemClickListener mOnItemClickListener
+		= new AdapterView.OnItemClickListener() {
+		@Override
+		public void onItemClick(final AdapterView<?> parent,
+			final View view, final int position, final long id) {
+
+			final FragmentManager fm = getFragmentManager();
+			switch (position) {
+			case 0:
+				fm.beginTransaction()
+					.addToBackStack(null)
+					.replace(R.id.container,
+					new PostMuxRecFragment()).commit();
+				break;
+			case 1:
+				fm.beginTransaction()
+					.addToBackStack(null)
+					.replace(R.id.container,
+					new TimeShiftRecFragment()).commit();
+				break;
+			case 2:
+				fm.beginTransaction()
+					.addToBackStack(null)
+					.replace(R.id.container,
+					new SplitRecFragment()).commit();
+				break;
+			}
 		}
-	}
+	};
 	
 	private static class Item implements Parcelable {
 		private int mId;

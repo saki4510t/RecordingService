@@ -15,10 +15,10 @@
  */
 package com.serenegiant.recordingservice;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 	
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		if (savedInstanceState == null) {
-			getFragmentManager().beginTransaction()
+			getSupportFragmentManager().beginTransaction()
 				.add(R.id.container, new MainFragment()).commit();
 		}
 	}
