@@ -26,22 +26,50 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 	
 	@Override
 	protected boolean isRecording() {
-		return mRecorder != null;
+		return mRecorder != null && mRecorder.isRecording();
+	}
+	
+	@Override
+	public void internalOnResume() {
+		super.internalOnResume();
+		if (DEBUG) Log.v(TAG, "internalOnResume:");
+		queueEvent(() -> {
+			if (mRecorder == null) {
+				mRecorder = new TimeShiftRecorder(requireContext(),
+					TimeShiftRecService.class, mCallback);
+			}
+		},100);
+	}
+	
+	@Override
+	public void internalOnPause() {
+		if (DEBUG) Log.v(TAG, "internalOnPause:");
+		releaseRecorder();
+		super.internalOnPause();
 	}
 	
 	@Override
 	protected void internalStartRecording() throws IOException {
-		if (mRecorder == null) {
-			mRecorder = new TimeShiftRecorder(requireContext(),
-				TimeShiftRecService.class, mCallback);
+		if (DEBUG) Log.v(TAG, "internalStartRecording:");
+		if ((mRecorder != null) && mRecorder.isTimeShift()) {
+			try {
+				final File dir = new File(
+					Environment.getExternalStoragePublicDirectory(
+						Environment.DIRECTORY_MOVIES), APP_DIR_NAME);
+				dir.mkdirs();
+				mRecorder.start(dir.toString(), FileUtils.getDateTimeString());
+			} catch (final Exception e) {
+				Log.w(TAG, e);
+				stopRecording();	// 非同期で呼ばないとデッドロックするかも
+			}
 		}
 	}
 	
 	@Override
 	protected void internalStopRecording() {
+		if (DEBUG) Log.v(TAG, "internalStopRecording:");
 		if (mRecorder != null) {
-			mRecorder.release();
-			mRecorder = null;
+			mRecorder.stop();
 		}
 	}
 	
@@ -49,6 +77,14 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 	protected void onFrameAvailable() {
 		if (mRecorder != null) {
 			mRecorder.frameAvailableSoon();
+		}
+	}
+	
+	private void releaseRecorder() {
+		if (DEBUG) Log.v(TAG, "releaseRecorder:");
+		if (mRecorder != null) {
+			mRecorder.release();
+			mRecorder = null;
 		}
 	}
 
@@ -69,6 +105,7 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
+					releaseRecorder();
 				}
 			}
 		}
@@ -83,15 +120,15 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 					if (surface != null) {
 						mRecordingSurfaceId = surface.hashCode();
 						mCameraView.addSurface(mRecordingSurfaceId, surface, true);
-						// バッファリング開始
-						mRecorder.startTimeShift();
 					} else {
 						Log.w(TAG, "surface is null");
 						stopRecording();	// 非同期で呼ばないとデッドロックするかも
+						releaseRecorder();
 					}
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
+					releaseRecorder();
 				}
 			}
 		}
@@ -100,18 +137,16 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 		@Override
 		public void onReady() {
 			if (DEBUG) Log.v(TAG, "onReady:");
-			if (mRecorder != null) {
+			queueEvent(() -> {
 				try {
-					final File dir = new File(
-						Environment.getExternalStoragePublicDirectory(
-							Environment.DIRECTORY_MOVIES), APP_DIR_NAME);
-					dir.mkdirs();
-					mRecorder.start(dir.toString(), FileUtils.getDateTimeString());
-				} catch (final Exception e) {
+					// バッファリング開始
+					mRecorder.startTimeShift();
+				} catch (final IOException e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
+					releaseRecorder();
 				}
-			}
+			}, 10);
 		}
 		
 		@Override
@@ -122,6 +157,7 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 				mRecordingSurfaceId = 0;
 			}
 			stopRecording();
+			releaseRecorder();
 		}
 	};
 

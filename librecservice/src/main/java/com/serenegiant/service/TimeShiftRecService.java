@@ -38,6 +38,7 @@ import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -173,12 +174,19 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
-		final IMuxer muxer = new MediaMuxerWrapper(
-			outputDir, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-		final int trackIndex = muxer.addTrack(videoFormat);
-		mRecordingTask = new RecordingTask(muxer, trackIndex);
-		new Thread(mRecordingTask, "RecordingTask").start();
+		if (!TextUtils.isEmpty(outputDir) && !TextUtils.isEmpty(name)) {
+			final String outputPath
+				= outputDir + (outputDir.endsWith("/")
+					? name : "/" + name) + ".mp4";
+			// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
+			final IMuxer muxer = new MediaMuxerWrapper(
+				outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+			final int trackIndex = muxer.addTrack(videoFormat);
+			mRecordingTask = new RecordingTask(muxer, trackIndex);
+			new Thread(mRecordingTask, "RecordingTask").start();
+		} else {
+			throw new IOException("invalid output dir or name");
+		}
 	}
 	
 	private String mOutputPath;
