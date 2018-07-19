@@ -20,6 +20,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -32,6 +33,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.serenegiant.librecservice.R;
+import com.serenegiant.media.AbstractAudioEncoder;
 import com.serenegiant.media.AudioSampler;
 import com.serenegiant.media.IAudioSampler;
 import com.serenegiant.media.MediaReaper;
@@ -45,8 +47,7 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import static com.serenegiant.media.MediaCodecHelper.MIME_AVC;
-import static com.serenegiant.media.MediaCodecHelper.selectVideoCodec;
+import static com.serenegiant.media.MediaCodecHelper.*;
 
 /**
  * TimeShiftRecServiceから流用できそうな部分を切り出し
@@ -89,6 +90,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	private MediaReaper.VideoReaper mVideoReaper;
 
 	private IAudioSampler mAudioSampler;
+	private boolean mOwnAudioSampler;
 	private int mSampleRate, mChannelCount;
 	private MediaFormat mAudioFormat;
 	private MediaCodec mAudioEncoder;
@@ -195,11 +197,13 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (getState() != STATE_INITIALIZED) {
 			throw new IllegalStateException();
 		}
+		releaseOwnAudioSampler();
 		if (mAudioSampler != sampler) {
 			if (mAudioSampler != null) {
 				mAudioSampler.removeCallback(mSoundSamplerCallback);
 			}
 			mAudioSampler = sampler;
+			mSampleRate = mChannelCount = 0;
 		}
 	}
 	
@@ -215,8 +219,11 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (getState() != STATE_INITIALIZED) {
 			throw new IllegalStateException();
 		}
-		mSampleRate = sampleRate;
-		mChannelCount = channelCount;
+		if ((mSampleRate != sampleRate) || (mChannelCount != channelCount)) {
+			mSampleRate = sampleRate;
+			mChannelCount = channelCount;
+			createOwnAudioSampler(sampleRate, channelCount);
+		}
 	}
 
 	/**
@@ -415,6 +422,11 @@ public abstract class AbstractRecorderService extends BaseService {
 					internalPrepare(mSampleRate, mChannelCount);
 					createEncoder(mSampleRate, mChannelCount);
 				}
+				if ((mAudioSampler != null)
+					&& !mAudioSampler.isStarted()) {
+					
+					mAudioSampler.start();
+				}
 				setState(STATE_PREPARED);
 			} catch (final IllegalStateException | IOException e) {
 				releaseEncoder();
@@ -462,11 +474,11 @@ public abstract class AbstractRecorderService extends BaseService {
 		final int frameRate, final float bpp) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createEncoder:");
-		final MediaCodecInfo codecInfo = selectVideoCodec(MIME_AVC);
+		final MediaCodecInfo codecInfo = selectVideoCodec(MIME_VIDEO_AVC);
 		if (codecInfo == null) {
-			throw new IOException("Unable to find an appropriate codec for " + MIME_AVC);
+			throw new IOException("Unable to find an appropriate codec for " + MIME_VIDEO_AVC);
 		}
-		final MediaFormat format = MediaFormat.createVideoFormat(MIME_AVC, width, height);
+		final MediaFormat format = MediaFormat.createVideoFormat(MIME_VIDEO_AVC, width, height);
 		// MediaCodecに適用するパラメータを設定する。
 		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
 		format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
@@ -478,7 +490,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.d(TAG, "format: " + format);
 
 		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
-		mVideoEncoder = MediaCodec.createEncoderByType(MIME_AVC);
+		mVideoEncoder = MediaCodec.createEncoderByType(MIME_VIDEO_AVC);
 		mVideoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 		// エンコーダーへの入力に使うSurfaceを取得する
 		mInputSurface = mVideoEncoder.createInputSurface();	// API >= 18
@@ -488,7 +500,6 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
 	
-	private static final String AUDIO_MIME_TYPE = "audio/mp4a-latm";
 	/**
 	 * 録音用のMediaCodecエンコーダーを生成
 	 * @param sampleRate
@@ -498,18 +509,23 @@ public abstract class AbstractRecorderService extends BaseService {
 		throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createEncoder:");
-		final MediaCodecInfo codecInfo = selectVideoCodec(AUDIO_MIME_TYPE);
+		final MediaCodecInfo codecInfo = selectAudioCodec(MIME_AUDIO_AAC);
 		if (codecInfo == null) {
-			throw new IOException("Unable to find an appropriate codec for " + AUDIO_MIME_TYPE);
+			throw new IOException("Unable to find an appropriate codec for " + MIME_AUDIO_AAC);
 		}
 		final MediaFormat format = MediaFormat.createAudioFormat(
-			AUDIO_MIME_TYPE, sampleRate, channelCount);
+			MIME_AUDIO_AAC, sampleRate, channelCount);
+		format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+		format.setInteger(MediaFormat.KEY_CHANNEL_MASK,
+			mChannelCount == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
+		format.setInteger(MediaFormat.KEY_BIT_RATE, 64000/*FIXMEパラメータにする*/);
+		format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, mChannelCount);
 		// MediaCodecに適用するパラメータを設定する。
 		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
 		if (DEBUG) Log.d(TAG, "format: " + format);
 
 		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
-		mAudioEncoder = MediaCodec.createEncoderByType(AUDIO_MIME_TYPE);
+		mAudioEncoder = MediaCodec.createEncoderByType(MIME_AUDIO_AAC);
 		mAudioEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 		mAudioEncoder.start();
 		mAudioReaper = new MediaReaper.AudioReaper(mAudioEncoder, mReaperListener,
@@ -556,6 +572,26 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.v(TAG, "releaseEncoder:finished");
 	}
 
+	protected void createOwnAudioSampler(final int sampleRate, final int channelCount) {
+		releaseOwnAudioSampler();
+		if (sampleRate > 0 && ((channelCount == 1) || (channelCount == 2))) {
+			mAudioSampler = new AudioSampler(2,
+				channelCount, sampleRate,
+				AbstractAudioEncoder.SAMPLES_PER_FRAME,
+				AbstractAudioEncoder.FRAMES_PER_BUFFER);
+			mAudioSampler.addCallback(mSoundSamplerCallback);
+			mOwnAudioSampler = true;
+		}
+	}
+
+	protected void releaseOwnAudioSampler() {
+		if (mOwnAudioSampler && (mAudioSampler != null)) {
+			mAudioSampler.release();
+			mAudioSampler = null;
+		}
+		mOwnAudioSampler = false;
+	}
+
 	/**
 	 * 録画開始
 	 * @param outputDir 出力ディレクトリ
@@ -569,6 +605,7 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		synchronized (mSync) {
+			// FIXME これだと映像と音声の同時記録ができない、同時の場合には両方のMediaFormatが揃うまで待機しないといけない
 			if ((mVideoFormat != null) || (mAudioFormat != null)) {
 				if (checkFreeSpace(this, 0)) {
 					final File dir = new File(outputDir);
@@ -684,7 +721,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		public void onOutputFormatChanged(@NonNull final MediaReaper reaper,
 			@NonNull final MediaFormat format) {
 
-			if (DEBUG) Log.v(TAG, "onOutputFormatChanged:");
+			if (DEBUG) Log.v(TAG, "onOutputFormatChanged:" + format);
 			switch (reaper.reaperType()) {
 			case MediaReaper.REAPER_VIDEO:
 				mVideoFormat = format;
@@ -693,6 +730,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				mAudioFormat = format;
 				break;
 			}
+			// FIXME これだと映像と音声の同時記録ができない、同時の場合には両方のMediaFormatが揃うまで待機しないといけない
 			setState(STATE_READY);
 		}
 
@@ -742,9 +780,13 @@ public abstract class AbstractRecorderService extends BaseService {
 		mBpp = -1.0f;
 		if (mAudioSampler != null) {
 			mAudioSampler.removeCallback(mSoundSamplerCallback);
+			if (mOwnAudioSampler) {
+				mAudioSampler.release();
+			}
 			mAudioSampler = null;
 		}
 		mSampleRate = mChannelCount = 0;
+		mOwnAudioSampler = false;
 		mIsEos = false;
 	}
 	
