@@ -328,38 +328,56 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
 
+		final File cacheDir = new File(getTimeShiftCacheDir(), "video");
+		if (cacheDir.mkdirs() && DEBUG) {
+			Log.v(TAG, "create new cache dir for video");
+		}
+		final long maxShiftMs = getMaxShiftMs();
+		VideoConfig.maxDuration = maxShiftMs;
+		mVideoCache = TimeShiftDiskCache.open(cacheDir,
+			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+		super.internalPrepare(width, height, frameRate, bpp);
+	}
+
+	@Override
+	protected void internalPrepare(final int sampleRate, final int channelCount)
+		throws IllegalStateException, IOException {
+		if (DEBUG) Log.v(TAG, "internalPrepare:");
+		
+		final File cacheDir = new File(getTimeShiftCacheDir(), "audio");
+		if (cacheDir.mkdirs() && DEBUG) {
+			Log.v(TAG, "create new cache dir for audio");
+		}
+		final long maxShiftMs = getMaxShiftMs();
+		VideoConfig.maxDuration = maxShiftMs;
+		mAudioCache = TimeShiftDiskCache.open(cacheDir,
+			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+		super.internalPrepare(sampleRate, channelCount);
+	}
+
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	private File getTimeShiftCacheDir() throws IOException {
 		File cacheDir = null;
 		if (!TextUtils.isEmpty(mCacheDir)) {
 			// キャッシュディレクトリが指定されている時
 			cacheDir = new File(mCacheDir);
+			cacheDir.mkdirs();
 		}
 		if ((cacheDir == null) || !cacheDir.canWrite()) {
 			// キャッシュディレクトリが指定されていないか書き込めない時は
 			// 外部ストレージのキャッシュディレクトリを試みる
 			cacheDir = getExternalCacheDir();
+			cacheDir.mkdirs();
 			if ((cacheDir == null) || !cacheDir.canWrite()) {
 				// 内部ストレージのキャッシュディレクトリを試みる
 				cacheDir = getCacheDir();
+				cacheDir.mkdirs();
 			}
 		}
 		if ((cacheDir == null) || !cacheDir.canWrite()) {
 			throw new IOException("can't write cache dir");
 		}
-		final File videoCacheDir = new File(cacheDir, "video");
-		if (videoCacheDir.mkdirs() && DEBUG) {
-			Log.v(TAG, "create new cache dir for video");
-		}
-		final File audioCacheDir = new File(cacheDir, "video");
-		if (audioCacheDir.mkdirs()) {
-			Log.v(TAG, "create new cache dir for audio");
-		}
-		final long maxShiftMs = getMaxShiftMs();
-		VideoConfig.maxDuration = maxShiftMs;
-		mVideoCache = TimeShiftDiskCache.open(videoCacheDir,
-			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
-		mAudioCache = TimeShiftDiskCache.open(audioCacheDir,
-			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
-		super.internalPrepare(width, height, frameRate, bpp);
+		return cacheDir;
 	}
 
 	@Override
