@@ -61,6 +61,10 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 	 * video resolution
 	 */
 	protected static final int VIDEO_WIDTH = 1280, VIDEO_HEIGHT = 720;
+	/**
+	 * Audio recording settings
+	 */
+	protected static final int SAMPLE_RATE = 44100, CHANNEL_COUNT = 1;
 	protected static final String APP_DIR_NAME = "RecordingService";
 	/** access code for secondary storage etc. */
 	protected static final int REQUEST_ACCESS_SD = 12345;
