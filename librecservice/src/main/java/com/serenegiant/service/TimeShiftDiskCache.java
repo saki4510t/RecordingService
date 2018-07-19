@@ -636,7 +636,7 @@ final class TimeShiftDiskCache implements Closeable {
 
 		final long limit = SystemClock.elapsedRealtime() - maxDurationMs;
 		final long oldest = oldestKey();
-		if ((oldest> 0) && (oldest < limit)) {
+		if ((oldest > 0) && (oldest < limit)) {
 			remove(oldest);
 		}
 
