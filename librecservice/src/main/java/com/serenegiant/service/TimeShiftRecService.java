@@ -38,7 +38,6 @@ import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -74,6 +73,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private final IBinder mBinder = new LocalBinder();
 
 	private TimeShiftDiskCache mVideoCache;
+	private TimeShiftDiskCache mAudioCache;
 	private long mCacheSize = CACHE_SIZE;
 	private String mCacheDir;
 	private RecordingTask mRecordingTask;
@@ -178,11 +178,12 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			final String outputPath
 				= outputDir + (outputDir.endsWith("/")
 					? name : "/" + name) + ".mp4";
-			// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
+
 			final IMuxer muxer = new MediaMuxerWrapper(
 				outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-			final int trackIndex = muxer.addTrack(videoFormat);
-			mRecordingTask = new RecordingTask(muxer, trackIndex);
+			final int videoTrackIx = videoFormat != null ? muxer.addTrack(videoFormat) : -1;
+			final int audioTrackIx = audioFormat != null ? muxer.addTrack(audioFormat) : -1;
+			mRecordingTask = new RecordingTask(muxer, videoTrackIx, audioTrackIx);
 			new Thread(mRecordingTask, "RecordingTask").start();
 		} else {
 			throw new IOException("invalid output dir or name");
@@ -209,7 +210,6 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		// FIXME 録音の処理は未実装, 録画なしで録音のみも未実装
 		final DocumentFile output = outputDir.createFile("*/*", name + ".mp4");
 		IMuxer muxer = null;
 		if (BuildCheck.isOreo()) {
@@ -231,8 +231,9 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			muxer = new VideoMuxer(getContentResolver()
 				.openFileDescriptor(output.getUri(), "rw").getFd());
 		}
-		final int trackIndex = muxer.addTrack(videoFormat);
-		mRecordingTask = new RecordingTask(muxer, trackIndex);
+		final int videoTrackIx = videoFormat != null ? muxer.addTrack(videoFormat) : -1;
+		final int audioTrackIx = audioFormat != null ? muxer.addTrack(audioFormat) : -1;
+		mRecordingTask = new RecordingTask(muxer, videoTrackIx, audioTrackIx);
 		new Thread(mRecordingTask, "RecordingTask").start();
 	}
 
@@ -342,9 +343,19 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if ((cacheDir == null) || !cacheDir.canWrite()) {
 			throw new IOException("can't write cache dir");
 		}
+		final File videoCacheDir = new File(cacheDir, "video");
+		if (videoCacheDir.mkdirs() && DEBUG) {
+			Log.v(TAG, "create new cache dir for video");
+		}
+		final File audioCacheDir = new File(cacheDir, "video");
+		if (audioCacheDir.mkdirs()) {
+			Log.v(TAG, "create new cache dir for audio");
+		}
 		final long maxShiftMs = getMaxShiftMs();
 		VideoConfig.maxDuration = maxShiftMs;
-		mVideoCache = TimeShiftDiskCache.open(cacheDir,
+		mVideoCache = TimeShiftDiskCache.open(videoCacheDir,
+			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+		mAudioCache = TimeShiftDiskCache.open(audioCacheDir,
 			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
 		super.internalPrepare(width, height, frameRate, bpp);
 	}
@@ -383,9 +394,12 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		}
 	}
 	
-	byte[] buf = null;
-	long prevPtsUs = 0;
-	TimeShiftDiskCache.Snapshot oldest;
+	byte[] videoBuf = null;
+	byte[] audioBuf = null;
+	long prevVideoPtsUs = 0;
+	long prevAudioPtsUs = 0;
+	TimeShiftDiskCache.Snapshot oldestVideo;
+	TimeShiftDiskCache.Snapshot oldestAudio;
 
 	/**
 	 * 非同期でエンコード済みの動画フレームを取得して
@@ -393,43 +407,54 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 */
 	private class RecordingTask implements Runnable {
 		private final IMuxer muxer;
-		private final int trackIndex;
-		public RecordingTask(final IMuxer muxer, final int trackIndex) {
+		private final int videoTrackIx;
+		private final int audioTrackIx;
+		public RecordingTask(@NonNull final IMuxer muxer,
+			final int videoTrackIx, final int audioTrackIx) {
 			this.muxer = muxer;
-			this.trackIndex = trackIndex;
+			this.videoTrackIx = videoTrackIx;
+			this.audioTrackIx = audioTrackIx;
 		}
 
 		@SuppressWarnings("WrongConstant")
 		@Override
 		public void run() {
 			if (DEBUG) Log.v(TAG, "RecordingTask#run");
-			final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-			int frames = 0, error = 0;
-			ByteBuffer buf = null;
+			final MediaCodec.BufferInfo videoInfo = new MediaCodec.BufferInfo();
+			final MediaCodec.BufferInfo audioInfo = new MediaCodec.BufferInfo();
+			int error = 0;
+			int videoFrames = 0;
+			int audioFrames = 0;
+			ByteBuffer videoBuf = null;
+			ByteBuffer audioBuf = null;
 			muxer.start();
 			boolean iFrame = false;
 			for ( ; ; ) {
 				synchronized (mSync) {
 					if (getState() != STATE_RECORDING) break;
 					try {
-						buf = processFrame(info);
-						if (buf != null) {
+						videoBuf = processVideoFrame(videoInfo);
+						if (videoBuf != null) {
 							if (!iFrame) {
-								if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME)
+								if ((videoInfo.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME)
 									!= MediaCodec.BUFFER_FLAG_KEY_FRAME) {
 
-									continue;
+									videoInfo.size = 0;
 								} else {
 									iFrame = true;
 								}
 							}
-						} else {
-							info.size = 0;
 						}
 					} catch (final IOException e) {
-						info.size = 0;
+						videoInfo.size = 0;
 					}
-					if (info.size == 0) {
+					try {
+						audioBuf = processAudioFrame(audioInfo);
+					} catch (final IOException e) {
+						audioInfo.size = 0;
+					}
+					
+					if ((videoInfo.size <= 0) && (audioInfo.size <= 0)) {
 						try {
 							mSync.wait(TIMEOUT_MS);
 						} catch (final InterruptedException e) {
@@ -438,14 +463,27 @@ public class TimeShiftRecService extends AbstractRecorderService {
 						continue;
 					}
 				} // synchronized (mSync)
-				if (DEBUG) Log.v(TAG, "writeSampleData:size=" + info.size
-					+ ", presentationTimeUs=" + info.presentationTimeUs);
-				try {
-					frames++;
-					muxer.writeSampleData(trackIndex, buf, info);
-				} catch (final Exception e) {
-					Log.w(TAG, e);
-					error++;
+				if ((videoTrackIx >= 0) && (videoInfo.size > 0)) {
+					if (DEBUG) Log.v(TAG, "writeSampleData/Video:size="+ videoInfo.size
+						+ ", presentationTimeUs=" + videoInfo.presentationTimeUs);
+					try {
+						videoFrames++;
+						muxer.writeSampleData(videoTrackIx, videoBuf, videoInfo);
+					} catch (final Exception e) {
+						Log.w(TAG, e);
+						error++;
+					}
+				}
+				if ((audioTrackIx >= 0) && (audioInfo.size > 0)) {
+					if (DEBUG) Log.v(TAG, "writeSampleData/Audio:size=" + audioInfo.size
+						+ ", presentationTimeUs=" + audioInfo.presentationTimeUs);
+					try {
+						audioFrames++;
+						muxer.writeSampleData(audioTrackIx, audioBuf, audioInfo);
+					} catch (final Exception e) {
+						Log.w(TAG, e);
+						error++;
+					}
 				}
 			} // for ( ; ; )
 			try {
@@ -458,38 +496,39 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			} catch (final Exception e) {
 				Log.w(TAG, e);
 			}
-			if (DEBUG) Log.v(TAG, "RecordingTask#run:finished, cnt=" + frames);
+			if (DEBUG) Log.v(TAG, String.format("RecordingTask#run:finished, video=%d,audio=%d",
+				videoFrames, audioFrames));
 		}
 
 	}
 
 	/**
-	 * フレームデータが準備できているかどうか確認して準備できていれば
+	 * ビデオフレームデータが準備できているかどうか確認して準備できていれば
 	 * BufferInfoを設定してByteBufferを返す
 	 * @param info
 	 * @return
 	 * @throws IOException
 	 */
 	@SuppressWarnings("WrongConstant")
-	protected ByteBuffer processFrame(
+	protected ByteBuffer processVideoFrame(
 		@NonNull final MediaCodec.BufferInfo info) throws IOException {
 
 		if (mVideoCache.size() > 0) {
-			oldest = mVideoCache.getOldest();
-			info.size = oldest != null ? oldest.available(0) : 0;
+			oldestVideo = mVideoCache.getOldest();
+			info.size = oldestVideo != null ? oldestVideo.available(0) : 0;
 			if (info.size > 0) {
-				info.presentationTimeUs = oldest.getKey();
-				buf = oldest.getBytes(0, buf);
-				info.flags = oldest.getInt(1);
-				oldest.close();
+				info.presentationTimeUs = oldestVideo.getKey();
+				videoBuf = oldestVideo.getBytes(0, videoBuf);
+				info.flags = oldestVideo.getInt(1);
+				oldestVideo.close();
 				mVideoCache.remove(info.presentationTimeUs);
-				if (info.presentationTimeUs == prevPtsUs) {
+				if (info.presentationTimeUs == prevVideoPtsUs) {
 					Log.w(TAG, "duplicated frame data");
 					info.size = 0;
 				}
-				prevPtsUs = info.presentationTimeUs;
+				prevVideoPtsUs = info.presentationTimeUs;
 			}
-			return ByteBuffer.wrap(buf, 0, info.size);
+			return ByteBuffer.wrap(videoBuf, 0, info.size);
 		} else {
 			info.size = 0;
 		}
@@ -497,7 +536,39 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	}
 	
 	/**
-	 * エンコード済みのフレームデータを書き出す
+	 * オーディオフレームデータが準備できているかどうか確認して準備できていれば
+	 * BufferInfoを設定してByteBufferを返す
+	 * @param info
+	 * @return
+	 * @throws IOException
+	 */
+	protected ByteBuffer processAudioFrame(
+		@NonNull final MediaCodec.BufferInfo info) throws IOException {
+
+		if (mAudioCache.size() > 0) {
+			oldestAudio = mAudioCache.getOldest();
+			info.size = oldestAudio != null ? oldestAudio.available(0) : 0;
+			if (info.size > 0) {
+				info.presentationTimeUs = oldestAudio.getKey();
+				audioBuf = oldestAudio.getBytes(0, audioBuf);
+				info.flags = oldestAudio.getInt(1);
+				oldestAudio.close();
+				mAudioCache.remove(info.presentationTimeUs);
+				if (info.presentationTimeUs == prevAudioPtsUs) {
+					Log.w(TAG, "duplicated frame data");
+					info.size = 0;
+				}
+				prevAudioPtsUs = info.presentationTimeUs;
+			}
+			return ByteBuffer.wrap(audioBuf, 0, info.size);
+		} else {
+			info.size = 0;
+		}
+		return null;
+	}
+	
+	/**
+	 * エンコード済みのフレームデータをキャッシュへ書き出す
 	 * @param reaper
 	 * @param byteBuf
 	 * @param bufferInfo
@@ -509,8 +580,19 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs)
 			throws IOException {
 	
-		if (mVideoCache != null) {
-			final TimeShiftDiskCache.Editor editor = mVideoCache.edit(ptsUs);
+		final TimeShiftDiskCache cache;
+		switch (reaper.reaperType()) {
+		case MediaReaper.REAPER_VIDEO:
+			cache = mVideoCache;
+			break;
+		case MediaReaper.REAPER_AUDIO:
+			cache = mAudioCache;
+			break;
+		default:
+			cache = null;
+		}
+		if ((cache != null) && !cache.isClosed()) {
+			final TimeShiftDiskCache.Editor editor = cache.edit(ptsUs);
 			editor.set(0, byteBuf, bufferInfo.offset, bufferInfo.size);
 			editor.set(1, bufferInfo.flags);
 			editor.commit();
