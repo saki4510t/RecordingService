@@ -227,7 +227,9 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	}
 	
 	@Override
-	public void setAudioSampler(@NonNull final IAudioSampler sampler) {
+	public void setAudioSampler(@NonNull final IAudioSampler sampler)
+		throws IllegalStateException {
+
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
@@ -235,6 +237,17 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		}
 	}
 	
+	@Override
+	public void setAudioSettings(final int sampleRate, final int channelCount)
+		throws IllegalStateException {
+
+		checkReleased();
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.setAudioSettings(sampleRate, channelCount);
+		}
+	}
+
 	@Override
 	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
 		final long presentationTimeUs) {

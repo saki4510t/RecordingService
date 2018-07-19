@@ -153,7 +153,9 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private void internalStopTimeShift() {
 		if (getState() == STATE_BUFFERING) {
 			setState(STATE_READY);
-			releaseEncoder();
+			synchronized (mSync) {
+				releaseEncoder();
+			}
 		}
 	}
 	

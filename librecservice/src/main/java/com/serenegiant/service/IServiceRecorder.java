@@ -59,18 +59,6 @@ public interface IServiceRecorder {
 	public boolean isRecording();
 
 	/**
-	 * 録画設定をセット
-	 * @param width
-	 * @param height
-	 * @param frameRate
-	 * @param bpp
-	 * @throws IllegalStateException
-	 * @throws IOException
-	 */
-	public void setVideoSettings(final int width, final int height,
-		final int frameRate, final float bpp);
-	
-	/**
 	 * 録画録音の準備
 	 * @throws IllegalStateException
 	 * @throws IOException
@@ -103,6 +91,17 @@ public interface IServiceRecorder {
 	public void stop();
 
 	/**
+	 * 録画設定をセット
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 * @throws IllegalStateException
+	 */
+	public void setVideoSettings(final int width, final int height,
+		final int frameRate, final float bpp);
+
+	/**
 	 * 録画用の映像を入力するためのSurfaceを取得
 	 * @return
 	 */
@@ -118,13 +117,25 @@ public interface IServiceRecorder {
 	 * #writeAudioFrameと排他使用
 	 * @param sampler
 	 */
-	public void setAudioSampler(@NonNull final IAudioSampler sampler);
+	public void setAudioSampler(@NonNull final IAudioSampler sampler)
+		throws IllegalStateException;
+	
+	/**
+	 * 録音設定
+	 * #setAudioSamplerで設置したIAudioSamplerの設定が優先される
+	 * @param sampleRate
+	 * @param channelCount
+	 * @throws IllegalStateException
+	 */
+	public void setAudioSettings(final int sampleRate, final int channelCount)
+		throws IllegalStateException;
 	
 	/**
 	 * 録音用の音声データを書き込む
 	 * #setAudioSamplerと排他使用
 	 * @param buffer
 	 * @param presentationTimeUs
+	 * @throws IllegalStateException
 	 */
 	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
 		final long presentationTimeUs);

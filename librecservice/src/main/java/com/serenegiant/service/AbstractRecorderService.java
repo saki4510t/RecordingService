@@ -168,6 +168,13 @@ public abstract class AbstractRecorderService extends BaseService {
 		mListeners.remove(listener);
 	}
 	
+	/**
+	 * 録画設定
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 */
 	public void setVideoSettings(final int width, final int height,
 		final int frameRate, final float bpp) {
 		
@@ -182,20 +189,53 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * #writeAudioFrameと排他使用
 	 * @param sampler
 	 */
-	public void setAudioSampler(@NonNull final IAudioSampler sampler) {
-		// FIXME 未実装
+	public void setAudioSampler(@NonNull final IAudioSampler sampler)
+		throws IllegalStateException {
+
+		if (getState() != STATE_INITIALIZED) {
+			throw new IllegalStateException();
+		}
+		if (mAudioSampler != sampler) {
+			if (mAudioSampler != null) {
+				mAudioSampler.removeCallback(mSoundSamplerCallback);
+			}
+			mAudioSampler = sampler;
+		}
 	}
 	
+	/**
+	 * 録音設定
+	 * #setAudioSamplerで設置したIAudioSamplerの設定が優先される
+	 * @param sampleRate
+	 * @param channelCount
+	 */
+	public void setAudioSettings(final int sampleRate, final int channelCount)
+		throws IllegalStateException {
+
+		if (getState() != STATE_INITIALIZED) {
+			throw new IllegalStateException();
+		}
+		mSampleRate = sampleRate;
+		mChannelCount = channelCount;
+	}
+
 	/**
 	 * 録音用の音声データを書き込む
 	 * #setAudioSamplerと排他使用
 	 * @param buffer position/limitを正しくセットしておくこと
 	 * @param presentationTimeUs
 	 */
-	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
-		final long presentationTimeUs) {
+	public void writeAudioFrame(
+		@NonNull final ByteBuffer buffer, final long presentationTimeUs)
+			throws IllegalStateException, UnsupportedOperationException {
 		
-		// FIXME 未実装
+		if (getState() < STATE_PREPARED) {
+			throw new IllegalStateException();
+		}
+		if (mAudioSampler != null) {
+			throw new UnsupportedOperationException("audioSampler is already set");
+		}
+		encodeAudio(buffer, buffer.limit(), presentationTimeUs);
 	}
 	
 
@@ -367,6 +407,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				if (mAudioSampler != null) {
 					mSampleRate = mAudioSampler.getSamplingFrequency();
 					mChannelCount = mAudioSampler.getChannels();
+					mAudioSampler.addCallback(mSoundSamplerCallback);
 				}
 				if ((mSampleRate > 0)
 					&& (mChannelCount == 1) || (mChannelCount == 2)) {
@@ -658,7 +699,9 @@ public abstract class AbstractRecorderService extends BaseService {
 		@Override
 		public void onStop(@NonNull final MediaReaper reaper) {
 			if (DEBUG) Log.v(TAG, "onStop:");
-			releaseEncoder();
+			synchronized (mSync) {
+				releaseEncoder();
+			}
 		}
 
 		@Override
@@ -691,10 +734,16 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	protected abstract void internalStop();
 	
+	/**
+	 * mSyncをロックして呼ばれる
+	 */
 	protected void internalResetSettings() {
 		mWidth = mHeight = mFrameRate = -1;
 		mBpp = -1.0f;
-		mAudioSampler = null;
+		if (mAudioSampler != null) {
+			mAudioSampler.removeCallback(mSoundSamplerCallback);
+			mAudioSampler = null;
+		}
 		mSampleRate = mChannelCount = -1;
 		mIsEos = false;
 	}
@@ -749,23 +798,7 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		@Override
 		public void onData(final ByteBuffer buffer, final int size, final long presentationTimeUs) {
-			final MediaReaper.AudioReaper reaper;
-			final MediaCodec encoder;
-    		synchronized (mSync) {
-    			// 既に終了しているか終了指示が出てれば何もしない
-				reaper = mAudioReaper;
-				encoder = mAudioEncoder;
-        		if (!isRunning() || (reaper == null) || (encoder == null)) return;
-    		}
-			if (size > 0) {
-				// 音声データを受け取った時はエンコーダーへ書き込む
-				try {
-					encode(encoder, buffer, size, presentationTimeUs);
-					reaper.frameAvailableSoon();
-				} catch (final Exception e) {
-					//
-				}
-			}
+			encodeAudio(buffer, size, presentationTimeUs);
 		}
 
 		@Override
@@ -773,6 +806,36 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 	};
 
+	/**
+	 * 音声データをエンコード
+	 * 既に終了しているか終了指示が出てれば何もしない
+	 * @param buffer
+	 * @param size
+	 * @param presentationTimeUs
+	 */
+	protected void encodeAudio(
+		@NonNull final ByteBuffer buffer, final int size,
+		final long presentationTimeUs) {
+	
+		final MediaReaper.AudioReaper reaper;
+		final MediaCodec encoder;
+   		synchronized (mSync) {
+   			// 既に終了しているか終了指示が出てれば何もしない
+			reaper = mAudioReaper;
+			encoder = mAudioEncoder;
+       		if (!isRunning() || (reaper == null) || (encoder == null)) return;
+   		}
+		if (size > 0) {
+			// 音声データを受け取った時はエンコーダーへ書き込む
+			try {
+				encode(encoder, buffer, size, presentationTimeUs);
+				reaper.frameAvailableSoon();
+			} catch (final Exception e) {
+				//
+			}
+		}
+	}
+	
 	/**
 	 * バイト配列をエンコードする場合
 	 * @param buffer
