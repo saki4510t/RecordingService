@@ -744,7 +744,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			mAudioSampler.removeCallback(mSoundSamplerCallback);
 			mAudioSampler = null;
 		}
-		mSampleRate = mChannelCount = -1;
+		mSampleRate = mChannelCount = 0;
 		mIsEos = false;
 	}
 	
