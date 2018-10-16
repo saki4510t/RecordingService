@@ -6,7 +6,7 @@ buildscript {
 		google()
 	}
 	dependencies {
-		classpath 'com.android.tools.build:gradle:3.1.4'
+		classpath 'com.android.tools.build:gradle:3.2.1'
 
 		// NOTE: Do not place your application dependencies here; they belong
 		// in the individual module build.gradle files
@@ -31,12 +31,12 @@ ext {
 	javaSourceCompatibility = JavaVersion.VERSION_1_8
 	javaTargetCompatibility = JavaVersion.VERSION_1_8
 
-	versionBuildTool = "27.0.3"
-	versionCompiler = 27
+	versionBuildTool = "28.0.3"
+	versionCompiler = 28
 	versionTarget = 27
 
 	supportLibVersion = '27.1.1'  // variable that can be referenced to keep support libs consistent
-	commonLibVersion= '2.9.0'
+	commonLibVersion= '2.13.1'
 
 	versionCodeNum = 15
 	versionNameString = '0.3.0'
