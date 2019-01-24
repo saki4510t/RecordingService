@@ -20,8 +20,8 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.support.annotation.NonNull;
-import android.support.v4.provider.DocumentFile;
+import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
 

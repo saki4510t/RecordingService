@@ -15,8 +15,8 @@ package com.serenegiant.service;
  * limitations under the License.
  */
 
-import android.support.annotation.NonNull;
-import android.support.v4.provider.DocumentFile;
+import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import android.view.Surface;
 
 import com.serenegiant.media.IAudioSampler;

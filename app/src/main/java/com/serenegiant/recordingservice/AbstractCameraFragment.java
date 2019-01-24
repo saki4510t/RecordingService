@@ -24,16 +24,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.StyleRes;
-import android.support.v4.app.Fragment;
-import android.support.v4.provider.DocumentFile;
+
+import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
-import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,10 +35,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.HandlerThreadHandler;
 import com.serenegiant.utils.PermissionCheck;
 import com.serenegiant.utils.SDUtils;
-import com.serenegiant.utils.Stacktrace;
 
 import java.io.File;
 import java.io.IOException;

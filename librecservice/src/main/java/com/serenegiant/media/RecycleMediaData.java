@@ -15,8 +15,8 @@ package com.serenegiant.media;
  * limitations under the License.
  */
 
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 
 import java.lang.ref.WeakReference;
 

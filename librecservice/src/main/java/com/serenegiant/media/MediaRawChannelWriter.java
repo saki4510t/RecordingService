@@ -18,7 +18,7 @@ package com.serenegiant.media;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import java.io.FileOutputStream;

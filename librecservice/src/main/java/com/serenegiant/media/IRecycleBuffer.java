@@ -15,8 +15,8 @@ package com.serenegiant.media;
  * limitations under the License.
  */
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * 再利用可能バッファインターフェース

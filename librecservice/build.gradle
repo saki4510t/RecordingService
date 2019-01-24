@@ -15,7 +15,7 @@ android {
 		versionCode versionCodeNum
 		versionName versionNameString
 
-		testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
 	}
 	buildTypes {
@@ -28,12 +28,17 @@ android {
 
 dependencies {
 	api fileTree(dir: 'libs', include: ['*.jar'])
-	androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+
+	implementation "androidx.legacy:legacy-support-v4:${supportLibVersion}"
+	implementation "androidx.appcompat:appcompat:${androidXVersion}"
+//	implementation "androidx.recyclerview:recyclerview:${supportLibVersion}"
+//	implementation "androidx.constraintlayout:constraintlayout:${constraintLibVersion}"
+
+	androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0-alpha4', {
 		exclude group: 'com.android.support', module: 'support-annotations'
 	})
 	testImplementation 'junit:junit:4.12'
 
-	implementation "com.android.support:appcompat-v7:${supportLibVersion}"
 	implementation("com.serenegiant:common:${commonLibVersion}") {
 		exclude module: 'support-v4'
 	}

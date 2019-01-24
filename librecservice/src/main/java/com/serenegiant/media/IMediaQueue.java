@@ -15,7 +15,7 @@ package com.serenegiant.media;
  * limitations under the License.
  */
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import java.util.concurrent.TimeUnit;
 

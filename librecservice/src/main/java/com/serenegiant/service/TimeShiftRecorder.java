@@ -17,7 +17,7 @@ package com.serenegiant.service;
 
 import android.content.Context;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.util.Log;
 
 import java.io.IOException;
