@@ -16,7 +16,7 @@ buildscript {
 allprojects {
 	repositories {
 		google()
-		maven { url 'https://maven.google.com' }
+//		maven { url 'https://maven.google.com' }
 		jcenter()
 		maven { url 'http://raw.github.com/saki4510t/libcommon/master/repository/' }
 		mavenLocal()
@@ -40,7 +40,7 @@ ext {
 	androidXVersion = '1.0.2'
 	constraintLibVersion = '1.1.3'
 
-	commonLibVersion= '4.0.1'
+	commonLibVersion= '4.1.0'
 
 	versionCodeNum = 16
 	versionNameString = '1.0.0'
