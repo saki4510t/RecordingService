@@ -42,7 +42,7 @@ ext {
 
 	commonLibVersion= '4.4.0'	// should be >=4.4.0
 
-	versionCodeNum = 16
-	versionNameString = '1.1.0'
+	versionCodeNum = 17
+	versionNameString = '1.2.0'
 
 }
