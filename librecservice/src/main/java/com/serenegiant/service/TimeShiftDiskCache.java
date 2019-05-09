@@ -1,6 +1,6 @@
 package com.serenegiant.service;
 /*
- * Copyright (c) 2016-2018.  saki t_saki@serenegiant.com
+ * Copyright (c) 2016-2019.  saki t_saki@serenegiant.com
  *
  * based on DiskLruCache on AOSP
  *

@@ -1,7 +1,7 @@
 package com.serenegiant.recordingservice;
 /*
  *
- * Copyright (c) 2016-2018 saki t_saki@serenegiant.com
+ * Copyright (c) 2016-2019 saki t_saki@serenegiant.com
  *
  * File name: AbstractCameraFragment.java
  *
