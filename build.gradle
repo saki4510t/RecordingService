@@ -40,7 +40,7 @@ ext {
 	androidXVersion = '1.0.2'
 	constraintLibVersion = '1.1.3'
 
-	commonLibVersion= '4.1.0'
+	commonLibVersion= '4.4.0'	// should be >=4.4.0
 
 	versionCodeNum = 16
 	versionNameString = '1.1.0'
