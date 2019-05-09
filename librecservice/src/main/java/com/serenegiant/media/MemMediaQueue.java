@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * IMediaQueueのオンメモリー実装
  * LinkedBlockingQueueを使用
+ * FIXME libcommonへ移動する
  */
 
 public class MemMediaQueue implements IMediaQueue {

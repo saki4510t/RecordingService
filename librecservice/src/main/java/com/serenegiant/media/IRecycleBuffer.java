@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 
 /**
  * 再利用可能バッファインターフェース
- *
+ * FIXME libcommonへ移動する
  */
 public interface IRecycleBuffer {
 	/**

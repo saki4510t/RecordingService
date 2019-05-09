@@ -22,6 +22,7 @@ import java.lang.ref.WeakReference;
 
 /**
  * IRecycleBufferを実装したMediaData
+ * FIXME libcommonへ移動する
  */
 public class RecycleMediaData extends MediaData implements IRecycleBuffer {
 	private final WeakReference<IMediaQueue> mWeakParent;

@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * バッファリング用のFIFOバッファインターフェース
+ * FIXME libcommonへ移動する
  */
 public interface IMediaQueue {
 	/**
