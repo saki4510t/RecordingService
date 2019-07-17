@@ -25,8 +25,13 @@ import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
 
+import com.serenegiant.media.AbstractAudioEncoder;
+import com.serenegiant.media.AudioSampler;
+import com.serenegiant.media.AudioSamplerEncoder;
 import com.serenegiant.media.Encoder;
 import com.serenegiant.media.EncoderListener;
+import com.serenegiant.media.IAudioEncoder;
+import com.serenegiant.media.IAudioSampler;
 import com.serenegiant.media.IRecorder;
 import com.serenegiant.media.IVideoEncoder;
 import com.serenegiant.media.Recorder;
@@ -65,7 +70,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		if (DEBUG) Log.v(TAG, "internalStartRecording:");
 		final DocumentFile recRoot = getRecordingRoot(getActivity());
 		if (recRoot != null) {
-			startEncoder(recRoot, 0, 0, false);
+			startEncoder(recRoot, 2, CHANNEL_COUNT, false);
 		} else {
 			throw new IOException("could not access storage");
 		}
@@ -91,8 +96,10 @@ public class SplitRecFragment extends AbstractCameraFragment {
 	}
 	
 	private Surface mEncoderSurface;
+	private IAudioSampler mAudioSampler;
 	private IRecorder mRecorder;
 	private volatile IVideoEncoder mVideoEncoder;
+	private volatile IAudioEncoder mAudioEncoder;
 
 	/**
 	 * create IRecorder instance for recording and prepare, start
@@ -135,6 +142,11 @@ public class SplitRecFragment extends AbstractCameraFragment {
 			mEncoderSurface = null;
 		}
 		mVideoEncoder = null;
+		mAudioEncoder = null;
+		if (mAudioSampler != null) {
+			mAudioSampler.release();
+			mAudioSampler = null;
+		}
 		if (DEBUG) Log.v(TAG, "stopEncoder:finished");
 	}
 
@@ -160,6 +172,14 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		mVideoEncoder = new SurfaceEncoder(recorder, mEncoderListener); // API>=18
 		mVideoEncoder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		((SurfaceEncoder)mVideoEncoder).setVideoConfig(-1, 30, 10);
+		if (audio_source >= 0) {
+			mAudioSampler = new AudioSampler(audio_source,
+				audio_channels, SAMPLE_RATE,
+				AbstractAudioEncoder.SAMPLES_PER_FRAME,
+				AbstractAudioEncoder.FRAMES_PER_BUFFER);
+			mAudioSampler.start();
+			mAudioEncoder = new AudioSamplerEncoder(recorder, mEncoderListener, 2, mAudioSampler);
+		}
 		if (DEBUG) Log.v(TAG, "createRecorder:finished");
 		return recorder;
 	}
@@ -230,7 +250,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 					Log.w(TAG, e1);
 				}
 			}
-			if (DEBUG) Log.v(TAG, "onPrepared:finished");
+			if (DEBUG) Log.v(TAG, "mRecorderCallback#onPrepared:finished");
 		}
 		
 		@Override
