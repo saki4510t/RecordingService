@@ -37,7 +37,7 @@ ext {
 
 	// variable that can be referenced to keep support libs consistent
 	supportLibVersion = '1.0.0'
-	androidXVersion = '1.0.2'
+	androidXVersion = '1.1.0-rc01'
 	constraintLibVersion = '1.1.3'
 
 	commonLibVersion= '4.4.0'	// should be >=4.4.0
