@@ -484,7 +484,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		final int frameRate, final float bpp) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createEncoder:");
-		final MediaCodecInfo codecInfo = selectVideoCodec(MIME_VIDEO_AVC);
+		final MediaCodecInfo codecInfo = selectVideoEncoder(MIME_VIDEO_AVC);
 		if (codecInfo == null) {
 			throw new IOException("Unable to find an appropriate codec for " + MIME_VIDEO_AVC);
 		}
@@ -519,7 +519,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createEncoder:");
-		final MediaCodecInfo codecInfo = selectAudioCodec(MIME_AUDIO_AAC);
+		final MediaCodecInfo codecInfo = selectAudioEncoder(MIME_AUDIO_AAC);
 		if (codecInfo == null) {
 			throw new IOException("Unable to find an appropriate codec for " + MIME_AUDIO_AAC);
 		}
