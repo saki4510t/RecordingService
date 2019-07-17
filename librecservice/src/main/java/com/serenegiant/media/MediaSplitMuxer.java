@@ -19,19 +19,16 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.media.MediaMuxer;
 import android.os.Environment;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
-import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.SDUtils;
+import com.serenegiant.utils.SAFUtils;
 import com.serenegiant.utils.StorageInfo;
 import com.serenegiant.utils.Time;
-import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,6 +91,8 @@ public class MediaSplitMuxer implements IMuxer {
 	@NonNull
 	private final IMediaQueue mQueue;
 	private final long mSplitSize;
+	@NonNull
+	private final IMuxerFactory mMuxerFactory;
 	private DocumentFile mCurrent;
 	/** 実行中フラグ */
 	private volatile boolean mIsRunning;
@@ -116,7 +115,7 @@ public class MediaSplitMuxer implements IMuxer {
 		final long splitSize) throws IOException {
 		
 		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
-			outputDir, name, splitSize);
+			null, outputDir, name, splitSize);
 	}
 	
 	/**
@@ -129,6 +128,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@Nullable final IMediaQueue queue,
+		@Nullable final IMuxerFactory factory,
 		@NonNull final String outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
@@ -142,6 +142,7 @@ public class MediaSplitMuxer implements IMuxer {
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
 		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
 			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
+		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mMuxer = createMuxer(0);
 	}
 	
@@ -157,7 +158,7 @@ public class MediaSplitMuxer implements IMuxer {
 		final long splitSize) throws IOException {
 
 		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
-			outputDir, name, splitSize);
+			null, outputDir, name, splitSize);
 	}
 
 	/**
@@ -170,6 +171,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
 		@Nullable final IMediaQueue queue,
+		@Nullable final IMuxerFactory factory,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
@@ -183,6 +185,7 @@ public class MediaSplitMuxer implements IMuxer {
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
 		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
 			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
+		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mMuxer = createMuxer(0);
 	}
 
@@ -493,7 +496,7 @@ public class MediaSplitMuxer implements IMuxer {
 	protected boolean checkFreespace() {
 		StorageInfo info = null;
 		if (mOutputDoc != null) {
-			info = SDUtils.getStorageInfo(getContext(), mOutputDoc);
+			info = SAFUtils.getStorageInfo(getContext(), mOutputDoc);
 		}
 		if (info == null) {
 			info = FileUtils.getStorageInfo(getContext(),
@@ -580,7 +583,7 @@ public class MediaSplitMuxer implements IMuxer {
 		if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
 		IMuxer result;
 		mCurrent = createOutputDoc(EXT_MP4, segment);
-		result = MediaSplitMuxer.createMuxer(getContext(), mCurrent);
+		result = createMuxer(getContext(), mCurrent);
 		return result;
 	}
 
@@ -635,31 +638,16 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @throws IOException
 	 */
 	@SuppressLint("NewApi")
-	protected static IMuxer createMuxer(@NonNull final Context context,
+	protected IMuxer createMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile file) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
 		IMuxer result = null;
-		if (VideoConfig.sUseMediaMuxer) {
-			if (BuildCheck.isOreo()) {
-				result = new MediaMuxerWrapper(context.getContentResolver()
-					.openFileDescriptor(file.getUri(), "rw").getFileDescriptor(),
-					MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-			} else {
-				final String path = UriHelper.getPath(context, file.getUri());
-				final File f = new File(UriHelper.getPath(context, file.getUri()));
-				if (/*!f.exists() &&*/ f.canWrite()) {
-					// 書き込めるファイルパスを取得できればそれを使う
-					result = new MediaMuxerWrapper(path,
-						MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-				} else {
-					Log.w(TAG, "cant't write to the file, try to use VideoMuxer instead");
-				}
-			}
-		}
+
+		result = mMuxerFactory.createMuxer(context, VideoConfig.DEFAULT_CONFIG.useMediaMuxer(), file);
 		if (result == null) {
-			result = new VideoMuxer(context.getContentResolver()
-				.openFileDescriptor(file.getUri(), "rw").getFd());
+			result = mMuxerFactory.createMuxer(VideoConfig.DEFAULT_CONFIG.useMediaMuxer(),
+				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
 		}
 		if (DEBUG) Log.v(TAG, "createMuxer:finished," + result);
 		return result;

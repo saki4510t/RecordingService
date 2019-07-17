@@ -25,9 +25,6 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
-import com.serenegiant.utils.BuildCheck;
-import com.serenegiant.utils.UriHelper;
-
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -47,9 +44,24 @@ class PostMuxBuilder extends PostMuxCommon {
 	private static final long MSEC30US = 1000000 / 30;
 
 	private volatile boolean mIsRunning;
-	
+
+	@NonNull
+	private final IMuxer.IMuxerFactory mMuxerFactory;
+
+	/**
+	 * コンストラクタ
+	 */
 	public PostMuxBuilder() {
+		this(null);
+	}
+
+	/**
+	 * コンストラクタ
+	 * @param factory
+	 */
+	public PostMuxBuilder(@Nullable final IMuxer.IMuxerFactory factory) {
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
+		mMuxerFactory = factory != null ? factory : new IMuxer.DefaultFactory();
 	}
 	
 	public void cancel() {
@@ -111,25 +123,10 @@ class PostMuxBuilder extends PostMuxCommon {
 		final boolean hasVideo = videoFile.exists() && videoFile.canRead();
 		final boolean hasAudio = audioFile.exists() && audioFile.canRead();
 		if (hasVideo || hasAudio) {
-			IMuxer muxer = null;
-			if (BuildCheck.isOreo()) {
-				muxer = new MediaMuxerWrapper(context.getContentResolver()
-					.openFileDescriptor(output.getUri(), "rw").getFileDescriptor(),
-					MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-			} else {
-				final String path = UriHelper.getPath(context, output.getUri());
-				final File f = new File(UriHelper.getPath(context, output.getUri()));
-				if (/*!f.exists() &&*/ f.canWrite()) {
-					// 書き込めるファイルパスを取得できればそれを使う
-					muxer = new MediaMuxerWrapper(path,
-						MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-				} else {
-					Log.w(TAG, "cant't write to the file, try to use VideoMuxer instead");
-				}
-			}
+			IMuxer muxer = mMuxerFactory.createMuxer(context, VideoConfig.DEFAULT_CONFIG.useMediaMuxer(), output);
 			if (muxer == null) {
-				muxer = new VideoMuxer(context.getContentResolver()
-					.openFileDescriptor(output.getUri(), "rw").getFd());
+				muxer = mMuxerFactory.createMuxer(VideoConfig.DEFAULT_CONFIG.useMediaMuxer(),
+					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 			}
 			if (muxer != null) {
 				try {
@@ -313,25 +310,10 @@ class PostMuxBuilder extends PostMuxCommon {
 		final boolean hasVideo = videoFile.exists() && videoFile.canRead();
 		final boolean hasAudio = audioFile.exists() && audioFile.canRead();
 		if (hasVideo || hasAudio) {
-			IMuxer muxer = null;
-			if (BuildCheck.isOreo()) {
-				muxer = new MediaMuxerWrapper(context.getContentResolver()
-					.openFileDescriptor(output.getUri(), "rw").getFileDescriptor(),
-					MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-			} else {
-				final String path = UriHelper.getPath(context, output.getUri());
-				final File f = new File(UriHelper.getPath(context, output.getUri()));
-				if (/*!f.exists() &&*/ f.canWrite()) {
-					// 書き込めるファイルパスを取得できればそれを使う
-					muxer = new MediaMuxerWrapper(path,
-						MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-				} else {
-					Log.w(TAG, "cant't write to the file, try to use VideoMuxer instead");
-				}
-			}
+			IMuxer muxer = mMuxerFactory.createMuxer(context, VideoConfig.DEFAULT_CONFIG.useMediaMuxer(), output);
 			if (muxer == null) {
-				muxer = new VideoMuxer(context.getContentResolver()
-					.openFileDescriptor(output.getUri(), "rw").getFd());
+				muxer = mMuxerFactory.createMuxer(VideoConfig.DEFAULT_CONFIG.useMediaMuxer(),
+					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 			}
 			if (muxer != null) {
 				try {

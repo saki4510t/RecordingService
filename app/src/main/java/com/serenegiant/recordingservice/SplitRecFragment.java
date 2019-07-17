@@ -52,7 +52,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		super();
 		// デフォルトコンストラクタが必要
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
-		VideoConfig.maxDuration = -1L;	// 録画時間制限なし
+		VideoConfig.DEFAULT_CONFIG.setMaxDuration(-1L);	// 録画時間制限なし
 	}
 	
 	@Override

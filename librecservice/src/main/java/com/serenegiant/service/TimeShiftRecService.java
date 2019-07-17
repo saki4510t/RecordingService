@@ -33,7 +33,6 @@ import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
-import com.serenegiant.media.VideoMuxer;
 import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.UriHelper;
 
@@ -230,8 +229,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			}
 		}
 		if (muxer == null) {
-			muxer = new VideoMuxer(getContentResolver()
-				.openFileDescriptor(output.getUri(), "rw").getFd());
+			throw new IllegalArgumentException();
 		}
 		final int videoTrackIx = videoFormat != null ? muxer.addTrack(videoFormat) : -1;
 		final int audioTrackIx = audioFormat != null ? muxer.addTrack(audioFormat) : -1;
@@ -333,7 +331,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			Log.v(TAG, "create new cache dir for video");
 		}
 		final long maxShiftMs = getMaxShiftMs();
-		VideoConfig.maxDuration = maxShiftMs;
+		VideoConfig.DEFAULT_CONFIG.setMaxDuration(maxShiftMs);
 		mVideoCache = TimeShiftDiskCache.open(cacheDir,
 			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
 		super.internalPrepare(width, height, frameRate, bpp);
@@ -349,7 +347,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			Log.v(TAG, "create new cache dir for audio");
 		}
 		final long maxShiftMs = getMaxShiftMs();
-		VideoConfig.maxDuration = maxShiftMs;
+		VideoConfig.DEFAULT_CONFIG.setMaxDuration(maxShiftMs);
 		mAudioCache = TimeShiftDiskCache.open(cacheDir,
 			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
 		super.internalPrepare(sampleRate, channelCount);

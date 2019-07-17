@@ -41,7 +41,7 @@ import com.serenegiant.dialog.MessageDialogFragmentV4;
 import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.HandlerThreadHandler;
 import com.serenegiant.utils.PermissionCheck;
-import com.serenegiant.utils.SDUtils;
+import com.serenegiant.utils.SAFUtils;
 import com.serenegiant.utils.Stacktrace;
 
 import java.util.Arrays;
@@ -510,7 +510,7 @@ public abstract class BaseFragment extends Fragment
 			return false;
 		}
 
-		return (SDUtils.hasStorageAccess(activity, REQUEST_ACCESS_SD)
+		return (SAFUtils.hasStorageAccess(activity, REQUEST_ACCESS_SD)
 			|| PermissionCheck.hasWriteExternalStorage(activity))
 			&& PermissionCheck.hasAudio(activity)
 			&& PermissionCheck.hasCamera(activity);

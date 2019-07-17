@@ -36,7 +36,7 @@ import android.widget.TextView;
 
 import com.serenegiant.utils.FileUtils;
 import com.serenegiant.utils.PermissionCheck;
-import com.serenegiant.utils.SDUtils;
+import com.serenegiant.utils.SAFUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -208,9 +208,9 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 	protected static DocumentFile getRecordingRoot(@NonNull final Context context) {
 		if (DEBUG) Log.v(TAG, "getRecordingRoot:");
 		DocumentFile root = null;
-		if (SDUtils.hasStorageAccess(context, REQUEST_ACCESS_SD)) {
+		if (SAFUtils.hasStorageAccess(context, REQUEST_ACCESS_SD)) {
 			try {
-				root = SDUtils.getStorage(context, REQUEST_ACCESS_SD);
+				root = SAFUtils.getStorage(context, REQUEST_ACCESS_SD);
 				if ((root != null) && root.exists() && root.canWrite()) {
 					final DocumentFile appDir = root.findFile(APP_DIR_NAME);
 					if (appDir == null) {
@@ -232,7 +232,7 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 		if (root == null) {
 			// remove permission to access secondary (external) storage,
 			// because app can't access it and it will already be removed.
-			SDUtils.releaseStorageAccessPermission(context, REQUEST_ACCESS_SD);
+			SAFUtils.releaseStorageAccessPermission(context, REQUEST_ACCESS_SD);
 		}
 		if ((root == null) && PermissionCheck.hasWriteExternalStorage(context)) {
 			// fallback to primary external storage if app has permission

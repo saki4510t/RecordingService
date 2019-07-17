@@ -77,6 +77,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	
 	private final Set<StateChangeListener> mListeners
 		= new CopyOnWriteArraySet<StateChangeListener>();
+	private VideoConfig mVideoConfig;
 	private Intent mIntent;
 	private int mState = STATE_UNINITIALIZED;
 	private boolean mIsBind;
@@ -126,6 +127,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	@Nullable
 	@Override
 	public IBinder onBind(final Intent intent) {
+		super.onBind(intent);
 		if (DEBUG) Log.v(TAG, "onBind:intent=" + intent);
 		if (intent != null) {
 			showNotification(NOTIFICATION,
@@ -158,6 +160,14 @@ public abstract class AbstractRecorderService extends BaseService {
 		checkStopSelf();
 		if (DEBUG) Log.v(TAG, "onUnbind:finished");
 		return false;	// onRebind使用不可
+	}
+
+	@NonNull
+	protected VideoConfig requireConfig() {
+		if (mVideoConfig == null) {
+			mVideoConfig = VideoConfig.createDefault();
+		}
+		return mVideoConfig;
 	}
 
 	public void addListener(@Nullable final StateChangeListener listener) {
@@ -403,10 +413,10 @@ public abstract class AbstractRecorderService extends BaseService {
 				if ((mWidth > 0) && (mHeight > 0)) {
 					// 録画する時
 					if (mFrameRate <= 0) {
-						mFrameRate = VideoConfig.getCaptureFps();
+						mFrameRate = requireConfig().captureFps();
 					}
 					if (mBpp <= 0) {
-						mBpp = VideoConfig.getBitrate(mWidth, mHeight);
+						mBpp = requireConfig().getBitrate(mWidth, mHeight);
 					}
 					internalPrepare(mWidth, mHeight, mFrameRate, mBpp);
 					createEncoder(mWidth, mHeight, mFrameRate, mBpp);
@@ -484,7 +494,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
 			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
 		format.setInteger(MediaFormat.KEY_BIT_RATE,
-			VideoConfig.getBitrate(width, height, frameRate, bpp));
+			requireConfig().getBitrate(width, height, frameRate, bpp));
 		format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
 		format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);	// IFrameの間隔は1秒にする
 		if (DEBUG) Log.d(TAG, "format: " + format);
@@ -680,7 +690,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	protected boolean checkFreeSpace(final Context context, final int accessId) {
 		return FileUtils.checkFreeSpace(context,
-			VideoConfig.maxDuration, System.currentTimeMillis(), accessId);
+			requireConfig().maxDuration(), System.currentTimeMillis(), accessId);
 	}
 	
 	/**
