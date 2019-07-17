@@ -327,7 +327,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 			throw new IllegalStateException("Can't write, muxer is not started");
 		}
 		if (trackIndex < 0 || trackIndex > mLastTrackIndex) {
-			throw new IllegalArgumentException("trackIndex is invalid");
+			throw new IllegalArgumentException("Invalid trackIndex=" + trackIndex);
 		}
 		if ((info.size < 0) || (info.offset < 0)
 			|| ((info.offset + info.size) > buffer.capacity())
