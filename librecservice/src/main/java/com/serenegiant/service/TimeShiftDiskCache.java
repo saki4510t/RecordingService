@@ -259,18 +259,26 @@ final class TimeShiftDiskCache implements Closeable {
 	/**
 	 * Recursively delete everything in {@code dir}.
 	 */
-	// TODO: this should specify paths as Strings rather than as Files
-	public static void deleteContents(final File dir) throws IOException {
-		File[] files = dir.listFiles();
-		if (files == null) {
-			throw new IllegalArgumentException("not a directory: " + dir);
-		}
-		for (final File file : files) {
-			if (file.isDirectory()) {
-				deleteContents(file);
+	public static void deleteContents(@NonNull final File path) throws IOException {
+		if (path.isDirectory()) {
+			// pathがディレクトリの時...再帰的に削除する
+			final File[] files = path.listFiles();
+			if (files == null) {
+				// ここには来ないはずだけど
+				throw new IllegalArgumentException("not a directory:" + path);
+			} else if (files.length > 0) {
+				for (final File file : files) {
+					// recursively delete contents
+					deleteContents(file);
+				}
 			}
-			if (!file.delete()) {
-				throw new IOException("failed to delete file: " + file);
+			if (!path.delete()) {
+				throw new IOException("failed to delete directory:" + path);
+			}
+		} else {
+			// pathがファイルの時
+			if (!path.delete()) {
+				throw new IOException("failed to delete file:" + path);
 			}
 		}
 	}
