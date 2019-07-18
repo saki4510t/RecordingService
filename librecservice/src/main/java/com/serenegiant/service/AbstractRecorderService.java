@@ -57,9 +57,6 @@ public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
 
-	private static final boolean USE_VIDEO = true;
-	private static final boolean USE_AUDIO = true;
-
 	private static final int NOTIFICATION = R.string.notification_service;
 	protected static final int TIMEOUT_MS = 10;
 	protected static final int TIMEOUT_USEC = 10000;	// 10ミリ秒
@@ -84,6 +81,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	private Intent mIntent;
 	private int mState = STATE_UNINITIALIZED;
 	private boolean mIsBind;
+
+	private volatile boolean mUseVideo;
 	/** 動画のサイズ(録画する場合) */
 	private int mWidth, mHeight;
 	private int mFrameRate;
@@ -93,6 +92,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	private Surface mInputSurface;
 	private MediaReaper.VideoReaper mVideoReaper;
 
+	private volatile boolean mUseAudio;
 	private IAudioSampler mAudioSampler;
 	private boolean mIsOwnAudioSampler;
 	private int mSampleRate, mChannelCount;
@@ -201,6 +201,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		mHeight = height;
 		mFrameRate = frameRate;
 		mBpp = bpp;
+		mUseVideo = true;
 	}
 
 	/**
@@ -244,6 +245,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			mSampleRate = sampleRate;
 			mChannelCount = channelCount;
 		}
+		mUseAudio = true;
 	}
 
 	/**
@@ -638,7 +640,7 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		synchronized (mSync) {
-			if ((!USE_VIDEO || (mVideoFormat != null)) && (!USE_AUDIO || (mAudioFormat != null))) {
+			if ((!mUseVideo || (mVideoFormat != null)) && (!mUseAudio || (mAudioFormat != null))) {
 				if (checkFreeSpace(this, 0)) {
 					final File dir = new File(outputDir);
 					dir.mkdirs();
@@ -665,7 +667,7 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			if ((!USE_VIDEO || (mVideoFormat != null)) && (!USE_AUDIO || (mAudioFormat != null))) {
+			if ((!mUseVideo || (mVideoFormat != null)) && (!mUseAudio || (mAudioFormat != null))) {
 				if (checkFreeSpace(this, 0)) {
 					internalStart(outputDir, name, mVideoFormat, mAudioFormat);
 				} else {
@@ -762,8 +764,8 @@ public abstract class AbstractRecorderService extends BaseService {
 				mAudioFormat = format;
 				break;
 			}
-			if ((!USE_VIDEO || (mVideoFormat != null))
-				&& (!USE_AUDIO || (mAudioFormat != null))) {
+			if ((!mUseVideo || (mVideoFormat != null))
+				&& (!mUseAudio || (mAudioFormat != null))) {
 
 				// 映像と音声のMediaFormatがそろった
 				setState(STATE_READY);
@@ -816,7 +818,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		mWidth = mHeight = mFrameRate = -1;
 		mBpp = -1.0f;
 		releaseOwnAudioSampler();
-		mIsEos = false;
+		mIsEos = mUseVideo = mUseAudio = false;
 	}
 	
 	/**
