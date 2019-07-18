@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -296,11 +297,23 @@ final class TimeShiftDiskCache implements Closeable {
 		}
 	};
 
-	private TimeShiftDiskCache(final File directory, final int appVersion, final int valueCount, final long maxSize, final long maxDurationMs) {
-		this.directory = directory;
+	private TimeShiftDiskCache(final File directory,
+		final int appVersion, final int valueCount,
+		final long maxSize, final long maxDurationMs) throws IOException {
+
+		if (!directory.isDirectory()) {
+			throw new IOException("specific path is not a directory");
+		}
+		final File dir = new File(directory, UUID.randomUUID().toString());
+		if (!dir.exists()) {
+			if (!dir.mkdirs()) {
+				throw new IOException("failed to create dir/parent dirs");
+			}
+		}
+		this.directory = dir;
 		this.appVersion = appVersion;
-		this.journalFile = new File(directory, JOURNAL_FILE);
-		this.journalFileTmp = new File(directory, JOURNAL_FILE_TMP);
+		this.journalFile = new File(dir, JOURNAL_FILE);
+		this.journalFileTmp = new File(dir, JOURNAL_FILE_TMP);
 		this.valueCount = valueCount;
 		this.maxSize = maxSize;
 		this.maxDurationMs = maxDurationMs;
