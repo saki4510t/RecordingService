@@ -111,7 +111,7 @@ final class TimeShiftDiskCache implements Closeable {
 
 	static final String JOURNAL_FILE = "journal";
 	static final String JOURNAL_FILE_TMP = "journal.tmp";
-	static final String MAGIC = "libcore.io.TimeShiftDiskCache";
+	static final String MAGIC = "com.serenegiant.io.TimeShiftDiskCache";
 	static final String VERSION_1 = "1";
 	static final long ANY_SEQUENCE_NUMBER = -1;
 	private static final String CLEAN = "CLEAN";
