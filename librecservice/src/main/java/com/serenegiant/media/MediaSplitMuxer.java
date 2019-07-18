@@ -621,14 +621,14 @@ public class MediaSplitMuxer implements IMuxer {
 			final DocumentFile dir = mOutputDoc.isDirectory()
 				? mOutputDoc : mOutputDoc.getParentFile();
 			return dir.createFile(null,
-				String.format(Locale.US, "%s%s%d.%s",
+				String.format(Locale.US, "%s%s%03d.%s",
 					mOutputName, mSegmentPrefix, segment + 1, ext));
 		} else if (mOutputDir != null) {
 			final File _dir = new File(mOutputDir);
 			final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
 			return DocumentFile.fromFile(
 				new File(dir,
-				String.format(Locale.US, "%s%s%d.%s",
+				String.format(Locale.US, "%s%s%03d.%s",
 					mOutputName, mSegmentPrefix, segment + 1, ext)));
 		} else {
 			throw new IOException("output dir not set");
