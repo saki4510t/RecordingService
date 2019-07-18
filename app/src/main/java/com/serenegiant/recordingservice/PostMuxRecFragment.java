@@ -51,8 +51,8 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 	protected void internalStartRecording() {
 		if (DEBUG) Log.v(TAG, "internalStartRecording:mRecorder=" + mRecorder);
 		if (mRecorder == null) {
-			mRecorder = PostMuxRecorder.newInstance(getActivity(),
 			if (DEBUG) Log.v(TAG, "internalStartRecording:get PostMuxRecorder");
+			mRecorder = PostMuxRecorder.newInstance(requireContext(),
 				PostMuxRecService.class, mCallback,
 				PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL);
 		} else {

@@ -57,6 +57,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
 
+	private static final boolean USE_VIDEO = true;
+	private static final boolean USE_AUDIO = true;
+
 	private static final int NOTIFICATION = R.string.notification_service;
 	protected static final int TIMEOUT_MS = 10;
 	protected static final int TIMEOUT_USEC = 10000;	// 10ミリ秒
@@ -91,7 +94,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	private MediaReaper.VideoReaper mVideoReaper;
 
 	private IAudioSampler mAudioSampler;
-	private boolean mOwnAudioSampler;
+	private boolean mIsOwnAudioSampler;
 	private int mSampleRate, mChannelCount;
 	private MediaFormat mAudioFormat;
 	private MediaCodec mAudioEncoder;
@@ -237,9 +240,9 @@ public abstract class AbstractRecorderService extends BaseService {
 			throw new IllegalStateException();
 		}
 		if ((mSampleRate != sampleRate) || (mChannelCount != channelCount)) {
+			createOwnAudioSampler(sampleRate, channelCount);
 			mSampleRate = sampleRate;
 			mChannelCount = channelCount;
-			createOwnAudioSampler(sampleRate, channelCount);
 		}
 	}
 
@@ -305,7 +308,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	public boolean isRunning() {
 		synchronized (mSync) {
-			return getState() == STATE_RECORDING;
+			final int state = getState();
+			return (state == STATE_RECORDING) || (state == STATE_PREPARED);
 		}
 	}
 	
@@ -603,19 +607,22 @@ public abstract class AbstractRecorderService extends BaseService {
 				channelCount, sampleRate,
 				AbstractAudioEncoder.SAMPLES_PER_FRAME,
 				AbstractAudioEncoder.FRAMES_PER_BUFFER);
-			mAudioSampler.addCallback(mSoundSamplerCallback);
-			mOwnAudioSampler = true;
+			mIsOwnAudioSampler = true;
 		}
 	}
 
 	protected void releaseOwnAudioSampler() {
-		if (mOwnAudioSampler && (mAudioSampler != null)) {
 		if (DEBUG) Log.v(TAG,
 			"releaseOwnAudioSampler:own=" + mIsOwnAudioSampler + "," + mAudioSampler);
+		if (mAudioSampler != null) {
+			mAudioSampler.removeCallback(mSoundSamplerCallback);
+			if (mIsOwnAudioSampler) {
 				mAudioSampler.release();
 				mAudioSampler = null;
+				mSampleRate = mChannelCount = 0;
+			}
 		}
-		mOwnAudioSampler = false;
+		mIsOwnAudioSampler = false;
 	}
 
 	/**
@@ -631,8 +638,7 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		synchronized (mSync) {
-			// FIXME これだと映像と音声の同時記録ができない、同時の場合には両方のMediaFormatが揃うまで待機しないといけない
-			if ((mVideoFormat != null) || (mAudioFormat != null)) {
+			if ((!USE_VIDEO || (mVideoFormat != null)) && (!USE_AUDIO || (mAudioFormat != null))) {
 				if (checkFreeSpace(this, 0)) {
 					final File dir = new File(outputDir);
 					dir.mkdirs();
@@ -659,14 +665,14 @@ public abstract class AbstractRecorderService extends BaseService {
 
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
-			if ((mVideoFormat != null) || (mAudioFormat != null)) {
+			if ((!USE_VIDEO || (mVideoFormat != null)) && (!USE_AUDIO || (mAudioFormat != null))) {
 				if (checkFreeSpace(this, 0)) {
 					internalStart(outputDir, name, mVideoFormat, mAudioFormat);
 				} else {
 					throw new IOException();
 				}
 			} else {
-				throw new IllegalStateException("there is no MediaFormat received.");
+				throw new IllegalStateException("Not all MediaFormat received.");
 			}
 			setState(STATE_RECORDING);
 		}
@@ -756,9 +762,13 @@ public abstract class AbstractRecorderService extends BaseService {
 				mAudioFormat = format;
 				break;
 			}
-			// FIXME これだと映像と音声の同時記録ができない、同時の場合には両方のMediaFormatが揃うまで待機しないといけない
+			if ((!USE_VIDEO || (mVideoFormat != null))
+				&& (!USE_AUDIO || (mAudioFormat != null))) {
+
+				// 映像と音声のMediaFormatがそろった
 				setState(STATE_READY);
 			}
+		}
 
 		@Override
 		public void onStop(@NonNull final MediaReaper reaper) {
@@ -805,15 +815,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.v(TAG, "internalResetSettings:");
 		mWidth = mHeight = mFrameRate = -1;
 		mBpp = -1.0f;
-		if (mAudioSampler != null) {
-			mAudioSampler.removeCallback(mSoundSamplerCallback);
-			if (mOwnAudioSampler) {
-				mAudioSampler.release();
-			}
-			mAudioSampler = null;
-		}
-		mSampleRate = mChannelCount = 0;
-		mOwnAudioSampler = false;
+		releaseOwnAudioSampler();
 		mIsEos = false;
 	}
 	
