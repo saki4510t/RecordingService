@@ -93,6 +93,8 @@ public class MediaSplitMuxer implements IMuxer {
 	private final long mSplitSize;
 	@NonNull
 	private final IMuxerFactory mMuxerFactory;
+	@NonNull
+	private final VideoConfig mVideoConfig;
 	private DocumentFile mCurrent;
 	/** 実行中フラグ */
 	private volatile boolean mIsRunning;
@@ -114,8 +116,8 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final String outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 		
-		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
-			null, outputDir, name, splitSize);
+		this(context, null, null,null,
+			outputDir, name, splitSize);
 	}
 	
 	/**
@@ -127,13 +129,16 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
-		@Nullable final IMediaQueue queue,
+		@Nullable final VideoConfig config,
 		@Nullable final IMuxerFactory factory,
+		@Nullable final IMediaQueue queue,
 		@NonNull final String outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
+		mVideoConfig = config != null ? config : VideoConfig.createDefault();
+		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mQueue = queue != null
 			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
 		mOutputDir = outputDir;
@@ -142,7 +147,6 @@ public class MediaSplitMuxer implements IMuxer {
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
 		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
 			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
-		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mMuxer = createMuxer(0);
 	}
 	
@@ -157,8 +161,8 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
-		this(context, new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM),
-			null, outputDir, name, splitSize);
+		this(context, null, null, null,
+			outputDir, name, splitSize);
 	}
 
 	/**
@@ -170,13 +174,16 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
 	public MediaSplitMuxer(@NonNull final Context context,
-		@Nullable final IMediaQueue queue,
+		@Nullable final VideoConfig config,
 		@Nullable final IMuxerFactory factory,
+		@Nullable final IMediaQueue queue,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
+		mVideoConfig = config != null ? config : VideoConfig.createDefault();
+		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mQueue = queue != null
 			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
 		mOutputDir = null;
@@ -185,7 +192,6 @@ public class MediaSplitMuxer implements IMuxer {
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
 		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
 			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
-		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mMuxer = createMuxer(0);
 	}
 
@@ -642,11 +648,9 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final DocumentFile file) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
-		IMuxer result = null;
-
-		result = mMuxerFactory.createMuxer(context, VideoConfig.DEFAULT_CONFIG.useMediaMuxer(), file);
+		IMuxer result = mMuxerFactory.createMuxer(context, mVideoConfig.useMediaMuxer(), file);
 		if (result == null) {
-			result = mMuxerFactory.createMuxer(VideoConfig.DEFAULT_CONFIG.useMediaMuxer(),
+			result = mMuxerFactory.createMuxer(mVideoConfig.useMediaMuxer(),
 				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
 		}
 		if (DEBUG) Log.v(TAG, "createMuxer:finished," + result);

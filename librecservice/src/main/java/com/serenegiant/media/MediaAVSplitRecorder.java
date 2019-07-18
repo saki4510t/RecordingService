@@ -32,7 +32,6 @@ import com.serenegiant.utils.StorageInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 
 /**
  * MP4自動分割録画用IRecorder実装
@@ -41,8 +40,6 @@ public class MediaAVSplitRecorder extends Recorder {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaAVSplitRecorder.class.getSimpleName();
 
-	@NonNull
-	protected final WeakReference<Context> mWeakContext;
 	private final int mSaveTreeId;	// SDカードへの出力を試みるかどうか
 	@NonNull
 	private final DocumentFile mOutputDir;
@@ -63,33 +60,35 @@ public class MediaAVSplitRecorder extends Recorder {
 		@NonNull final String name,
 		final long splitSize) throws IOException {
 		
-		this(context, null, null, callback, outputDir, name, splitSize);
+		this(context, callback, null, null, null, outputDir, name, splitSize);
 	}
 	
 	/**
 	 * コンストラクタ
 	 * @param context
-	 * @param queue
 	 * @param callback
+	 * @param config
+	 * @param factory
+	 * @param queue
 	 * @param outputDir 出力先ディレクトリ
 	 * @param name
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 * @throws IOException
 	 */
 	public MediaAVSplitRecorder(@NonNull final Context context,
-		@Nullable final IMediaQueue queue,
-		@Nullable final IMuxer.IMuxerFactory factory,
 		final RecorderCallback callback,
+		@Nullable final VideoConfig config,
+		@Nullable final IMuxer.IMuxerFactory factory,
+		@Nullable final IMediaQueue queue,
 		@NonNull final String outputDir,
 		@NonNull final String name,
 		final long splitSize) throws IOException {
 
-		super(callback, VideoConfig.createDefault());
+		super(context, callback, config, factory);
 		if (DEBUG) Log.v(TAG, "コンストラクタ");
-		mWeakContext = new WeakReference<Context>(context);
 		mSaveTreeId = 0;
 		mOutputDir = DocumentFile.fromFile(new File(outputDir));
-		setupMuxer(context, queue, factory, outputDir, name, splitSize);
+		setupMuxer(context, queue, outputDir, name, splitSize);
 	}
 
 	/**
@@ -108,33 +107,35 @@ public class MediaAVSplitRecorder extends Recorder {
 		@NonNull final String name,
 		final long splitSize) throws IOException {
 		
-		this(context, null, null, callback, outputDir, name, splitSize);
+		this(context, callback, null, null, null, outputDir, name, splitSize);
 	}
 	
 	/**
 	 * コンストラクタ
 	 * @param context
-	 * @param queue
 	 * @param callback
+	 * @param config
+	 * @param factory
+	 * @param queue
 	 * @param outputDir 出力先ディレクトリ
 	 * @param name 出力名
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 * @throws IOException
 	 */
 	public MediaAVSplitRecorder(@NonNull final Context context,
-		@Nullable final IMediaQueue queue,
-		@Nullable final IMuxer.IMuxerFactory factory,
 		final RecorderCallback callback,
+		@Nullable final VideoConfig config,
+		@Nullable final IMuxer.IMuxerFactory factory,
+		@Nullable final IMediaQueue queue,
 		@NonNull final DocumentFile outputDir,
 		@NonNull final String name,
 		final long splitSize) throws IOException {
 
-		super(callback, VideoConfig.createDefault());
+		super(context, callback, config, factory);
 		if (DEBUG) Log.v(TAG, "コンストラクタ");
-		mWeakContext = new WeakReference<Context>(context);
 		mSaveTreeId = 0;
 		mOutputDir = outputDir;
-		setupMuxer(context, queue, factory, outputDir, name, splitSize);
+		setupMuxer(context, queue, outputDir, name, splitSize);
 	}
 	
 	/**
@@ -186,41 +187,27 @@ public class MediaAVSplitRecorder extends Recorder {
 		return mOutputDir;
 	}
 	
-	@Nullable
-	protected Context getContext() {
-		return mWeakContext.get();
-	}
-
-	@NonNull
-	protected Context requireContext() throws IllegalStateException {
-		final Context result = mWeakContext.get();
-		if (result == null) {
-			throw new IllegalStateException();
-		}
-		return result;
-	}
-
 	protected void setupMuxer(
 		@NonNull final Context context,
 		@Nullable final IMediaQueue queue,
-		@Nullable final IMuxer.IMuxerFactory factory,
 		@NonNull final DocumentFile output,
 		@NonNull final String name,
 		final long splitSize)  throws IOException {
 		
 		if (DEBUG) Log.v(TAG, "setupMuxer");
-		setMuxer(new MediaSplitMuxer(context, queue, factory, output, name, splitSize));
+		setMuxer(new MediaSplitMuxer(context, getConfig(), getMuxerFactory(),
+			queue, output, name, splitSize));
 	}
 	
 	protected void setupMuxer(
 		@NonNull final Context context,
 		@Nullable final IMediaQueue queue,
-		@Nullable final IMuxer.IMuxerFactory factory,
 		@NonNull final String outputPath,
 		@NonNull final String name,
 		final long splitSize)  throws IOException {
 		
 		if (DEBUG) Log.v(TAG, "setupMuxer");
-		setMuxer(new MediaSplitMuxer(context, queue, factory, outputPath, name, splitSize));
+		setMuxer(new MediaSplitMuxer(context, getConfig(), getMuxerFactory(),
+			queue, outputPath, name, splitSize));
 	}
 }
