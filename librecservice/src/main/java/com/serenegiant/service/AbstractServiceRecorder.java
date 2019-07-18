@@ -168,6 +168,8 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		final AbstractRecorderService service = getService();
 		if (service != null) {
 			service.start(outputDir, name);
+		} else {
+			throw new IllegalStateException("start:service is not ready");
 		}
 	}
 
@@ -182,11 +184,13 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	public void start(@NonNull final DocumentFile outputDir, @NonNull final String name)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:");
+		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
 			service.start(outputDir, name);
+		} else {
+			throw new IllegalStateException("start:service is not ready");
 		}
 	}
 
@@ -219,6 +223,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	 */
 	@Override
 	public void frameAvailableSoon() {
+//		if (DEBUG) Log.v(TAG, "frameAvailableSoon:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
@@ -230,6 +235,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	public void setAudioSampler(@NonNull final IAudioSampler sampler)
 		throws IllegalStateException {
 
+		if (DEBUG) Log.v(TAG, "setAudioSampler:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
@@ -241,6 +247,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	public void setAudioSettings(final int sampleRate, final int channelCount)
 		throws IllegalStateException {
 
+		if (DEBUG) Log.v(TAG, "setAudioSettings:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
@@ -252,6 +259,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
 		final long presentationTimeUs) {
 
+//		if (DEBUG) Log.v(TAG, "writeAudioFrame:");
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {

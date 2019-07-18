@@ -56,7 +56,7 @@ import static com.serenegiant.media.MediaCodecHelper.*;
 public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
-	
+
 	private static final int NOTIFICATION = R.string.notification_service;
 	protected static final int TIMEOUT_MS = 10;
 	protected static final int TIMEOUT_USEC = 10000;	// 10ミリ秒
@@ -171,12 +171,14 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	public void addListener(@Nullable final StateChangeListener listener) {
+		if (DEBUG) Log.v(TAG, "addListener:" + listener);
 		if (listener != null) {
 			mListeners.add(listener);
 		}
 	}
 	
 	public void removeListener(@Nullable final StateChangeListener listener) {
+		if (DEBUG) Log.v(TAG, "removeListener:" + listener);
 		mListeners.remove(listener);
 	}
 	
@@ -190,6 +192,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void setVideoSettings(final int width, final int height,
 		final int frameRate, final float bpp) {
 		
+		if (DEBUG) Log.v(TAG,
+			String.format("setVideoSettings:(%dx%d)@%d", width, height, frameRate));
 		mWidth = width;
 		mHeight = height;
 		mFrameRate = frameRate;
@@ -204,6 +208,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void setAudioSampler(@NonNull final IAudioSampler sampler)
 		throws IllegalStateException {
 
+		if (DEBUG) Log.v(TAG, "setAudioSampler:" + sampler);
 		if (getState() != STATE_INITIALIZED) {
 			throw new IllegalStateException();
 		}
@@ -226,6 +231,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void setAudioSettings(final int sampleRate, final int channelCount)
 		throws IllegalStateException {
 
+		if (DEBUG) Log.v(TAG,
+			String.format("setAudioSettings:sampling=%d,channelCount=%d", sampleRate, channelCount));
 		if (getState() != STATE_INITIALIZED) {
 			throw new IllegalStateException();
 		}
@@ -246,6 +253,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		@NonNull final ByteBuffer buffer, final long presentationTimeUs)
 			throws IllegalStateException, UnsupportedOperationException {
 		
+//		if (DEBUG) Log.v(TAG, "writeAudioFrame:");
 		if (getState() < STATE_PREPARED) {
 			throw new IllegalStateException();
 		}
@@ -410,6 +418,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			}
 			setState(STATE_PREPARING);
 			try {
+				if (DEBUG) Log.v(TAG, "prepare:start");
 				if ((mWidth > 0) && (mHeight > 0)) {
 					// 録画する時
 					if (mFrameRate <= 0) {
@@ -434,7 +443,8 @@ public abstract class AbstractRecorderService extends BaseService {
 				}
 				if ((mAudioSampler != null)
 					&& !mAudioSampler.isStarted()) {
-					
+
+					if (DEBUG) Log.v(TAG, "prepare:start audio sampler");
 					mAudioSampler.start();
 				}
 				setState(STATE_PREPARED);
@@ -457,7 +467,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	protected void internalPrepare(final int width, final int height,
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
-		if (DEBUG) Log.v(TAG, "internalPrepare:");
+		if (DEBUG) Log.v(TAG, "internalPrepare:video");
 	}
 	
 	/**
@@ -469,7 +479,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	protected void internalPrepare(final int sampleRate, final int channelCount)
 		throws IllegalStateException, IOException {
-		if (DEBUG) Log.v(TAG, "internalPrepare:");
+		if (DEBUG) Log.v(TAG, "internalPrepare:audio");
 	}
 	
 	/**
@@ -483,7 +493,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	protected void createEncoder(final int width, final int height,
 		final int frameRate, final float bpp) throws IOException {
 
-		if (DEBUG) Log.v(TAG, "createEncoder:");
+		if (DEBUG) Log.v(TAG, "createEncoder:video");
 		final MediaCodecInfo codecInfo = selectVideoEncoder(MIME_VIDEO_AVC);
 		if (codecInfo == null) {
 			throw new IOException("Unable to find an appropriate codec for " + MIME_VIDEO_AVC);
@@ -497,7 +507,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			requireConfig().getBitrate(width, height, frameRate, bpp));
 		format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
 		format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);	// IFrameの間隔は1秒にする
-		if (DEBUG) Log.d(TAG, "format: " + format);
+		if (DEBUG) Log.d(TAG, "createEncoder:video format:" + format);
 
 		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
 		mVideoEncoder = MediaCodec.createEncoderByType(MIME_VIDEO_AVC);
@@ -518,7 +528,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	protected void createEncoder(final int sampleRate, final int channelCount)
 		throws IOException {
 
-		if (DEBUG) Log.v(TAG, "createEncoder:");
+		if (DEBUG) Log.v(TAG, "createEncoder:audio");
 		final MediaCodecInfo codecInfo = selectAudioEncoder(MIME_AUDIO_AAC);
 		if (codecInfo == null) {
 			throw new IOException("Unable to find an appropriate codec for " + MIME_AUDIO_AAC);
@@ -532,7 +542,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, mChannelCount);
 		// MediaCodecに適用するパラメータを設定する。
 		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
-		if (DEBUG) Log.d(TAG, "format: " + format);
+		if (DEBUG) Log.d(TAG, "createEncoder:audio format:" + format);
 
 		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
 		mAudioEncoder = MediaCodec.createEncoderByType(MIME_AUDIO_AAC);
@@ -583,8 +593,12 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	protected void createOwnAudioSampler(final int sampleRate, final int channelCount) {
+		if (DEBUG) Log.v(TAG,
+			String.format("createOwnAudioSampler:sampling=%d,channelCount=%d",
+				sampleRate, channelCount));
 		releaseOwnAudioSampler();
 		if (sampleRate > 0 && ((channelCount == 1) || (channelCount == 2))) {
+			if (DEBUG) Log.v(TAG, "createOwnAudioSampler:create AudioSampler");
 			mAudioSampler = new AudioSampler(2,
 				channelCount, sampleRate,
 				AbstractAudioEncoder.SAMPLES_PER_FRAME,
@@ -596,8 +610,10 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	protected void releaseOwnAudioSampler() {
 		if (mOwnAudioSampler && (mAudioSampler != null)) {
-			mAudioSampler.release();
-			mAudioSampler = null;
+		if (DEBUG) Log.v(TAG,
+			"releaseOwnAudioSampler:own=" + mIsOwnAudioSampler + "," + mAudioSampler);
+				mAudioSampler.release();
+				mAudioSampler = null;
 		}
 		mOwnAudioSampler = false;
 	}
@@ -741,8 +757,8 @@ public abstract class AbstractRecorderService extends BaseService {
 				break;
 			}
 			// FIXME これだと映像と音声の同時記録ができない、同時の場合には両方のMediaFormatが揃うまで待機しないといけない
-			setState(STATE_READY);
-		}
+				setState(STATE_READY);
+			}
 
 		@Override
 		public void onStop(@NonNull final MediaReaper reaper) {
@@ -786,6 +802,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * mSyncをロックして呼ばれる
 	 */
 	protected void internalResetSettings() {
+		if (DEBUG) Log.v(TAG, "internalResetSettings:");
 		mWidth = mHeight = mFrameRate = -1;
 		mBpp = -1.0f;
 		if (mAudioSampler != null) {
@@ -805,6 +822,7 @@ public abstract class AbstractRecorderService extends BaseService {
  	 * @param outputPath
 	 */
 	protected void scanFile(@NonNull final String outputPath) {
+		if (DEBUG) Log.v(TAG, "scanFile:" + outputPath);
 		try {
 			MediaScannerConnection.scanFile(this, new String[] {outputPath}, null, null);
 		} catch (final Exception e) {
@@ -868,23 +886,31 @@ public abstract class AbstractRecorderService extends BaseService {
 	protected void encodeAudio(
 		@NonNull final ByteBuffer buffer, final int size,
 		final long presentationTimeUs) {
-	
+
 		final MediaReaper.AudioReaper reaper;
 		final MediaCodec encoder;
    		synchronized (mSync) {
    			// 既に終了しているか終了指示が出てれば何もしない
 			reaper = mAudioReaper;
 			encoder = mAudioEncoder;
-       		if (!isRunning() || (reaper == null) || (encoder == null)) return;
    		}
+		if (!isRunning() || (reaper == null) || (encoder == null)) {
+			if (DEBUG) Log.d(TAG,
+				"encodeAudio:isRunning=" + isRunning()
+				+ ",reaper=" + reaper + ",encoder=" + encoder);
+			return;
+		}
 		if (size > 0) {
 			// 音声データを受け取った時はエンコーダーへ書き込む
 			try {
 				encode(encoder, buffer, size, presentationTimeUs);
 				reaper.frameAvailableSoon();
 			} catch (final Exception e) {
-				//
+				if (DEBUG) Log.w(TAG, e);
+				// ignore
 			}
+		} else if (DEBUG) {
+			Log.v(TAG, "encodeAudio:zero length");
 		}
 	}
 	
@@ -972,7 +998,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param encoder
 	 */
 	private void signalEndOfInputStream(@NonNull final MediaCodec encoder) {
-//		if (DEBUG) Log.i(TAG, "signalEndOfInputStream:encoder=" + this);
+		if (DEBUG) Log.i(TAG, "signalEndOfInputStream:encoder=" + encoder);
         // MediaCodec#signalEndOfInputStreamはBUFFER_FLAG_END_OF_STREAMフラグを付けて
         // 空のバッファをセットするのと等価である
     	// ・・・らしいので空バッファを送る。encode内でBUFFER_FLAG_END_OF_STREAMを付けてセットする

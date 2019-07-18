@@ -276,6 +276,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 									format,
 								tempDir);
 							mLastTrackIndex = trackIndex;
+							if (DEBUG) Log.v(TAG, "addTrack:mLastTrackIndex=" + mLastTrackIndex);
 							return trackIndex;
 						} catch (final IOException e) {
 							throw new IllegalArgumentException(e);
@@ -294,6 +295,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 									format,
 								tempDir);
 							mLastTrackIndex = trackIndex;
+							if (DEBUG) Log.v(TAG, "addTrack:mLastTrackIndex=" + mLastTrackIndex);
 							return trackIndex;
 						} catch (final IOException e) {
 							throw new IllegalArgumentException(e);

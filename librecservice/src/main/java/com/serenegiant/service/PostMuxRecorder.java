@@ -18,6 +18,8 @@ package com.serenegiant.service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.serenegiant.service.PostMuxRecService.MuxIntermediateType;
@@ -63,6 +65,7 @@ public class PostMuxRecorder extends AbstractServiceRecorder {
 			@NonNull final Callback callback) {
 
 			super(context, serviceClazz, callback);
+			if (DEBUG) Log.v(TAG, "PostMuxFileRecorder:");
 		}
 
 		@Override
@@ -88,6 +91,7 @@ public class PostMuxRecorder extends AbstractServiceRecorder {
 			@NonNull final Callback callback) {
 
 			super(context, serviceClazz, callback);
+			if (DEBUG) Log.v(TAG, "PostMuxChannelRecorder:");
 		}
 
 		@Override
@@ -112,6 +116,7 @@ public class PostMuxRecorder extends AbstractServiceRecorder {
 		@NonNull final Callback callback) {
 
 		super(context, serviceClazz, callback);
+		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 	}
 	
 	/**

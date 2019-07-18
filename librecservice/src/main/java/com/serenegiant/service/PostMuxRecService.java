@@ -101,7 +101,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 		
-		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputDir);
+		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputDir + ",video=" + videoFormat + ",audio=" + audioFormat);
 		if (mMuxer == null) {
 			final Intent intent = getIntent();
 			@MuxIntermediateType
@@ -111,11 +111,13 @@ public class PostMuxRecService extends AbstractRecorderService {
 				: MUX_INTERMEDIATE_TYPE_FILE;
 			switch (type) {
 			case MUX_INTERMEDIATE_TYPE_CHANNEL:
+				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawChannelMuxer");
 				mMuxer = new MediaRawChannelMuxer(this, outputDir, name,
 					videoFormat, audioFormat);
 				break;
 			case MUX_INTERMEDIATE_TYPE_FILE:
 			default:
+				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawFileMuxer");
 				mMuxer = new MediaRawFileMuxer(this, outputDir, name,
 					videoFormat, audioFormat);
 				break;
@@ -127,6 +129,8 @@ public class PostMuxRecService extends AbstractRecorderService {
 				mAudioTrackIx = mMuxer.addTrack(audioFormat);
 			}
 			mMuxer.start();
+		} else if (DEBUG) {
+			Log.w(TAG, "internalStart:muxer already exists,muxer=" + mMuxer);
 		}
 	}
 	

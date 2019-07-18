@@ -325,6 +325,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	protected void internalPrepare(final int width, final int height,
 		final int frameRate, final float bpp)
 			throws IllegalStateException, IOException {
+		if (DEBUG) Log.v(TAG, "internalPrepare:video");
 
 		final File cacheDir = new File(getTimeShiftCacheDir(), "video");
 		if (cacheDir.mkdirs() && DEBUG) {
@@ -340,7 +341,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	@Override
 	protected void internalPrepare(final int sampleRate, final int channelCount)
 		throws IllegalStateException, IOException {
-		if (DEBUG) Log.v(TAG, "internalPrepare:");
+		if (DEBUG) Log.v(TAG, "internalPrepare:audio");
 		
 		final File cacheDir = new File(getTimeShiftCacheDir(), "audio");
 		if (cacheDir.mkdirs() && DEBUG) {
