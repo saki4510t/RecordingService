@@ -53,13 +53,11 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private static final String TAG = TimeShiftRecService.class.getSimpleName();
 
 	private static final long CACHE_SIZE = 1024 * 1024 * 20; // 20MB... 1920x1080@15fpsで20秒強ぐらい
-	private static final String MIME_TYPE = "video/avc";
 
 	public static final int STATE_BUFFERING = 100;
 	public static final String EXTRA_MAX_SHIFT_MS = "extra_max_shift_ms";
 	
 	private static final long DEFAULT_MAX_SHIFT_MS = 10000L;	// 10秒
-	private static final String EXT_VIDEO = ".mp4";
 
 	/** Binder class to access this local service */
 	public class LocalBinder extends Binder {
