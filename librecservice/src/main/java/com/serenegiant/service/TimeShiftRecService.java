@@ -52,11 +52,25 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecService.class.getSimpleName();
 
+	/**
+	 * タイムシフトバッファリング中ステート
+	 */
+	public static final int STATE_BUFFERING = 100;
+
+	/**
+	 * インテントのextra(long)で最大タイムシフト時間[ミリ秒]を指定するときのキー文字列
+	 * デフォルトの最大タイムシフト時間は10000[ミリ秒](10秒)
+	 */
+	public static final String EXTRA_MAX_SHIFT_MS = "extra_max_shift_ms";
+
+	/**
+	 * 最大キャッシュサイズ[バイト]
+	 */
 	private static final long CACHE_SIZE = 1024 * 1024 * 20; // 20MB... 1920x1080@15fpsで20秒強ぐらい
 
-	public static final int STATE_BUFFERING = 100;
-	public static final String EXTRA_MAX_SHIFT_MS = "extra_max_shift_ms";
-	
+	/**
+	 * 最大タイムシフト時間[ミリ秒]
+	 */
 	private static final long DEFAULT_MAX_SHIFT_MS = 10000L;	// 10秒
 
 	/** Binder class to access this local service */
