@@ -79,11 +79,10 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 		// デフォルトコンストラクタが必要
 	}
 	
-	@SuppressWarnings("deprecation")
 	@Override
-	public void onAttach(final Activity activity) {
-		super.onAttach(activity);
-		activity.setTitle(this.getClass().getSimpleName());
+	public void onAttach(@NonNull final Context context) {
+		super.onAttach(context);
+		requireActivity().setTitle(this.getClass().getSimpleName());
 		FileUtils.DIR_NAME = APP_DIR_NAME;
 	}
 	
