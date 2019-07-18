@@ -411,6 +411,15 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			}
 			mVideoCache = null;
 		}
+		if (mAudioCache != null) {
+			try {
+				mAudioCache.delete();
+				mAudioCache.close();
+			} catch (final IOException e) {
+				Log.w(TAG, e);
+			}
+			mAudioCache = null;
+		}
 	}
 	
 	byte[] videoBuf = null;
