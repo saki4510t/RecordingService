@@ -21,9 +21,11 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
@@ -32,7 +34,6 @@ import com.serenegiant.librecservice.BuildConfig;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
-import com.serenegiant.media.VideoConfig;
 import com.serenegiant.utils.BuildCheck;
 import com.serenegiant.utils.UriHelper;
 
@@ -48,6 +49,7 @@ import java.nio.ByteBuffer;
  * #stopTimeShiftを呼ぶとエンコードを終了
  * #startTimeShift => [#start => #stop] => #stopTimeShift
  */
+@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class TimeShiftRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecService.class.getSimpleName();
@@ -344,7 +346,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			Log.v(TAG, "create new cache dir for video");
 		}
 		final long maxShiftMs = getMaxShiftMs();
-		VideoConfig.DEFAULT_CONFIG.setMaxDuration(maxShiftMs);
+		requireConfig().setMaxDuration(maxShiftMs);
 		mVideoCache = TimeShiftDiskCache.open(cacheDir,
 			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
 		super.internalPrepare(width, height, frameRate, bpp);
@@ -360,7 +362,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			Log.v(TAG, "create new cache dir for audio");
 		}
 		final long maxShiftMs = getMaxShiftMs();
-		VideoConfig.DEFAULT_CONFIG.setMaxDuration(maxShiftMs);
+		requireConfig().setMaxDuration(maxShiftMs);
 		mAudioCache = TimeShiftDiskCache.open(cacheDir,
 			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
 		super.internalPrepare(sampleRate, channelCount);

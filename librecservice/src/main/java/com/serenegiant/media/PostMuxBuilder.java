@@ -23,6 +23,7 @@ import android.media.MediaMuxer;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
+
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -47,21 +48,24 @@ class PostMuxBuilder extends PostMuxCommon {
 
 	@NonNull
 	private final IMuxer.IMuxerFactory mMuxerFactory;
+	private final boolean mUseMediaMuxer;
 
 	/**
 	 * コンストラクタ
 	 */
-	public PostMuxBuilder() {
-		this(null);
+	public PostMuxBuilder(final boolean useMediaMuxer) {
+		this(null, useMediaMuxer);
 	}
 
 	/**
 	 * コンストラクタ
 	 * @param factory
+	 * @param useMediaMuxer
 	 */
-	public PostMuxBuilder(@Nullable final IMuxer.IMuxerFactory factory) {
+	public PostMuxBuilder(@Nullable final IMuxer.IMuxerFactory factory, final boolean useMediaMuxer) {
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mMuxerFactory = factory != null ? factory : new IMuxer.DefaultFactory();
+		mUseMediaMuxer = useMediaMuxer;
 	}
 	
 	public void cancel() {
@@ -123,9 +127,9 @@ class PostMuxBuilder extends PostMuxCommon {
 		final boolean hasVideo = videoFile.exists() && videoFile.canRead();
 		final boolean hasAudio = audioFile.exists() && audioFile.canRead();
 		if (hasVideo || hasAudio) {
-			IMuxer muxer = mMuxerFactory.createMuxer(context, VideoConfig.DEFAULT_CONFIG.useMediaMuxer(), output);
+			IMuxer muxer = mMuxerFactory.createMuxer(context, mUseMediaMuxer, output);
 			if (muxer == null) {
-				muxer = mMuxerFactory.createMuxer(VideoConfig.DEFAULT_CONFIG.useMediaMuxer(),
+				muxer = mMuxerFactory.createMuxer(mUseMediaMuxer,
 					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 			}
 			if (muxer != null) {
@@ -310,9 +314,9 @@ class PostMuxBuilder extends PostMuxCommon {
 		final boolean hasVideo = videoFile.exists() && videoFile.canRead();
 		final boolean hasAudio = audioFile.exists() && audioFile.canRead();
 		if (hasVideo || hasAudio) {
-			IMuxer muxer = mMuxerFactory.createMuxer(context, VideoConfig.DEFAULT_CONFIG.useMediaMuxer(), output);
+			IMuxer muxer = mMuxerFactory.createMuxer(context, mUseMediaMuxer, output);
 			if (muxer == null) {
-				muxer = mMuxerFactory.createMuxer(VideoConfig.DEFAULT_CONFIG.useMediaMuxer(),
+				muxer = mMuxerFactory.createMuxer(mUseMediaMuxer,
 					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 			}
 			if (muxer != null) {

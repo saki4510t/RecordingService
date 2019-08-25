@@ -25,9 +25,11 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaScannerConnection;
+import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
@@ -53,6 +55,7 @@ import static com.serenegiant.media.MediaCodecHelper.*;
  * TimeShiftRecServiceから流用できそうな部分を切り出し
  * FIXME 今は録画のみ。録音は未対応
  */
+@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
@@ -168,7 +171,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	@NonNull
 	protected VideoConfig requireConfig() {
 		if (mVideoConfig == null) {
-			mVideoConfig = VideoConfig.createDefault();
+			mVideoConfig = new VideoConfig();
 		}
 		return mVideoConfig;
 	}
@@ -497,7 +500,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @throws IOException
 	 */
 	protected void createEncoder(final int width, final int height,
-		final int frameRate, final float bpp) throws IOException {
+								 final int frameRate, final float bpp) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createEncoder:video");
 		final MediaCodecInfo codecInfo = selectVideoEncoder(MIME_VIDEO_AVC);

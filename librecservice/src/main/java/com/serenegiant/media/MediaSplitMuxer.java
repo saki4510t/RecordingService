@@ -137,7 +137,7 @@ public class MediaSplitMuxer implements IMuxer {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
-		mVideoConfig = config != null ? config : VideoConfig.createDefault();
+		mVideoConfig = config != null ? config : new VideoConfig();
 		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mQueue = queue != null
 			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
@@ -182,7 +182,7 @@ public class MediaSplitMuxer implements IMuxer {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
-		mVideoConfig = config != null ? config : VideoConfig.createDefault();
+		mVideoConfig = config != null ? config : new VideoConfig();
 		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mQueue = queue != null
 			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);

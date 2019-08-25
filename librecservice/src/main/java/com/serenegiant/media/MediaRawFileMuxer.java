@@ -23,6 +23,7 @@ import android.os.Environment;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
+
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -42,6 +43,8 @@ public class MediaRawFileMuxer implements IPostMuxer {
 
 	private final Object mSync = new Object();
 	private final WeakReference<Context> mWeakContext;
+	@NonNull
+	private final VideoConfig mVideoConfig;
 	/**
 	 * MediaCodecの動画エンコーダーの設定
 	 * 最終のmp4ファイル出力時に必要なため保持しておく
@@ -82,18 +85,21 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	/**
 	 * コンストラクタ
 	 * @param context
+	 * @param config
 	 * @param outputDir 最終出力ディレクトリ
 	 * @param name 出つ力ファイル名(拡張子なし)
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
+		@Nullable final VideoConfig config,
 		@NonNull final String outputDir, @NonNull final String name,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
+		mVideoConfig = config != null ? config : new VideoConfig();
 		mOutputDir = outputDir;
 		mOutputDoc = null;
 		mOutputName = name;
@@ -104,18 +110,21 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	/**
 	 * コンストラクタ
 	 * @param context
+	 * @param config
 	 * @param outputDir 最終出力ディレクトリ
 	 * @param name 出つ力ファイル名(拡張子なし)
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
+		@Nullable final VideoConfig config,
 		@NonNull final DocumentFile outputDir, @NonNull final String name,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
+		mVideoConfig = config != null ? config : new VideoConfig();
 		mOutputDir = null;
 		mOutputDoc = outputDir;
 		mOutputName = name;
@@ -200,7 +209,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 				= mOutputDir + (mOutputDir.endsWith("/")
 					? mOutputName : "/" + mOutputName) + ".mp4";
 			try {
-				final PostMuxBuilder builder = new PostMuxBuilder();
+				final PostMuxBuilder builder = new PostMuxBuilder(mVideoConfig.useMediaMuxer());
 				builder.buildFromRawFile(context, tempDir, outputPath);
 			} finally {
 				delete(new File(tempDir));
@@ -217,7 +226,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 			final DocumentFile output = mOutputDoc.createFile(
 				"*/*", mOutputName + ".mp4");
 			try {
-				final PostMuxBuilder builder = new PostMuxBuilder();
+				final PostMuxBuilder builder = new PostMuxBuilder(mVideoConfig.useMediaMuxer());
 				builder.buildFromRawFile(context, tempDir, output);
 			} finally {
 				delete(new File(tempDir));

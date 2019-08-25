@@ -20,10 +20,12 @@ import android.content.Intent;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
@@ -40,6 +42,7 @@ import java.nio.ByteBuffer;
 /**
  *
  */
+@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class PostMuxRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = PostMuxRecService.class.getSimpleName();
@@ -99,7 +102,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 	protected void internalStart(@NonNull final String outputDir,
 		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
-		@Nullable final MediaFormat audioFormat) throws IOException {
+		@Nullable final MediaFormat audioFormat) {
 		
 		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputDir + ",video=" + videoFormat + ",audio=" + audioFormat);
 		if (mMuxer == null) {
@@ -112,13 +115,17 @@ public class PostMuxRecService extends AbstractRecorderService {
 			switch (type) {
 			case MUX_INTERMEDIATE_TYPE_CHANNEL:
 				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawChannelMuxer");
-				mMuxer = new MediaRawChannelMuxer(this, outputDir, name,
+				mMuxer = new MediaRawChannelMuxer(this,
+					requireConfig(),
+					outputDir, name,
 					videoFormat, audioFormat);
 				break;
 			case MUX_INTERMEDIATE_TYPE_FILE:
 			default:
 				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawFileMuxer");
-				mMuxer = new MediaRawFileMuxer(this, outputDir, name,
+				mMuxer = new MediaRawFileMuxer(this,
+					requireConfig(),
+					outputDir, name,
 					videoFormat, audioFormat);
 				break;
 			}
@@ -147,7 +154,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 	protected void internalStart(@NonNull final DocumentFile outputDir,
 		@NonNull final String name,
 		@Nullable final MediaFormat videoFormat,
-		@Nullable final MediaFormat audioFormat) throws IOException {
+		@Nullable final MediaFormat audioFormat) {
 		
 		if (DEBUG) Log.v(TAG, "internalStart:output=" + outputDir);
 		// FIXME 未実装
@@ -198,8 +205,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 	@Override
 	protected void onWriteSampleData(@NonNull final MediaReaper reaper,
 		@NonNull final ByteBuffer byteBuf,
-		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs)
-			throws IOException {
+		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs) {
 
 		if (mMuxer != null) {
 			switch (reaper.reaperType()) {
