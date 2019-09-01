@@ -32,10 +32,8 @@ import android.os.Message;
 import androidx.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Display;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.WindowManager;
 
 import com.serenegiant.glutils.GLDrawer2D;
 import com.serenegiant.glutils.IRendererHolder;
@@ -639,9 +637,7 @@ public final class CameraGLView extends GLSurfaceView {
 			final CameraGLView parent = mWeakParent.get();
 			if (parent == null) return;
 
-			final Display display = ((WindowManager)parent.getContext()
-				.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-			final int rotation = display.getRotation();
+			final int rotation = parent.getDisplay().getRotation();
 			int degrees = 0;
 			switch (rotation) {
 				case Surface.ROTATION_0: degrees = 0; break;
