@@ -440,6 +440,7 @@ public final class CameraGLView extends GLSurfaceView {
 						if (DEBUG) Log.d(TAG, "wait for terminating of camera thread");
 						wait();
 					} catch (final InterruptedException e) {
+						// ignore
 					}
 				}
 			}
@@ -471,14 +472,12 @@ public final class CameraGLView extends GLSurfaceView {
 	/**
 	 * Thread for asynchronous operation of camera preview
 	 */
-	@SuppressWarnings("deprecation")
 	private static final class CameraThread extends Thread {
     	private final Object mReadyFence = new Object();
     	private final WeakReference<CameraGLView> mWeakParent;
     	private CameraHandler mHandler;
     	private volatile boolean mIsRunning = false;
 		private Camera mCamera;
-		private boolean mIsFrontFace;
 
     	public CameraThread(final CameraGLView parent) {
 			super("Camera thread");
@@ -490,6 +489,7 @@ public final class CameraGLView extends GLSurfaceView {
             	try {
             		mReadyFence.wait();
             	} catch (final InterruptedException e) {
+            		// ignore
                 }
             }
             return mHandler;
@@ -521,7 +521,6 @@ public final class CameraGLView extends GLSurfaceView {
 		 * @param width
 		 * @param height
 		 */
-		@SuppressWarnings("deprecation")
 		private final void startPreview(final int width, final int height) {
 			if (DEBUG) Log.v(TAG, "startPreview:");
 			final CameraGLView parent = mWeakParent.get();
@@ -597,7 +596,6 @@ public final class CameraGLView extends GLSurfaceView {
 			}
 		}
 
-		@SuppressWarnings("deprecation")
 		private static Camera.Size getClosestSupportedSize(
 			final List<Camera.Size> supportedSizes,
 			final int requestedWidth, final int requestedHeight) {
@@ -636,7 +634,6 @@ public final class CameraGLView extends GLSurfaceView {
 		 * rotate preview screen according to the device orientation
 		 * @param params
 		 */
-		@SuppressWarnings("deprecation")
 		private final void setRotation(final Camera.Parameters params) {
 			if (DEBUG) Log.v(TAG, "setRotation:");
 			final CameraGLView parent = mWeakParent.get();
@@ -656,8 +653,7 @@ public final class CameraGLView extends GLSurfaceView {
 			final Camera.CameraInfo info =
 					new android.hardware.Camera.CameraInfo();
 				android.hardware.Camera.getCameraInfo(CAMERA_ID, info);
-			mIsFrontFace = (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT);
-			if (mIsFrontFace) {	// front camera
+			if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {	// front camera
 				degrees = (info.orientation + degrees) % 360;
 				degrees = (360 - degrees) % 360;  // reverse
 			} else {  // back camera
