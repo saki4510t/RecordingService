@@ -373,7 +373,7 @@ public final class CameraGLView extends GLSurfaceView {
 			}
 		}
 
-		private volatile boolean requesrUpdateTex = false;
+		private volatile boolean requestUpdateTex = false;
 		private boolean flip = true;
 		/**
 		 * drawing to GLSurface
@@ -385,8 +385,8 @@ public final class CameraGLView extends GLSurfaceView {
 		public void onDrawFrame(final GL10 unused) {
 			GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-			if (requesrUpdateTex) {
-				requesrUpdateTex = false;
+			if (requestUpdateTex) {
+				requestUpdateTex = false;
 				// update texture(came from camera)
 				mSTexture.updateTexImage();
 				// get texture matrix
@@ -403,7 +403,7 @@ public final class CameraGLView extends GLSurfaceView {
 
 		@Override
 		public void onFrameAvailable(final SurfaceTexture st) {
-			requesrUpdateTex = true;
+			requestUpdateTex = true;
 //			final CameraGLView parent = mWeakParent.get();
 //			if (parent != null)
 //				parent.requestRender();
