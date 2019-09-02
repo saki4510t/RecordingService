@@ -35,7 +35,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
-import com.serenegiant.glutils.GLDrawer2D;
+import com.serenegiant.glutils.es2.GLDrawer2D;
 import com.serenegiant.glutils.IRendererHolder;
 import com.serenegiant.glutils.RenderHolderCallback;
 import com.serenegiant.glutils.RendererHolder;
