@@ -76,7 +76,8 @@ public abstract class AbstractRecorderService extends BaseService {
 		public void onStateChanged(@NonNull final AbstractRecorderService service,
 			final int state);
 	}
-	
+
+//================================================================================
 	private final Set<StateChangeListener> mListeners
 		= new CopyOnWriteArraySet<StateChangeListener>();
 	private VideoConfig mVideoConfig;
@@ -167,22 +168,36 @@ public abstract class AbstractRecorderService extends BaseService {
 		return false;	// onRebind使用不可
 	}
 
-	@NonNull
-	protected VideoConfig requireConfig() {
-		if (mVideoConfig == null) {
-			mVideoConfig = new VideoConfig();
+	protected abstract IBinder getBinder();
+
+	@Nullable
+	protected Intent getIntent() {
+		synchronized (mSync) {
+			return mIntent;
 		}
-		return mVideoConfig;
 	}
 
-	public void addListener(@Nullable final StateChangeListener listener) {
+//--------------------------------------------------------------------------------
+// BaseServiceの抽象メソッドをoverride
+	@Override
+	protected IntentFilter createIntentFilter() {
+		return null;
+	}
+
+	@Override
+	protected void onReceiveLocalBroadcast(final Context context, final Intent intent) {
+
+	}
+
+//--------------------------------------------------------------------------------
+	void addListener(@Nullable final StateChangeListener listener) {
 		if (DEBUG) Log.v(TAG, "addListener:" + listener);
 		if (listener != null) {
 			mListeners.add(listener);
 		}
 	}
 	
-	public void removeListener(@Nullable final StateChangeListener listener) {
+	void removeListener(@Nullable final StateChangeListener listener) {
 		if (DEBUG) Log.v(TAG, "removeListener:" + listener);
 		mListeners.remove(listener);
 	}
@@ -194,7 +209,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param frameRate
 	 * @param bpp
 	 */
-	public void setVideoSettings(final int width, final int height,
+	void setVideoSettings(final int width, final int height,
 		final int frameRate, final float bpp) {
 		
 		if (DEBUG) Log.v(TAG,
@@ -211,7 +226,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * #writeAudioFrameと排他使用
 	 * @param sampler
 	 */
-	public void setAudioSampler(@NonNull final IAudioSampler sampler)
+	void setAudioSampler(@NonNull final IAudioSampler sampler)
 		throws IllegalStateException {
 
 		if (DEBUG) Log.v(TAG, "setAudioSampler:" + sampler);
@@ -234,7 +249,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param sampleRate
 	 * @param channelCount
 	 */
-	public void setAudioSettings(final int sampleRate, final int channelCount)
+	void setAudioSettings(final int sampleRate, final int channelCount)
 		throws IllegalStateException {
 
 		if (DEBUG) Log.v(TAG,
@@ -256,7 +271,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param buffer position/limitを正しくセットしておくこと
 	 * @param presentationTimeUs
 	 */
-	public void writeAudioFrame(
+	void writeAudioFrame(
 		@NonNull final ByteBuffer buffer, final long presentationTimeUs)
 			throws IllegalStateException, UnsupportedOperationException {
 		
@@ -269,27 +284,20 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 		encodeAudio(buffer, buffer.limit(), presentationTimeUs);
 	}
-	
 
-	@Override
-	protected IntentFilter createIntentFilter() {
-		return null;
-	}
-
-	@Override
-	protected void onReceiveLocalBroadcast(final Context context, final Intent intent) {
-
-	}
-	
-	protected abstract IBinder getBinder();
-	
-	@Nullable
-	protected Intent getIntent() {
-		synchronized (mSync) {
-			return mIntent;
-		}
-	}
 //================================================================================
+	/**
+	 * 録画設定を取得
+	 * @return
+	 */
+	@NonNull
+	protected VideoConfig requireConfig() {
+		if (mVideoConfig == null) {
+			mVideoConfig = new VideoConfig();
+		}
+		return mVideoConfig;
+	}
+
 	/**
 	 * 録画中かどうかを取得する。
 	 * このクラスでは#isRunningと同じ値を返すがこちらは
