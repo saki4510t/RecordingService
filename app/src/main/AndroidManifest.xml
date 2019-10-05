@@ -27,6 +27,15 @@
 		</activity>
 
 		<service
+			android:name="com.serenegiant.service.SimpleRecorderService"
+			android:exported="false"
+			android:enabled="true" >
+			<intent-filter>
+				<action android:name="com.serenegiant.service.SimpleRecorderService" />
+			</intent-filter>
+		</service>
+
+		<service
 			android:name="com.serenegiant.service.PostMuxRecService"
 			android:exported="false"
 			android:enabled="true" >
