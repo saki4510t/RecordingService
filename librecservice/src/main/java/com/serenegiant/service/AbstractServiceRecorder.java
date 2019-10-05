@@ -224,9 +224,8 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	@Override
 	public void frameAvailableSoon() {
 //		if (DEBUG) Log.v(TAG, "frameAvailableSoon:");
-		checkReleased();
 		final AbstractRecorderService service = getService();
-		if (service != null) {
+		if (!mReleased && (service != null)) {
 			service.frameAvailableSoon();
 		}
 	}
