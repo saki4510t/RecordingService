@@ -355,6 +355,20 @@ public class MediaSplitMuxer implements IMuxer {
 		return mWeakContext.get();
 	}
 	
+	@NonNull
+	protected Context requireContext() throws IllegalStateException {
+		final Context context = mWeakContext.get();
+		if (context == null) {
+			throw new IllegalStateException();
+		}
+		return context;
+	}
+
+	@NonNull
+	public VideoConfig getConfig() {
+		return mVideoConfig;
+	}
+
 	/**
 	 * 出力ファイル名(拡張子なし)を取得
  	 * @return
