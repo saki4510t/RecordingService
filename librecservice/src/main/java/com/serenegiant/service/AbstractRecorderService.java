@@ -502,8 +502,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		final int frameRate, final float bpp) throws IOException {
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-			createEncoderAPI18(width, height, frameRate, bpp);
-			mInputSurface = mVideoEncoder.createInputSurface();	// API >= 18
+			createEncoderAPI18(width, height, frameRate, bpp);	// API >= 18
 		} else {
 			createEncoderAPI16(width, height, frameRate, bpp);	// API >= 16
 		}
