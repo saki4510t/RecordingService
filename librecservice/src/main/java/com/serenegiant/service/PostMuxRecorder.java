@@ -17,10 +17,12 @@ package com.serenegiant.service;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import com.serenegiant.service.PostMuxRecService.MuxIntermediateType;
 
@@ -28,6 +30,7 @@ import com.serenegiant.service.PostMuxRecService.MuxIntermediateType;
  * PostMux録画サービスアクセス用のヘルパークラス
  * #prepare => #start => #stop => #release
  */
+@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class PostMuxRecorder extends AbstractServiceRecorder {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = PostMuxRecorder.class.getSimpleName();

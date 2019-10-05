@@ -98,7 +98,6 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 			}
 		}
 		
-		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public void onPrepared() {
 			if (DEBUG) Log.v(TAG, "onPrepared:");
