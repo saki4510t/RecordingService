@@ -101,7 +101,9 @@ public class MediaSplitMuxer implements IMuxer {
 	private volatile boolean mRequestStop;
 	private boolean mReleased;
 	private int mLastTrackIndex = -1;
+	@Nullable
 	private IMuxer mMuxer;
+	@Nullable
 	private MuxTask mMuxTask;
 	
 	/**
@@ -345,7 +347,7 @@ public class MediaSplitMuxer implements IMuxer {
 	protected void internalWriteSampleData(@NonNull final IMuxer muxer,
 		final int trackIx,
 		@NonNull final ByteBuffer buffer,
-		@NonNull final MediaCodec.BufferInfo info) throws IOException {
+		@NonNull final MediaCodec.BufferInfo info) {
 
 		muxer.writeSampleData(trackIx, buffer, info);
 	}
@@ -516,7 +518,7 @@ public class MediaSplitMuxer implements IMuxer {
 	protected boolean checkFreespace() {
 		StorageInfo info = null;
 		if (mOutputDoc != null) {
-			info = SAFUtils.getStorageInfo(getContext(), mOutputDoc);
+			info = SAFUtils.getStorageInfo(requireContext(), mOutputDoc);
 		}
 		if (info == null) {
 			info = FileUtils.getStorageInfo(getContext(),
@@ -603,7 +605,7 @@ public class MediaSplitMuxer implements IMuxer {
 		if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
 		IMuxer result;
 		mCurrent = createOutputDoc(EXT_MP4, segment);
-		result = createMuxer(getContext(), mCurrent);
+		result = createMuxer(requireContext(), mCurrent);
 		return result;
 	}
 
@@ -662,9 +664,10 @@ public class MediaSplitMuxer implements IMuxer {
 		@NonNull final DocumentFile file) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
-		IMuxer result = mMuxerFactory.createMuxer(context, mVideoConfig.useMediaMuxer(), file);
+		final boolean useMediaMuxer = getConfig().useMediaMuxer();
+		IMuxer result = mMuxerFactory.createMuxer(context, useMediaMuxer, file);
 		if (result == null) {
-			result = mMuxerFactory.createMuxer(mVideoConfig.useMediaMuxer(),
+			result = mMuxerFactory.createMuxer(useMediaMuxer,
 				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
 		}
 		if (DEBUG) Log.v(TAG, "createMuxer:finished," + result);
