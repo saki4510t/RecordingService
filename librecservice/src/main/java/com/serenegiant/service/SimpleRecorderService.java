@@ -142,7 +142,7 @@ public class SimpleRecorderService extends AbstractRecorderService {
 			}
 		}
 		if (getState() == STATE_RECORDING) {
-			setState(STATE_READY);
+			setState(STATE_INITIALIZED);
 			if (!TextUtils.isEmpty(mOutputPath)) {
 				final String path = mOutputPath;
 				mOutputPath = null;
