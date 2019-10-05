@@ -60,8 +60,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
 
 	private static final int NOTIFICATION = R.string.notification_service;
-	protected static final int TIMEOUT_MS = 10;
-	protected static final int TIMEOUT_USEC = 10000;	// 10ミリ秒
+	protected static final long TIMEOUT_MS = 10;
+	protected static final long TIMEOUT_USEC = TIMEOUT_MS * 1000L;	// 10ミリ秒
 
 	// ステート定数, XXX 継承クラスは100以降を使う
 	public static final int STATE_UNINITIALIZED = -1;
