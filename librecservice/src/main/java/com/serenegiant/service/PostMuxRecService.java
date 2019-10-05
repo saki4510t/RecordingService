@@ -126,12 +126,8 @@ public class PostMuxRecService extends AbstractRecorderService {
 					videoFormat, audioFormat);
 				break;
 			}
-			if (videoFormat != null) {
-				mVideoTrackIx = mMuxer.addTrack(videoFormat);
-			}
-			if (audioFormat != null) {
-				mAudioTrackIx = mMuxer.addTrack(audioFormat);
-			}
+			mVideoTrackIx = videoFormat != null ? mMuxer.addTrack(videoFormat) : -1;
+			mAudioTrackIx = audioFormat != null ? mMuxer.addTrack(audioFormat) : -1;
 			mMuxer.start();
 		} else if (DEBUG) {
 			Log.w(TAG, "internalStart:muxer already exists,muxer=" + mMuxer);
