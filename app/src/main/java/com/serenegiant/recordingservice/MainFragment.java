@@ -44,9 +44,10 @@ import java.util.Locale;
 public class MainFragment extends BaseFragment {
 
 	private static final Item[] ITEMS = {
-		new Item(0, "PostMuxRec"),
-		new Item(1, "TimeShiftRec"),
-		new Item(2, "SplitRec"),
+		new Item(0, "SimpleServiceRec"),
+		new Item(1, "PostMuxRec"),
+		new Item(2, "TimeShiftRec"),
+		new Item(3, "SplitRec"),
 	};
 	
 	private ItemListAdapter mAdapter;
@@ -100,15 +101,21 @@ public class MainFragment extends BaseFragment {
 				fm.beginTransaction()
 					.addToBackStack(null)
 					.replace(R.id.container,
-					new PostMuxRecFragment()).commit();
+					new SimpleRecFragment()).commit();
 				break;
 			case 1:
 				fm.beginTransaction()
 					.addToBackStack(null)
 					.replace(R.id.container,
-					new TimeShiftRecFragment()).commit();
+					new PostMuxRecFragment()).commit();
 				break;
 			case 2:
+				fm.beginTransaction()
+					.addToBackStack(null)
+					.replace(R.id.container,
+					new TimeShiftRecFragment()).commit();
+				break;
+			case 3:
 				fm.beginTransaction()
 					.addToBackStack(null)
 					.replace(R.id.container,
