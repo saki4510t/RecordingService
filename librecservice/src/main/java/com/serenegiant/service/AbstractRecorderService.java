@@ -45,6 +45,7 @@ import com.serenegiant.utils.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -53,9 +54,7 @@ import static com.serenegiant.media.MediaCodecHelper.*;
 
 /**
  * TimeShiftRecServiceから流用できそうな部分を切り出し
- * FIXME 今は録画のみ。録音は未対応
  */
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public abstract class AbstractRecorderService extends BaseService {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = AbstractRecorderService.class.getSimpleName();
@@ -500,7 +499,20 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @throws IOException
 	 */
 	protected void createEncoder(final int width, final int height,
-								 final int frameRate, final float bpp) throws IOException {
+		final int frameRate, final float bpp) throws IOException {
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+			createEncoderAPI18(width, height, frameRate, bpp);
+			mInputSurface = mVideoEncoder.createInputSurface();	// API >= 18
+		} else {
+			// FIXME 未実装
+			throw new UnsupportedEncodingException("Not implement now for less than API18");
+		}
+	}
+
+	@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+	protected void createEncoderAPI18(final int width, final int height,
+		final int frameRate, final float bpp) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "createEncoder:video");
 		final MediaCodecInfo codecInfo = selectVideoEncoder(MIME_VIDEO_AVC);

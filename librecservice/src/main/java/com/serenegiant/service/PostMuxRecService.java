@@ -20,12 +20,10 @@ import android.content.Intent;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
@@ -42,7 +40,6 @@ import java.nio.ByteBuffer;
 /**
  *
  */
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class PostMuxRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = PostMuxRecService.class.getSimpleName();

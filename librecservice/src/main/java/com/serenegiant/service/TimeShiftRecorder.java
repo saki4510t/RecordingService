@@ -16,10 +16,8 @@ package com.serenegiant.service;
  */
 
 import android.content.Context;
-import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import android.util.Log;
 
@@ -29,7 +27,6 @@ import java.io.IOException;
  * タイムシフト録画サービスアクセス用のヘルパークラス
  * #prepare => #startTimeShift => [#start => #stop] => #stopTimeShift => #release
  */
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class TimeShiftRecorder extends AbstractServiceRecorder
 	implements ITimeShiftRecorder {
 

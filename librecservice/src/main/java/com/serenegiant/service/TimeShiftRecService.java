@@ -21,11 +21,9 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Binder;
-import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
@@ -49,7 +47,6 @@ import java.nio.ByteBuffer;
  * #stopTimeShiftを呼ぶとエンコードを終了
  * #startTimeShift => [#start => #stop] => #stopTimeShift
  */
-@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class TimeShiftRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = TimeShiftRecService.class.getSimpleName();
@@ -194,6 +191,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 				= outputDir + (outputDir.endsWith("/")
 					? name : "/" + name) + ".mp4";
 
+			@SuppressLint("InlinedApi")
 			final IMuxer muxer = new MediaMuxerWrapper(
 				outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 			final int videoTrackIx = videoFormat != null ? muxer.addTrack(videoFormat) : -1;
