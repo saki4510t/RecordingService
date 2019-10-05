@@ -1,1 +1,8 @@
-<manifest package="com.serenegiant.librecservice" />
+<manifest
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	package="com.serenegiant.librecservice" >
+
+	<!-- Android 9 以降でフォアグラウンドサービスを実行するため -->
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+</manifest>
