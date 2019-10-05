@@ -505,11 +505,34 @@ public abstract class AbstractRecorderService extends BaseService {
 			createEncoderAPI18(width, height, frameRate, bpp);
 			mInputSurface = mVideoEncoder.createInputSurface();	// API >= 18
 		} else {
-			// FIXME 未実装
-			throw new UnsupportedEncodingException("Not implement now for less than API18");
+			createEncoderAPI16(width, height, frameRate, bpp);	// API >= 16
 		}
 	}
 
+	/**
+	 * 録画用のMediaCodecのエンコーダーを生成(API>=16, ByteBufferを使う)
+	 * FIXME 未実装
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 * @throws IOException
+	 * @throws UnsupportedEncodingException
+	 */
+	protected void createEncoderAPI16(final int width, final int height,
+		final int frameRate, final float bpp) throws IOException {
+
+		throw new UnsupportedEncodingException("Not implement now for less than API18");
+	}
+
+	/**
+	 * 録画用のMediaCodecのエンコーダーを生成(API>=18, 映像入力用Surfaceを使う)
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 * @throws IOException
+	 */
 	@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
 	protected void createEncoderAPI18(final int width, final int height,
 		final int frameRate, final float bpp) throws IOException {
@@ -540,7 +563,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			width, height);
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
-	
+
 	/**
 	 * 録音用のMediaCodecエンコーダーを生成
 	 * @param sampleRate
