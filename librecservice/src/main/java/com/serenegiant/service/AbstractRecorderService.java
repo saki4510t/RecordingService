@@ -124,7 +124,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	@Override
-	public int onStartCommand(final Intent intent, final int flags, final int startId) {
+	public int onStartCommand(@NonNull final Intent intent, final int flags, final int startId) {
 		if (DEBUG) Log.i(TAG, "onStartCommand:startId=" + startId + ": " + intent);
 		super.onStartCommand(intent, flags, startId);
 		return START_STICKY;
@@ -132,7 +132,7 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	@Nullable
 	@Override
-	public IBinder onBind(final Intent intent) {
+	public IBinder onBind(@NonNull final Intent intent) {
 		super.onBind(intent);
 		if (DEBUG) Log.v(TAG, "onBind:intent=" + intent);
 		if (intent != null) {
@@ -933,7 +933,6 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (BuildCheck.isLollipop()) {
 			encodeV21(encoder, buffer, length, presentationTimeUs);
 		} else {
-			@SuppressWarnings("deprecation")
 			final ByteBuffer[] inputBuffers = encoder.getInputBuffers();
 			for ( ; isRunning() && !mIsEos ;) {
 				final int inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_USEC);
