@@ -100,14 +100,14 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	/**
 	 * タイムシフトバッファリングを開始
 	 */
-	public void startTimeShift() throws IllegalStateException {
+	public void startTimeShift() throws IllegalStateException, IOException {
 		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		synchronized (mSync) {
 			if (getState() != STATE_READY) {
 				throw new IllegalStateException();
 			}
 		}
-		// FIXME 未実装
+		// FIXME キャッシュをクリアする？ 未実装
 		setState(STATE_BUFFERING);
 	}
 
