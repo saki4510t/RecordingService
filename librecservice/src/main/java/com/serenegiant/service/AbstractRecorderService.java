@@ -84,7 +84,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	private Intent mIntent;
 	private int mState = STATE_UNINITIALIZED;
 	private boolean mIsBind;
-
+	private volatile boolean mIsEos;
+// 動画関係
 	private volatile boolean mUseVideo;
 	/** 動画のサイズ(録画する場合) */
 	private int mWidth, mHeight;
@@ -94,7 +95,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	private MediaCodec mVideoEncoder;
 	private Surface mInputSurface;
 	private MediaReaper.VideoReaper mVideoReaper;
-
+// 音声関係
 	private volatile boolean mUseAudio;
 	private IAudioSampler mAudioSampler;
 	private boolean mIsOwnAudioSampler;
@@ -102,7 +103,6 @@ public abstract class AbstractRecorderService extends BaseService {
 	private MediaFormat mAudioFormat;
 	private MediaCodec mAudioEncoder;
 	private MediaReaper.AudioReaper mAudioReaper;
-	private volatile boolean mIsEos;
 
 	@Override
 	public void onCreate() {
