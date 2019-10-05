@@ -36,6 +36,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.serenegiant.media.VideoConfig;
+
 import java.util.Locale;
 
 /**
@@ -59,6 +61,7 @@ public class MainFragment extends BaseFragment {
 	@Override
 	public void onCreate(@Nullable final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		VideoConfig.DEFAULT_CONFIG.setMaxDuration(-1L);	// 録画時間制限なし
 	}
 	
 	@Override

@@ -37,7 +37,6 @@ import com.serenegiant.media.IVideoEncoder;
 import com.serenegiant.media.Recorder;
 import com.serenegiant.media.MediaAVSplitRecorder;
 import com.serenegiant.media.SurfaceEncoder;
-import com.serenegiant.media.VideoConfig;
 import com.serenegiant.utils.FileUtils;
 
 import java.io.IOException;
@@ -55,9 +54,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 
 	public SplitRecFragment() {
 		super();
-		// デフォルトコンストラクタが必要
-		if (DEBUG) Log.v(TAG, "コンストラクタ:");
-		VideoConfig.DEFAULT_CONFIG.setMaxDuration(-1L);	// 録画時間制限なし
+		// need default constructor
 	}
 	
 	@Override
