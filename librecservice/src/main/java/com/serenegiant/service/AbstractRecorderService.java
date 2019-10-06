@@ -884,6 +884,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @return
 	 * @throws IllegalStateException #prepareと#startの間以外で呼ぶとIllegalStateExceptionを投げる
 	 */
+	@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+	@Nullable
 	public Surface getInputSurface() throws IllegalStateException {
 		if (DEBUG) Log.v(TAG, "getInputSurface:");
 		synchronized (mSync) {

@@ -68,8 +68,9 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 		super.internalOnPause();
 	}
 	
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Override
-	protected void internalStartRecording() throws IOException {
+	protected void internalStartRecording() {
 		if (DEBUG) Log.v(TAG, "internalStartRecording:");
 		if ((mRecorder != null) && mRecorder.isTimeShift()) {
 			try {
@@ -131,13 +132,12 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 			}
 		}
 		
-		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public void onPrepared() {
 			if (DEBUG) Log.v(TAG, "onPrepared:");
 			if (mRecorder != null) {
 				try {
-					final Surface surface = mRecorder.getInputSurface();
+					final Surface surface = mRecorder.getInputSurface();	// API>=18
 					if (surface != null) {
 						mRecordingSurfaceId = surface.hashCode();
 						mCameraView.addSurface(mRecordingSurfaceId, surface, true);
@@ -154,7 +154,6 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 			}
 		}
 		
-		@SuppressWarnings("ResultOfMethodCallIgnored")
 		@Override
 		public void onReady() {
 			if (DEBUG) Log.v(TAG, "onReady:");

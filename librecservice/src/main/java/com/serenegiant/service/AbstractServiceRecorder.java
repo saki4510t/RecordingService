@@ -20,9 +20,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 import android.view.Surface;
@@ -210,6 +212,8 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	 * 録画用の映像を入力するためのSurfaceを取得
 	 * @return
 	 */
+	@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+	@Nullable
 	@Override
 	public Surface getInputSurface() {
 		if (DEBUG) Log.v(TAG, "getInputSurface:");

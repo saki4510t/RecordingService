@@ -83,7 +83,7 @@ public class SimpleRecFragment extends AbstractCameraFragment {
 			if (DEBUG) Log.v(TAG, "onPrepared:");
 			if (mRecorder != null) {
 				try {
-					final Surface surface = mRecorder.getInputSurface();
+					final Surface surface = mRecorder.getInputSurface();	// API>=18
 					if (surface != null) {
 						mRecordingSurfaceId = surface.hashCode();
 						mCameraView.addSurface(mRecordingSurfaceId, surface, true);

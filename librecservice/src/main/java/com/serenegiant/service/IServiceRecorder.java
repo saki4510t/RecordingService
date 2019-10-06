@@ -16,7 +16,11 @@ package com.serenegiant.service;
  */
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.documentfile.provider.DocumentFile;
+
+import android.os.Build;
 import android.view.Surface;
 
 import com.serenegiant.media.IAudioSampler;
@@ -105,6 +109,8 @@ public interface IServiceRecorder {
 	 * 録画用の映像を入力するためのSurfaceを取得
 	 * @return
 	 */
+	@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+	@Nullable
 	public Surface getInputSurface();
 
 	/**
