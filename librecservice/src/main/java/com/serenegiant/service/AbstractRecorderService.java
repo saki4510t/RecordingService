@@ -210,10 +210,13 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param bpp
 	 */
 	void setVideoSettings(final int width, final int height,
-		final int frameRate, final float bpp) {
+		final int frameRate, final float bpp) throws IllegalStateException {
 		
 		if (DEBUG) Log.v(TAG,
 			String.format("setVideoSettings:(%dx%d)@%d", width, height, frameRate));
+		if (getState() != STATE_INITIALIZED) {
+			throw new IllegalStateException();
+		}
 		mWidth = width;
 		mHeight = height;
 		mFrameRate = frameRate;
