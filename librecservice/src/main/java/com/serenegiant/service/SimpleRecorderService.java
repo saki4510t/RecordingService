@@ -156,9 +156,22 @@ public class SimpleRecorderService extends AbstractRecorderService {
 		@NonNull final MediaReaper reaper,
 		@NonNull final ByteBuffer buffer,
 		@NonNull final MediaCodec.BufferInfo info,
-		final long ptsUs) throws IOException {
+		final long ptsUs) {
 
 //		if (DEBUG) Log.v(TAG, "onWriteSampleData:");
+		synchronized (mSync) {
+			for (int i = 0; isRecording() && (i < 10); i++) {
+				if (mMuxer == null) {
+					try {
+						mSync.wait(100);
+					} catch (final InterruptedException e) {
+						break;
+					}
+				} else {
+					break;
+				}
+			}
+		}
 		if (mMuxer != null) {
 			switch (reaper.reaperType()) {
 			case MediaReaper.REAPER_VIDEO:
