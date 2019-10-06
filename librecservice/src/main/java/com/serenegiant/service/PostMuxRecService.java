@@ -200,6 +200,20 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@NonNull final ByteBuffer byteBuf,
 		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs) {
 
+//		if (DEBUG) Log.v(TAG, "onWriteSampleData:");
+		synchronized (mSync) {
+			for (int i = 0; isRecording() && (i < 10); i++) {
+				if (mMuxer == null) {
+					try {
+						mSync.wait(100);
+					} catch (final InterruptedException e) {
+						break;
+					}
+				} else {
+					break;
+				}
+			}
+		}
 		if (mMuxer != null) {
 			switch (reaper.reaperType()) {
 			case MediaReaper.REAPER_VIDEO:
