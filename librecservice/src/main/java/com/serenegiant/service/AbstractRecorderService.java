@@ -569,8 +569,8 @@ public abstract class AbstractRecorderService extends BaseService {
 		// エンコーダーへの入力に使うSurfaceを取得する
 		mInputSurface = mVideoEncoder.createInputSurface();	// API >= 18
 		mVideoEncoder.start();
-		mVideoReaper = new MediaReaper.VideoReaper(mVideoEncoder, mReaperListener,
-			width, height);
+		mVideoReaper = new MediaReaper.VideoReaper(
+			mVideoEncoder, mReaperListener, width, height);
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
 
@@ -602,8 +602,8 @@ public abstract class AbstractRecorderService extends BaseService {
 		mAudioEncoder = MediaCodec.createEncoderByType(MIME_AUDIO_AAC);
 		mAudioEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 		mAudioEncoder.start();
-		mAudioReaper = new MediaReaper.AudioReaper(mAudioEncoder, mReaperListener,
-			sampleRate, channelCount);
+		mAudioReaper = new MediaReaper.AudioReaper(
+			mAudioEncoder, mReaperListener, sampleRate, channelCount);
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
 	
