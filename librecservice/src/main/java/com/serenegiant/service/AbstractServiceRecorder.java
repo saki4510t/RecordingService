@@ -313,8 +313,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 			synchronized (mServiceSync) {
 				if ((mState == STATE_UNINITIALIZED) && (mService == null)) {
 					mState = STATE_BINDING;
-					final Intent intent = new Intent(mServiceClazz.getName());
-					intent.setPackage(context.getPackageName());
+					final Intent intent = createServiceIntent(context, mServiceClazz);
 					if (DEBUG) Log.v(TAG, "call Context#bindService");
 					final boolean result = context.bindService(intent,
 						mServiceConnection, Context.BIND_AUTO_CREATE);
