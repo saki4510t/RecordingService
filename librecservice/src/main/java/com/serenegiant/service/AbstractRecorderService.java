@@ -343,7 +343,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 		if (changed && !isDestroyed()) {
 			try {
-				runOnUiThread(new Runnable() {
+				queueEvent(new Runnable() {
 					@Override
 					public void run() {
 						for (final StateChangeListener listener: mListeners) {
