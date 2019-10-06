@@ -39,9 +39,26 @@ public interface IServiceRecorder {
 	public static final int STATE_UNBINDING = 3;
 
 	public interface Callback {
+		/**
+		 * 録画サービスと接続した
+		 */
 		public void onConnected();
+
+		/**
+		 * エンコーダーの準備が整った
+		 * このタイミングでRecorderへ動画・音声データ供給開始する
+		 */
 		public void onPrepared();
+
+		/**
+		 * 録画可能
+		 * このタイミングでIServiceRecorder#startを呼び出す
+		 */
 		public void onReady();
+
+		/**
+		 * 録画サービスから切断された
+		 */
 		public void onDisconnected();
 	}
 	
