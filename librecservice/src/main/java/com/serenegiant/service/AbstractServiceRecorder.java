@@ -448,30 +448,41 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		@Override
 		public void onStateChanged(
 			@NonNull final AbstractRecorderService service, final int state) {
-			
-			switch (state) {
-			case AbstractRecorderService.STATE_INITIALIZED:
-				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_INITIALIZED");
-				break;
-			case AbstractRecorderService.STATE_PREPARING:
-				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_PREPARING");
-				break;
-			case AbstractRecorderService.STATE_PREPARED:
-				mCallback.onPrepared();
-				break;
-			case AbstractRecorderService.STATE_READY:
-				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_READY");
-				mCallback.onReady();
-				break;
-			case AbstractRecorderService.STATE_RECORDING:
-				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RECORDING");
-				break;
-			case AbstractRecorderService.STATE_RELEASING:
-				if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RELEASING");
-				break;
-			default:
-				break;
-			}
+
+			AbstractServiceRecorder.this.onStateChanged(service, state);
 		}
 	};
+
+	/**
+	 * 録画サービスでステートが変化したときのコールバック処理の実体
+	 * @param service
+	 * @param state
+	 */
+	protected void onStateChanged(
+		@NonNull final AbstractRecorderService service, final int state) {
+
+		switch (state) {
+		case AbstractRecorderService.STATE_INITIALIZED:
+			if (DEBUG) Log.v(TAG, "onStateChanged:STATE_INITIALIZED");
+			break;
+		case AbstractRecorderService.STATE_PREPARING:
+			if (DEBUG) Log.v(TAG, "onStateChanged:STATE_PREPARING");
+			break;
+		case AbstractRecorderService.STATE_PREPARED:
+			mCallback.onPrepared();
+			break;
+		case AbstractRecorderService.STATE_READY:
+			if (DEBUG) Log.v(TAG, "onStateChanged:STATE_READY");
+			mCallback.onReady();
+			break;
+		case AbstractRecorderService.STATE_RECORDING:
+			if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RECORDING");
+			break;
+		case AbstractRecorderService.STATE_RELEASING:
+			if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RELEASING");
+			break;
+		default:
+			break;
+		}
+	}
 }
