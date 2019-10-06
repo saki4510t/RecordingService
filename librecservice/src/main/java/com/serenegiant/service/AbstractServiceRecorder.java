@@ -482,6 +482,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 			if (DEBUG) Log.v(TAG, "onStateChanged:STATE_RELEASING");
 			break;
 		default:
+			if (DEBUG) Log.d(TAG, "onStateChanged:unknown state " + state);
 			break;
 		}
 	}
