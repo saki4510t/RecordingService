@@ -119,17 +119,16 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	}
 
 	/**
-	 * 録画の準備
+	 * 動画設定をセット
 	 * @param width
 	 * @param height
 	 * @param frameRate
 	 * @param bpp
 	 * @throws IllegalStateException
-	 * @throws IOException
 	 */
 	@Override
 	public void setVideoSettings(final int width, final int height,
-		final int frameRate, final float bpp) {
+		final int frameRate, final float bpp) throws IllegalStateException {
 
 		if (DEBUG) Log.v(TAG, "setVideoSettings:");
 
@@ -138,7 +137,43 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 			service.setVideoSettings(width, height, frameRate, bpp);
 		}
 	}
-	
+
+	/**
+	 * 音声用のIAudioSamplerをセット
+	 * #writeAudioFrameと排他使用
+	 * @param sampler
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public void setAudioSampler(@NonNull final IAudioSampler sampler)
+		throws IllegalStateException {
+
+		if (DEBUG) Log.v(TAG, "setAudioSampler:");
+		checkReleased();
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.setAudioSampler(sampler);
+		}
+	}
+
+	/**
+	 * 音声設定をセット
+	 * @param sampleRate
+	 * @param channelCount
+	 * @throws IllegalStateException
+	 */
+	@Override
+	public void setAudioSettings(final int sampleRate, final int channelCount)
+		throws IllegalStateException {
+
+		if (DEBUG) Log.v(TAG, "setAudioSettings:");
+		checkReleased();
+		final AbstractRecorderService service = getService();
+		if (service != null) {
+			service.setAudioSettings(sampleRate, channelCount);
+		}
+	}
+
 	/**
 	 * 録画録音の準備
 	 * @throws IllegalStateException
@@ -234,30 +269,6 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 		}
 	}
 	
-	@Override
-	public void setAudioSampler(@NonNull final IAudioSampler sampler)
-		throws IllegalStateException {
-
-		if (DEBUG) Log.v(TAG, "setAudioSampler:");
-		checkReleased();
-		final AbstractRecorderService service = getService();
-		if (service != null) {
-			service.setAudioSampler(sampler);
-		}
-	}
-	
-	@Override
-	public void setAudioSettings(final int sampleRate, final int channelCount)
-		throws IllegalStateException {
-
-		if (DEBUG) Log.v(TAG, "setAudioSettings:");
-		checkReleased();
-		final AbstractRecorderService service = getService();
-		if (service != null) {
-			service.setAudioSettings(sampleRate, channelCount);
-		}
-	}
-
 	@Override
 	public void writeAudioFrame(@NonNull final ByteBuffer buffer,
 		final long presentationTimeUs) {
