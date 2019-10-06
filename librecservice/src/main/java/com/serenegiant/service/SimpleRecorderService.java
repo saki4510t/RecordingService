@@ -27,7 +27,7 @@ import androidx.documentfile.provider.DocumentFile;
  * 録画機能をサービス側で実行するだけのサービス
  */
 public class SimpleRecorderService extends AbstractRecorderService {
-	private static final boolean DEBUG = true;	// FIXME set false on production
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = SimpleRecorderService.class.getSimpleName();
 
 	/** Binder class to access this local service */

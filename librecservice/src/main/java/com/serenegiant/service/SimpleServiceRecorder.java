@@ -6,7 +6,7 @@ import android.os.IBinder;
 import androidx.annotation.NonNull;
 
 public class SimpleServiceRecorder extends AbstractServiceRecorder {
-	private static final boolean DEBUG = true;	// TODO set false on release
+	private static final boolean DEBUG = false;	// FIXME set false on production
 	private static final String TAG = SimpleServiceRecorder.class.getSimpleName();
 
 	public static SimpleServiceRecorder newInstance(@NonNull final Context context,
