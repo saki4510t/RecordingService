@@ -910,7 +910,6 @@ public abstract class AbstractRecorderService extends BaseService {
 			if (mVideoReaper != null) {
 				mVideoReaper.frameAvailableSoon();
 			}
-			mSync.notifyAll();
 		}
 	}
 
