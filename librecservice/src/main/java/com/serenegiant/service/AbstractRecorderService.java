@@ -381,7 +381,6 @@ public abstract class AbstractRecorderService extends BaseService {
 			if (!isDestroyed() && canStopSelf(mIsBind | isRunning())) {
 				if (DEBUG) Log.v(TAG, "stopSelf");
 				setState(STATE_RELEASING);
-				internalResetSettings();
 				try {
 					queueEvent(new Runnable() {
 						@Override
@@ -643,6 +642,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			mAudioReaper = null;
 		}
 		mAudioEncoder = null;
+		releaseOwnAudioSampler();
 		internalResetSettings();
 		if (DEBUG) Log.v(TAG, "releaseEncoder:finished");
 	}
@@ -866,7 +866,6 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.v(TAG, "internalResetSettings:");
 		mWidth = mHeight = mFrameRate = -1;
 		mBpp = -1.0f;
-		releaseOwnAudioSampler();
 		mIsEos = mUseVideo = mUseAudio = false;
 	}
 	
