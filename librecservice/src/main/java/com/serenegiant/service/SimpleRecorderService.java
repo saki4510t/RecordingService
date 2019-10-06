@@ -154,25 +154,26 @@ public class SimpleRecorderService extends AbstractRecorderService {
 	@Override
 	protected void onWriteSampleData(
 		@NonNull final MediaReaper reaper,
-		@NonNull final ByteBuffer byteBuf,
-		@NonNull final MediaCodec.BufferInfo bufferInfo,
+		@NonNull final ByteBuffer buffer,
+		@NonNull final MediaCodec.BufferInfo info,
 		final long ptsUs) throws IOException {
 
 //		if (DEBUG) Log.v(TAG, "onWriteSampleData:");
 		if (mMuxer != null) {
 			switch (reaper.reaperType()) {
 			case MediaReaper.REAPER_VIDEO:
-				mMuxer.writeSampleData(mVideoTrackIx, byteBuf, bufferInfo);
+				mMuxer.writeSampleData(mVideoTrackIx, buffer, info);
 				break;
 			case MediaReaper.REAPER_AUDIO:
-				mMuxer.writeSampleData(mAudioTrackIx, byteBuf, bufferInfo);
+				mMuxer.writeSampleData(mAudioTrackIx, buffer, info);
 				break;
 			default:
 				if (DEBUG) Log.v(TAG, "onWriteSampleData:unexpected reaper type");
 				break;
 			}
 		} else {
-			if (DEBUG) Log.v(TAG, "onWriteSampleData:muxer is not set yet");
+			if (DEBUG) Log.v(TAG, "onWriteSampleData:muxer is not set yet, " +
+				"state=" + getState() + ",reaperType=" + reaper.reaperType());
 		}
 	}
 
