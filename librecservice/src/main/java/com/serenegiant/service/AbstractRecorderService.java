@@ -309,23 +309,24 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	public final boolean isRecording() {
 		synchronized (mSync) {
-			return (getState() == STATE_RECORDING);
+			final int state = getState();
+			return (state == STATE_PREPARING)
+				|| (state == STATE_PREPARED)
+				|| (state == STATE_READY)
+				|| (state == STATE_RECORDING);
 		}
 	}
 	
 	/**
 	 * 録画サービスの処理を実行中かどうかを返す
-	 * このクラスでは#isRecordingと同じクラスを返す。
+	 * このクラスでは#isRecordingと同じ値を返す。
 	 * こちらはオーバーライド可能でサービスの自己終了判定に使う。
 	 * 録画中では無いが録画の前後処理中などで録画サービスを
 	 * 終了しないようにしたい時に下位クラスでオーバーライドする。
 	 * @return true: サービスの自己終了しない
 	 */
 	public boolean isRunning() {
-		synchronized (mSync) {
-			final int state = getState();
-			return (state == STATE_RECORDING) || (state == STATE_PREPARED);
-		}
+		return isRecording();
 	}
 
 	/**
