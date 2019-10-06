@@ -20,7 +20,6 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Environment;
