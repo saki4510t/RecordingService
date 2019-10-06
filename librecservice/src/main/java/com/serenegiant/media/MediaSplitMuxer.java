@@ -326,8 +326,7 @@ public class MediaSplitMuxer implements IMuxer {
 		if (!mRequestStop && (trackIx <= mLastTrackIndex)) {
 			final IRecycleBuffer buf = mQueue.obtain();
 			if (buf instanceof RecycleMediaData) {
-				((RecycleMediaData) buf).trackIx = trackIx;
-				((RecycleMediaData) buf).set(buffer, info);
+				((RecycleMediaData) buf).set(trackIx, buffer, info);
 				mQueue.queueFrame(buf);
 			} else if (DEBUG && (buf != null)) {
 				Log.w(TAG, "unexpected buffer class");
@@ -455,8 +454,8 @@ public class MediaSplitMuxer implements IMuxer {
 							}
 							// 出力ファイルへの書き込み処理
 							internalWriteSampleData(muxer,
-								((RecycleMediaData) buf).trackIx,
-								((RecycleMediaData) buf).mBuffer, info);
+								((RecycleMediaData) buf).trackIx(),
+								((RecycleMediaData) buf).get(), info);
 							// 再利用のためにバッファを返す
 							mQueue.recycle(buf);
 						} else if (mRequestStop) {
