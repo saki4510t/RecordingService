@@ -327,7 +327,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			return (state == STATE_RECORDING) || (state == STATE_PREPARED);
 		}
 	}
-	
+
 	/**
 	 * 録画サービスの状態をセット
 	 * 状態が変化したときにはコールバックを呼び出す
@@ -359,7 +359,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			}
 		}
 	}
-	
+
 	/**
 	 * 録画サービスの現在の状態フラグを取得
 	 * @return

@@ -167,7 +167,12 @@ public class SimpleRecorderService extends AbstractRecorderService {
 			case MediaReaper.REAPER_AUDIO:
 				mMuxer.writeSampleData(mAudioTrackIx, byteBuf, bufferInfo);
 				break;
+			default:
+				if (DEBUG) Log.v(TAG, "onWriteSampleData:unexpected reaper type");
+				break;
 			}
+		} else {
+			if (DEBUG) Log.v(TAG, "onWriteSampleData:muxer is not set yet");
 		}
 	}
 
