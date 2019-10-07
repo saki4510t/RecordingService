@@ -621,15 +621,17 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			throws IOException {
 	
 		final TimeShiftDiskCache cache;
-		switch (reaper.reaperType()) {
-		case MediaReaper.REAPER_VIDEO:
-			cache = mVideoCache;
-			break;
-		case MediaReaper.REAPER_AUDIO:
-			cache = mAudioCache;
-			break;
-		default:
-			cache = null;
+		synchronized (mSync) {
+			switch (reaper.reaperType()) {
+			case MediaReaper.REAPER_VIDEO:
+				cache = mVideoCache;
+				break;
+			case MediaReaper.REAPER_AUDIO:
+				cache = mAudioCache;
+				break;
+			default:
+				cache = null;
+			}
 		}
 		if ((cache != null) && !cache.isClosed()) {
 			final TimeShiftDiskCache.Editor editor = cache.edit(ptsUs);

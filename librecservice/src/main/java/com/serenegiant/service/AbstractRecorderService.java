@@ -768,6 +768,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	
 	/**
 	 * エンコード済みのフレームデータを書き出す
+	 * mSyncをロックしていないので必要に応じでロックすること
 	 * @param reaper
 	 * @param byteBuf
 	 * @param bufferInfo
@@ -792,9 +793,7 @@ public abstract class AbstractRecorderService extends BaseService {
 //			if (DEBUG) Log.v(TAG, "writeSampleData:");
 			try {
 				final long ptsUs = getInputPTSUs();
-				synchronized (mSync) {
-					onWriteSampleData(reaper, byteBuf, bufferInfo, ptsUs);
-				}
+				onWriteSampleData(reaper, byteBuf, bufferInfo, ptsUs);
 			} catch (final IOException e) {
 				AbstractRecorderService.this.onError(e);
 			}

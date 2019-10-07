@@ -27,6 +27,7 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
+import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.IPostMuxer;
 import com.serenegiant.media.MediaRawChannelMuxer;
 import com.serenegiant.media.MediaRawFileMuxer;
@@ -129,6 +130,9 @@ public class PostMuxRecService extends AbstractRecorderService {
 			mVideoTrackIx = videoFormat != null ? mMuxer.addTrack(videoFormat) : -1;
 			mAudioTrackIx = audioFormat != null ? mMuxer.addTrack(audioFormat) : -1;
 			mMuxer.start();
+			synchronized (mSync) {
+				mSync.notifyAll();
+			}
 		} else if (DEBUG) {
 			Log.w(TAG, "internalStart:muxer already exists,muxer=" + mMuxer);
 		}
@@ -201,26 +205,30 @@ public class PostMuxRecService extends AbstractRecorderService {
 		@NonNull final MediaCodec.BufferInfo bufferInfo, final long ptsUs) {
 
 //		if (DEBUG) Log.v(TAG, "onWriteSampleData:");
+		IMuxer muxer;
 		synchronized (mSync) {
-			for (int i = 0; isRecording() && (i < 10); i++) {
-				if (mMuxer == null) {
-					try {
-						mSync.wait(100);
-					} catch (final InterruptedException e) {
+			if (mMuxer == null) {
+				for (int i = 0; isRecording() && (i < 100); i++) {
+					if (mMuxer == null) {
+						try {
+							mSync.wait(10);
+						} catch (final InterruptedException e) {
+							break;
+						}
+					} else {
 						break;
 					}
-				} else {
-					break;
 				}
 			}
+			muxer = mMuxer;
 		}
-		if (mMuxer != null) {
+		if (muxer != null) {
 			switch (reaper.reaperType()) {
 			case MediaReaper.REAPER_VIDEO:
-				mMuxer.writeSampleData(mVideoTrackIx, byteBuf, bufferInfo);
+				muxer.writeSampleData(mVideoTrackIx, byteBuf, bufferInfo);
 				break;
 			case MediaReaper.REAPER_AUDIO:
-				mMuxer.writeSampleData(mAudioTrackIx, byteBuf, bufferInfo);
+				muxer.writeSampleData(mAudioTrackIx, byteBuf, bufferInfo);
 				break;
 			}
 		}

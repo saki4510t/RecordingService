@@ -122,6 +122,9 @@ public class SimpleRecorderService extends AbstractRecorderService {
 		mVideoTrackIx = videoFormat != null ? muxer.addTrack(videoFormat) : -1;
 		mAudioTrackIx = audioFormat != null ? muxer.addTrack(audioFormat) : -1;
 		mMuxer.start();
+		synchronized (mSync) {
+			mSync.notifyAll();
+		}
 	}
 
 	@Override
@@ -159,26 +162,30 @@ public class SimpleRecorderService extends AbstractRecorderService {
 		final long ptsUs) {
 
 //		if (DEBUG) Log.v(TAG, "onWriteSampleData:");
+		IMuxer muxer;
 		synchronized (mSync) {
-			for (int i = 0; isRecording() && (i < 10); i++) {
-				if (mMuxer == null) {
-					try {
-						mSync.wait(100);
-					} catch (final InterruptedException e) {
+			if (mMuxer == null) {
+				for (int i = 0; isRecording() && (i < 100); i++) {
+					if (mMuxer == null) {
+						try {
+							mSync.wait(10);
+						} catch (final InterruptedException e) {
+							break;
+						}
+					} else {
 						break;
 					}
-				} else {
-					break;
 				}
 			}
+			muxer = mMuxer;
 		}
-		if (mMuxer != null) {
+		if (muxer != null) {
 			switch (reaper.reaperType()) {
 			case MediaReaper.REAPER_VIDEO:
-				mMuxer.writeSampleData(mVideoTrackIx, buffer, info);
+				muxer.writeSampleData(mVideoTrackIx, buffer, info);
 				break;
 			case MediaReaper.REAPER_AUDIO:
-				mMuxer.writeSampleData(mAudioTrackIx, buffer, info);
+				muxer.writeSampleData(mAudioTrackIx, buffer, info);
 				break;
 			default:
 				if (DEBUG) Log.v(TAG, "onWriteSampleData:unexpected reaper type");
