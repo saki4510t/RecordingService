@@ -3,7 +3,7 @@
   <groupId>com.serenegiant</groupId>
   <artifactId>recordingservice</artifactId>
   <versioning>
-    <release>1.6.2</release>
+    <release>1.7.0</release>
     <versions>
       <version>0.1.0</version>
       <version>0.1.1</version>
@@ -31,7 +31,8 @@
       <version>1.6.0</version>
       <version>1.6.1</version>
       <version>1.6.2</version>
+      <version>1.7.0</version>
     </versions>
-    <lastUpdated>20191029002416</lastUpdated>
+    <lastUpdated>20200125040442</lastUpdated>
   </versioning>
 </metadata>

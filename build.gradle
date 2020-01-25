@@ -43,9 +43,9 @@ ext {
 	androidXMaterial = '1.1.0-beta01'
 	constraintLibVersion = '1.1.3'
 
-	commonLibVersion= '7.2.2'	// should be >=6.5.0
+	commonLibVersion= '7.2.2'	// should be >=7.2.x
 
-	versionCodeNum = 24
-	versionNameString = '1.6.2'
+	versionCodeNum = 25
+	versionNameString = '1.7.0'
 
 }
