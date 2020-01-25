@@ -30,7 +30,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.serenegiant.media.IAudioSampler;
-import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.system.BuildCheck;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;

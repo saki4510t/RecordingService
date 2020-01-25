@@ -38,11 +38,11 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.serenegiant.dialog.MessageDialogFragmentV4;
-import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.system.BuildCheck;
+import com.serenegiant.system.PermissionCheck;
+import com.serenegiant.system.Stacktrace;
 import com.serenegiant.utils.HandlerThreadHandler;
-import com.serenegiant.utils.PermissionCheck;
 import com.serenegiant.utils.SAFUtils;
-import com.serenegiant.utils.Stacktrace;
 
 import java.util.Arrays;
 

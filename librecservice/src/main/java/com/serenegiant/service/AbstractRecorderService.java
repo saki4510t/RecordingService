@@ -40,7 +40,7 @@ import com.serenegiant.media.AudioSampler;
 import com.serenegiant.media.IAudioSampler;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.VideoConfig;
-import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.system.BuildCheck;
 import com.serenegiant.utils.FileUtils;
 
 import java.io.File;

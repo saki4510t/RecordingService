@@ -33,8 +33,8 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.serenegiant.system.PermissionCheck;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.PermissionCheck;
 import com.serenegiant.utils.SAFUtils;
 
 import java.io.File;

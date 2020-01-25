@@ -37,11 +37,10 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
-import com.serenegiant.glutils.es2.GLDrawer2D;
+import com.serenegiant.glutils.GLDrawer2D;
 import com.serenegiant.glutils.IRendererHolder;
-import com.serenegiant.glutils.RenderHolderCallback;
 import com.serenegiant.glutils.RendererHolder;
-import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.system.BuildCheck;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -211,8 +210,8 @@ public final class CameraGLView extends GLSurfaceView {
 		super.surfaceDestroyed(holder);
 	}
 
-	private final RenderHolderCallback mRenderHolderCallback
-		= new RenderHolderCallback() {
+	private final IRendererHolder.RenderHolderCallback mRenderHolderCallback
+		= new IRendererHolder.RenderHolderCallback() {
 
 		@Override
 		public void onCreate(final Surface surface) {
@@ -273,7 +272,7 @@ public final class CameraGLView extends GLSurfaceView {
 //			if (DEBUG) Log.i(TAG, "onSurfaceCreated:Gl extensions: " + extensions);
 			if (!extensions.contains("OES_EGL_image_external"))
 				throw new RuntimeException("This system does not support OES_EGL_image_external.");
-			mDrawer = new GLDrawer2D(true);
+			mDrawer = GLDrawer2D.create(false, true);
 			// create texture ID
 			hTex = mDrawer.initTex();
 			// create SurfaceTexture with texture ID.

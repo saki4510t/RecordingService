@@ -12,7 +12,7 @@ import android.util.Log;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
-import com.serenegiant.utils.BuildCheck;
+import com.serenegiant.system.BuildCheck;
 import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
