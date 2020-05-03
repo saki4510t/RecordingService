@@ -124,7 +124,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 
 	@Override
-	public int onStartCommand(@NonNull final Intent intent, final int flags, final int startId) {
+	public int onStartCommand(@Nullable final Intent intent, final int flags, final int startId) {
 		if (DEBUG) Log.i(TAG, "onStartCommand:startId=" + startId + ": " + intent);
 		super.onStartCommand(intent, flags, startId);
 		return START_STICKY;
