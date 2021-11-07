@@ -356,14 +356,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			throws IllegalStateException, IOException {
 		if (DEBUG) Log.v(TAG, "internalPrepare:video");
 
-		final File cacheDir = new File(getTimeShiftCacheDir(), "video");
-		if (cacheDir.mkdirs() && DEBUG) {
-			Log.v(TAG, "create new cache dir for video");
-		}
-		final long maxShiftMs = getMaxShiftMs();
-		requireConfig().setMaxDuration(maxShiftMs);
-		mVideoCache = TimeShiftDiskCache.open(cacheDir,
-			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+		mVideoCache = createCache("video");
 		super.internalPrepare(width, height, frameRate, bpp);
 	}
 
@@ -372,14 +365,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		throws IllegalStateException, IOException {
 		if (DEBUG) Log.v(TAG, "internalPrepare:audio");
 		
-		final File cacheDir = new File(getTimeShiftCacheDir(), "audio");
-		if (cacheDir.mkdirs() && DEBUG) {
-			Log.v(TAG, "create new cache dir for audio");
-		}
-		final long maxShiftMs = getMaxShiftMs();
-		requireConfig().setMaxDuration(maxShiftMs);
-		mAudioCache = TimeShiftDiskCache.open(cacheDir,
-			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+		mAudioCache = createCache("audio");
 		super.internalPrepare(sampleRate, channelCount);
 	}
 
@@ -411,8 +397,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	@Override
 	protected void releaseEncoder() {
 		releaseCache();
-		super.releaseEncoder();
-	}
+			super.releaseEncoder();
+		}
 	
 	/**
 	 * 録画サービス起動時のインテントに最大タイムシフト時間の指定があれば
@@ -425,7 +411,26 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			? intent.getLongExtra(EXTRA_MAX_SHIFT_MS, DEFAULT_MAX_SHIFT_MS)
 			: DEFAULT_MAX_SHIFT_MS;
 	}
-		
+
+	/**
+	 * typeで指定したサブディレクトリを使うTimeShiftDiskCacheインスタンスを生成する
+	 * @param type
+	 * @return
+	 * @throws IOException
+	 */
+	private TimeShiftDiskCache createCache(
+		@NonNull final String type) throws IOException {
+
+		final File cacheDir = new File(getTimeShiftCacheDir(), type);
+		if (cacheDir.mkdirs() && DEBUG) {
+			Log.v(TAG, "create new cache dir for video");
+		}
+		final long maxShiftMs = getMaxShiftMs();
+		requireConfig().setMaxDuration(maxShiftMs);
+		return TimeShiftDiskCache.open(cacheDir,
+			BuildConfig.VERSION_CODE, 2, mCacheSize, maxShiftMs);
+	}
+
 	/**
 	 * ストレージ上のキャッシュを削除
 	 */
