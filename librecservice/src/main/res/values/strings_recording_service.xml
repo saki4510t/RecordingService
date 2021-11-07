@@ -9,4 +9,6 @@
 	<string name="notification_stop_recording">Stop recording</string>
 
 	<string name="error_no_free_space">No enough free space for recording or has no permission</string>
+
+	<string name="time_shift">Time shift recording service</string>
 </resources>

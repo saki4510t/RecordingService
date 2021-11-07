@@ -9,4 +9,6 @@
 	<string name="notification_stop_recording">録画終了</string>
 
 	<string name="error_no_free_space">空き容量が足らないかパーミッションがありません</string>
+
+	<string name="time_shift">タイムシフト録画サービス</string>
 </resources>
