@@ -160,7 +160,9 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 			queueEvent(() -> {
 				try {
 					// バッファリング開始
-					mRecorder.startTimeShift();
+					if (mRecorder != null) {
+						mRecorder.startTimeShift();
+					}
 				} catch (final IOException e) {
 					Log.w(TAG, e);
 					stopRecording();	// 非同期で呼ばないとデッドロックするかも
