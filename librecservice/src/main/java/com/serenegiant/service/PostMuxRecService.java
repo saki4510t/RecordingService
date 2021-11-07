@@ -195,7 +195,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 							Log.w(TAG, e);
 						}
 						if (getState() == STATE_MUXING) {
-							setState(STATE_READY);
+							setState(STATE_INITIALIZED);
 						}
 						muxer.release();
 						checkStopSelf();
@@ -203,7 +203,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 					}
 				});
 			} else {
-				setState(STATE_READY);
+				setState(STATE_INITIALIZED);
 			}
 		}
 	}
