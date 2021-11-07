@@ -432,7 +432,6 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (mVideoCache != null) {
 			try {
 				mVideoCache.delete();
-				mVideoCache.close();
 			} catch (final IOException e) {
 				Log.w(TAG, e);
 			}
@@ -441,7 +440,6 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (mAudioCache != null) {
 			try {
 				mAudioCache.delete();
-				mAudioCache.close();
 			} catch (final IOException e) {
 				Log.w(TAG, e);
 			}
