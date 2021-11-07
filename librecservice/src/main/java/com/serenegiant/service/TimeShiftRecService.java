@@ -88,6 +88,19 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private String mCacheDir;
 	private RecordingTask mRecordingTask;
 
+	/**
+	 * デフォルトコンストラクタ
+	 */
+	public TimeShiftRecService() {
+		super();
+	}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		mCacheDir = getFilesDir().getAbsolutePath();
+	}
+
 	@Override
 	public boolean onUnbind(final Intent intent) {
 		stopTimeShift();
@@ -379,11 +392,11 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			// 外部ストレージのキャッシュディレクトリを試みる
 			cacheDir = getExternalCacheDir();
 			cacheDir.mkdirs();
-			if ((cacheDir == null) || !cacheDir.canWrite()) {
-				// 内部ストレージのキャッシュディレクトリを試みる
-				cacheDir = getCacheDir();
-				cacheDir.mkdirs();
-			}
+		}
+		if ((cacheDir == null) || !cacheDir.canWrite()) {
+			// 内部ストレージのキャッシュディレクトリを試みる
+			cacheDir = getCacheDir();
+			cacheDir.mkdirs();
 		}
 		if ((cacheDir == null) || !cacheDir.canWrite()) {
 			throw new IOException("can't write cache dir");
