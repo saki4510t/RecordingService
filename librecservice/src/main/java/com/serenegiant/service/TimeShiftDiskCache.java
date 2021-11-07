@@ -174,7 +174,7 @@ final class TimeShiftDiskCache implements Closeable {
 	private long size = 0;
 	private Writer journalWriter;
 	private final LinkedHashMap<Long, Entry> mEntries
-			= new LinkedHashMap<Long, Entry>(0, 0.75f, false/*accessOrder*/);   // 挿入順
+			= new LinkedHashMap<>(0, 0.75f, false/*accessOrder*/);   // 挿入順
 	private int redundantOpCount;
 
 	/**
@@ -205,7 +205,7 @@ final class TimeShiftDiskCache implements Closeable {
 	/**
 	 * Returns the remainder of 'reader' as a string, closing it when done.
 	 */
-	public static String readFully(final Reader reader) throws IOException {
+	private static String readFully(final Reader reader) throws IOException {
 		try {
 			final StringWriter writer = new StringWriter();
 			char[] buffer = new char[1024];
@@ -223,7 +223,7 @@ final class TimeShiftDiskCache implements Closeable {
 	 * Returns the ASCII characters up to but not including the next "\r\n", or "\n".
 	 * @throws EOFException if the stream is exhausted before the next newline character.
 	 */
-	public static String readAsciiLine(final InputStream in) throws IOException {
+	private static String readAsciiLine(final InputStream in) throws IOException {
 		// TODO: support UTF-8 here instead
 
 		final StringBuilder result = new StringBuilder(80);
@@ -247,7 +247,7 @@ final class TimeShiftDiskCache implements Closeable {
 	/**
 	 * Closes 'closeable', ignoring any checked exceptions. Does nothing if 'closeable' is null.
 	 */
-	public static void closeQuietly(final Closeable closeable) {
+	private static void closeQuietly(final Closeable closeable) {
 		if (closeable != null) {
 			try {
 				closeable.close();
@@ -261,7 +261,7 @@ final class TimeShiftDiskCache implements Closeable {
 	/**
 	 * Recursively delete everything in {@code dir}.
 	 */
-	public static void deleteContents(@NonNull final File path) throws IOException {
+	private static void deleteContents(@NonNull final File path) throws IOException {
 		if (path.isDirectory()) {
 			// pathがディレクトリの時...再帰的に削除する
 			final File[] files = path.listFiles();
@@ -307,6 +307,15 @@ final class TimeShiftDiskCache implements Closeable {
 		}
 	};
 
+	/**
+	 * コンストラクタ
+	 * @param directory
+	 * @param appVersion
+	 * @param valueCount
+	 * @param maxSize
+	 * @param maxDurationMs
+	 * @throws IOException
+	 */
 	private TimeShiftDiskCache(final File directory,
 		final int appVersion, final int valueCount,
 		final long maxSize, final long maxDurationMs) throws IOException {
@@ -467,6 +476,7 @@ final class TimeShiftDiskCache implements Closeable {
 	 * Creates a new journal that omits redundant information.
 	 * This replaces the current journal if it exists.
 	 */
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private synchronized void rebuildJournal() throws IOException {
 		if (journalWriter != null) {
 			journalWriter.close();
@@ -610,6 +620,7 @@ final class TimeShiftDiskCache implements Closeable {
 		return size;
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private synchronized void completeEdit(final Editor editor,
 		final boolean success) throws IOException {
 
