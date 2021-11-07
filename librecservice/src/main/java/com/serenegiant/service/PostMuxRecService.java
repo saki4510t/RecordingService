@@ -188,6 +188,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 				queueEvent(new Runnable() {
 					@Override
 					public void run() {
+						if (DEBUG) Log.v(TAG, "internalStop:start build");
 						try {
 							muxer.build();
 						} catch (final IOException e) {
@@ -198,6 +199,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 						}
 						muxer.release();
 						checkStopSelf();
+						if (DEBUG) Log.v(TAG, "internalStop:build finished");
 					}
 				});
 			} else {
