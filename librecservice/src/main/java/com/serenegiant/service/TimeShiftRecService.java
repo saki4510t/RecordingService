@@ -123,11 +123,13 @@ public class TimeShiftRecService extends AbstractRecorderService {
 
 	/**
 	 * タイムシフトバッファリングを終了
+	 * 一度タイムシフトバッファリングを終了するとSTATE_INITIALIZEDになるので
+	 * サービスを再生成するか#prepareからやり直す必要がある
 	 */
 	public void stopTimeShift() {
 		if (DEBUG) Log.v(TAG, "stopTimeShift:");
-		internalStopTimeShift();
 		stop();
+		internalStopTimeShift();
 		checkStopSelf();
 	}
 	
@@ -176,7 +178,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	private void internalStopTimeShift() {
 		if (DEBUG) Log.v(TAG, "internalStopTimeShift:state=" + getState());
 		if (getState() == STATE_BUFFERING) {
-			setState(STATE_READY);
+			setState(STATE_INITIALIZED);
 			synchronized (mSync) {
 				releaseEncoder();
 			}
@@ -395,10 +397,19 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	}
 
 	@Override
+	protected void stopEncoder() {
+		if (DEBUG) Log.v(TAG, "stopEncoder:");
+		// ここではsuperを呼ばない
+	}
+
+	@Override
 	protected void releaseEncoder() {
-		releaseCache();
+		if (DEBUG) Log.v(TAG, "releaseEncoder:");
+		if (getState() != STATE_BUFFERING) {
+			super.stopEncoder();
 			super.releaseEncoder();
 		}
+	}
 	
 	/**
 	 * 録画サービス起動時のインテントに最大タイムシフト時間の指定があれば

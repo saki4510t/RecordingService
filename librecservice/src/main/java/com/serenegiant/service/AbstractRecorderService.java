@@ -625,6 +625,16 @@ public abstract class AbstractRecorderService extends BaseService {
     }
 
 	/**
+	 * エンコーダーへ終了要求
+	 * 今は音声エンコーダーのみ#signalEndOfInputStreamを呼び出す
+	 */
+	protected void stopEncoder() {
+		if (mAudioEncoder != null) {
+			signalEndOfInputStream(mAudioEncoder);
+		}
+	}
+
+	/**
 	 * エンコーダーを破棄
 	 */
 	protected void releaseEncoder() {
@@ -843,9 +853,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	public void stop() {
 		if (DEBUG) Log.v(TAG, "stop:");
 		synchronized (mSync) {
-			if (mAudioEncoder != null) {
-				signalEndOfInputStream(mAudioEncoder);
-			}
+			stopEncoder();
 			internalStop();
 			internalResetSettings();
 		}
