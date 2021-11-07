@@ -39,7 +39,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 
 /**
- *
+ * エンコードしたデータを一旦一時ファイルに書き出しておいて録画終了後に
+ * 一括してmuxして動画ファイルを生成するためのAbstractRecorderService実装
  */
 public class PostMuxRecService extends AbstractRecorderService {
 	private static final boolean DEBUG = false;	// FIXME set false on production
@@ -49,8 +50,15 @@ public class PostMuxRecService extends AbstractRecorderService {
 	
 	public static final String KEY_MUX_INTERMEDIATE_TYPE = "MUX_INTERMEDIATE_TYPE";
 
-	// 中間ファイルの形式
+	/**
+	 * 中間ファイルの形式
+	 * MediaRawFileMuxerを使う
+	 */
 	public static final int MUX_INTERMEDIATE_TYPE_FILE = 0;
+	/**
+	 * 中間ファイルの形式
+	 * MediaRawChannelMuxerを使う
+	 */
 	public static final int MUX_INTERMEDIATE_TYPE_CHANNEL = 1;
 	
 	@IntDef({MUX_INTERMEDIATE_TYPE_FILE,

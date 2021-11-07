@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 
 /**
  * Rawファイル形式でエンコードデータをファイルに書き出すためのIMuxer実装
- * 実際のファイルへの出力はMediaRawFilerWriterで行う。
+ * 実際のファイルへの出力はMediaRawChannelWriterで行う。
  * 実際のmp4ファイルへの出力は別途PostMuxBuilderで行う。
  */
 public class MediaRawChannelMuxer implements IPostMuxer {
