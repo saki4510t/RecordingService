@@ -156,7 +156,7 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 		
 		@Override
 		public void onReady() {
-			if (DEBUG) Log.v(TAG, "onReady:");
+			if (DEBUG) Log.v(TAG, "onReady:" + mRecorder);
 			queueEvent(() -> {
 				try {
 					// バッファリング開始

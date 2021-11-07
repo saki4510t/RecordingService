@@ -110,7 +110,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	/**
 	 * タイムシフトバッファリングを開始
 	 */
-	public void startTimeShift() throws IllegalStateException, IOException {
+	public void startTimeShift() throws IllegalStateException {
 		if (DEBUG) Log.v(TAG, "startTimeShift:");
 		synchronized (mSync) {
 			if (getState() != STATE_READY) {
@@ -174,6 +174,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * タイムシフトバッファリング終了の実体
 	 */
 	private void internalStopTimeShift() {
+		if (DEBUG) Log.v(TAG, "internalStopTimeShift:");
 		if (getState() == STATE_BUFFERING) {
 			setState(STATE_READY);
 			synchronized (mSync) {
@@ -264,6 +265,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 
 	@Override
 	protected void internalStop() {
+		if (DEBUG) Log.v(TAG, "internalStop:");
 		mRecordingTask = null;
 		if (getState() == STATE_RECORDING) {
 			setState(STATE_BUFFERING);
