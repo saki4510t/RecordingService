@@ -27,8 +27,8 @@ import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
 import com.serenegiant.system.StorageInfo;
+import com.serenegiant.system.StorageUtils;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.SAFUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -146,7 +146,12 @@ public class MediaAVSplitRecorder extends Recorder {
 	@Override
 	public boolean check() {
 		final Context context = getContext();
-		final StorageInfo info = SAFUtils.getStorageInfo(context, mOutputDir);
+		StorageInfo info = null;
+		try {
+			info = StorageUtils.getStorageInfo(context, mOutputDir);
+		} catch (final IOException e) {
+			Log.w(TAG, e);
+		}
 		if ((info != null) && (info.totalBytes != 0)) {
 			return ((info.freeBytes/ (float)info.totalBytes) < FileUtils.FREE_RATIO)
 				|| (info.freeBytes < FileUtils.FREE_SIZE);

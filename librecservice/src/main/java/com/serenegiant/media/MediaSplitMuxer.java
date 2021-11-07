@@ -26,9 +26,9 @@ import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
 import com.serenegiant.system.StorageInfo;
+import com.serenegiant.system.StorageUtils;
 import com.serenegiant.system.Time;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.SAFUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -517,11 +517,19 @@ public class MediaSplitMuxer implements IMuxer {
 	protected boolean checkFreespace() {
 		StorageInfo info = null;
 		if (mOutputDoc != null) {
-			info = SAFUtils.getStorageInfo(requireContext(), mOutputDoc);
+			try {
+				info = StorageUtils.getStorageInfo(requireContext(), mOutputDoc);
+			} catch (final IOException e) {
+				Log.w(TAG, e);
+			}
 		}
 		if (info == null) {
-			info = FileUtils.getStorageInfo(getContext(),
-				Environment.DIRECTORY_MOVIES, 0);
+			try {
+				info = StorageUtils.getStorageInfo(getContext(),
+					Environment.DIRECTORY_MOVIES, 0);
+			} catch (final IOException e) {
+				Log.w(TAG, e);
+			}
 		}
 		final float rate;
 		final long totalBytes, freeBytes;
