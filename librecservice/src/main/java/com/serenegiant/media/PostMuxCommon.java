@@ -304,9 +304,9 @@ public class PostMuxCommon {
 		int n = (buffer != null ? buffer.limit() : 0);
 		if (n > 0) {
 			buffer.rewind();
-			int sz = (n > 16 ? 16 : n);
+			int sz = Math.min(n, 16);
 			n -= sz;
-			for (; sz > 0; sz = (n > 16 ? 16 : n), n -= sz) {
+			for (; sz > 0; sz = Math.min(n, 16), n -= sz) {
 				buffer.get(temp, 0, sz);
 				for (int i = 0; i < sz; i++) {
 					sb.append(temp[i]).append(',');
@@ -402,6 +402,7 @@ public class PostMuxCommon {
 			ChannelHelper.write(out, RESERVED);
 		}
 
+		@NonNull
 		@Override
 		public String toString() {
 			return String.format(Locale.US,

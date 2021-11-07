@@ -23,6 +23,8 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import android.util.Log;
 
+import com.serenegiant.nio.CharsetsUtils;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -119,7 +121,7 @@ final class TimeShiftDiskCache implements Closeable {
 	private static final String REMOVE = "REMOVE";
 	private static final String READ = "READ";
 
-	private static final Charset UTF_8 = Charset.forName("UTF-8");
+	private static final Charset UTF_8 = CharsetsUtils.UTF8;
 	private static final int IO_BUFFER_SIZE = 8 * 1024;
 
     /*

@@ -50,7 +50,7 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import static com.serenegiant.media.MediaCodecHelper.*;
+import static com.serenegiant.media.MediaCodecUtils.*;
 
 /**
  * TimeShiftRecServiceから流用できそうな部分を切り出し
@@ -556,7 +556,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		// MediaCodecに適用するパラメータを設定する。
 		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
 		format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
+			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// aAPI >= 18
 		format.setInteger(MediaFormat.KEY_BIT_RATE,
 			requireConfig().getBitrate(width, height, frameRate, bpp));
 		format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
@@ -989,7 +989,7 @@ public abstract class AbstractRecorderService extends BaseService {
 					}
 //	            	if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
 					if (length <= 0) {
-					// エンコード要求サイズが0の時はEOSを送信
+						// エンコード要求サイズが0の時はEOSを送信
 						mIsEos = true;
 //		            	if (DEBUG) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
 						encoder.queueInputBuffer(inputBufferIndex, 0, 0,
@@ -1027,7 +1027,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				}
 //	            if (DEBUG) Log.v(TAG, "encode:queueInputBuffer");
 				if (length <= 0) {
-				// エンコード要求サイズが0の時はEOSを送信
+					// エンコード要求サイズが0の時はEOSを送信
 					mIsEos = true;
 //	            	if (DEBUG) Log.i(TAG, "send BUFFER_FLAG_END_OF_STREAM");
 					encoder.queueInputBuffer(inputBufferIndex, 0, 0,

@@ -67,7 +67,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * MediaCodecのエンコーダーの設定
 	 * 最終のmp4ファイル出力時に必要なため保持しておく
 	 */
-	private MediaFormat[] mMediaFormats = new MediaFormat[2];
+	private final MediaFormat[] mMediaFormats = new MediaFormat[2];
 	private int mVideoTrackIx = -1;
 	private int mAudioTrackIx = -1;
 	/**
@@ -640,19 +640,18 @@ public class MediaSplitMuxer implements IMuxer {
 	protected DocumentFile createOutputDoc(
 		@NonNull final String name,
 		@NonNull final String ext, final int segment) throws IOException {
+
+		final String fileName = String.format(Locale.US, "%s%s%03d.%s",
+			mOutputName, mSegmentPrefix, segment + 1, ext);
 		if (mOutputDoc != null) {
 			final DocumentFile dir = mOutputDoc.isDirectory()
 				? mOutputDoc : mOutputDoc.getParentFile();
-			return dir.createFile(null,
-				String.format(Locale.US, "%s%s%03d.%s",
-					mOutputName, mSegmentPrefix, segment + 1, ext));
+			return dir.createFile(null, fileName);
 		} else if (mOutputDir != null) {
 			final File _dir = new File(mOutputDir);
 			final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
 			return DocumentFile.fromFile(
-				new File(dir,
-				String.format(Locale.US, "%s%s%03d.%s",
-					mOutputName, mSegmentPrefix, segment + 1, ext)));
+				new File(dir, fileName));
 		} else {
 			throw new IOException("output dir not set");
 		}

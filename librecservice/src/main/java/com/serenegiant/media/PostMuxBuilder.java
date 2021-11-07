@@ -79,7 +79,6 @@ class PostMuxBuilder extends PostMuxCommon {
 	 * @param outputPath
 	 * @throws IOException
 	 */
-	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public void buildFromRawFile(@NonNull final Context context,
 		@NonNull final String tempDirPath,
 		@NonNull final String outputPath) throws IOException {
@@ -92,6 +91,7 @@ class PostMuxBuilder extends PostMuxCommon {
 		final boolean hasVideo = videoFile.exists() && videoFile.canRead();
 		final boolean hasAudio = audioFile.exists() && audioFile.canRead();
 		if (hasVideo || hasAudio) {
+			@SuppressLint("InlinedApi")
 			final IMuxer muxer = new MediaMuxerWrapper(outputPath,
 				MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 			if (muxer != null) {
@@ -268,7 +268,6 @@ class PostMuxBuilder extends PostMuxCommon {
 	 * @param outputPath
 	 * @throws IOException
 	 */
-	@SuppressWarnings("ResultOfMethodCallIgnored")
 	public void buildFromRawChannel(@NonNull final Context context,
 		@NonNull final String tempDirPath,
 		@NonNull final String outputPath) throws IOException {
@@ -281,6 +280,7 @@ class PostMuxBuilder extends PostMuxCommon {
 		final boolean hasVideo = videoFile.exists() && videoFile.canRead();
 		final boolean hasAudio = audioFile.exists() && audioFile.canRead();
 		if (hasVideo || hasAudio) {
+			@SuppressLint("InlinedApi")
 			final IMuxer muxer = new MediaMuxerWrapper(outputPath,
 				MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 			if (muxer != null) {

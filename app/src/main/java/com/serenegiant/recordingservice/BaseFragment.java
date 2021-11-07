@@ -19,7 +19,6 @@ package com.serenegiant.recordingservice;
 */
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -37,17 +36,17 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.serenegiant.dialog.MessageDialogFragmentV4;
+import com.serenegiant.dialog.PermissionDescriptionDialogV4;
 import com.serenegiant.system.BuildCheck;
 import com.serenegiant.system.PermissionCheck;
+import com.serenegiant.system.SAFUtils;
 import com.serenegiant.system.Stacktrace;
 import com.serenegiant.utils.HandlerThreadHandler;
-import com.serenegiant.utils.SAFUtils;
 
 import java.util.Arrays;
 
 public abstract class BaseFragment extends Fragment
-	implements MessageDialogFragmentV4.MessageDialogListener {
+	implements PermissionDescriptionDialogV4.DialogResultListener {
 
 	private static final boolean DEBUG = true; // set false on production
 	private static final String TAG = BaseFragment.class.getSimpleName();
@@ -184,7 +183,7 @@ public abstract class BaseFragment extends Fragment
 	protected void popBackStack() {
 		if (DEBUG) Log.v(TAG, "popBackStack:");
 		try {
-			getFragmentManager().popBackStack();
+			getParentFragmentManager().popBackStack();
 		} catch (final Exception e) {
 			Log.w(TAG, e);
 		}
@@ -360,19 +359,19 @@ public abstract class BaseFragment extends Fragment
 	}
 
 //================================================================================
+
 	/**
-	 * MessageDialogFragmentメッセージダイアログからのコールバックリスナー
+	 * PermissionDescriptionDialogV4からのコールバックリスナー
 	 * @param dialog
 	 * @param requestCode
 	 * @param permissions
 	 * @param result
 	 */
-	@SuppressLint("NewApi")
 	@Override
-	public void onMessageDialogResult(final MessageDialogFragmentV4 dialog,
-		final int requestCode, final String[] permissions, final boolean result) {
+	public void onDialogResult(@NonNull final PermissionDescriptionDialogV4 dialog,
+		final int requestCode, @NonNull final String[] permissions, final boolean result) {
 
-		if (DEBUG) Log.v(TAG, "onMessageDialogResult:" + result + "," + Arrays.toString(permissions));
+		if (DEBUG) Log.v(TAG, "onDialogResult:" + result + "," + Arrays.toString(permissions));
 		if (result) {
 			// メッセージダイアログでOKを押された時はパーミッション要求する
 			if (BuildCheck.isMarshmallow()) {
@@ -445,7 +444,7 @@ public abstract class BaseFragment extends Fragment
 	 */
 	protected boolean checkPermissionWriteExternalStorage() {
 		if (!PermissionCheck.hasWriteExternalStorage(getActivity())) {
-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
+			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
 				R.string.permission_title, R.string.permission_ext_storage_request,
 				new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
 			return false;
@@ -460,7 +459,7 @@ public abstract class BaseFragment extends Fragment
 	 */
 	protected boolean checkPermissionAudio() {
 		if (!PermissionCheck.hasAudio(getActivity())) {
-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_AUDIO_RECORDING,
+			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_AUDIO_RECORDING,
 				R.string.permission_title, R.string.permission_audio_recording_request,
 				new String[]{Manifest.permission.RECORD_AUDIO});
 			return false;
@@ -475,7 +474,7 @@ public abstract class BaseFragment extends Fragment
 	 */
 	protected boolean checkPermissionCamera() {
 		if (!PermissionCheck.hasCamera(getActivity())) {
-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_CAMERA,
+			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_CAMERA,
 				R.string.permission_title, R.string.permission_camera,
 				new String[]{Manifest.permission.CAMERA});
 			return false;
@@ -490,7 +489,7 @@ public abstract class BaseFragment extends Fragment
 	 */
 	protected boolean checkPermissionNetwork() {
 		if (!PermissionCheck.hasNetwork(getActivity())) {
-			MessageDialogFragmentV4.showDialog(this, REQUEST_PERMISSION_NETWORK,
+			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_NETWORK,
 				R.string.permission_title, R.string.permission_network_request,
 				new String[]{Manifest.permission.INTERNET});
 			return false;
@@ -510,7 +509,7 @@ public abstract class BaseFragment extends Fragment
 			return false;
 		}
 
-		return (SAFUtils.hasStorageAccess(activity, REQUEST_ACCESS_SD)
+		return (SAFUtils.hasPermission(activity, REQUEST_ACCESS_SD)
 			|| PermissionCheck.hasWriteExternalStorage(activity))
 			&& PermissionCheck.hasAudio(activity)
 			&& PermissionCheck.hasCamera(activity);

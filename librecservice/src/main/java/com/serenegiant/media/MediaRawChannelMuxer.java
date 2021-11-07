@@ -79,7 +79,7 @@ public class MediaRawChannelMuxer implements IPostMuxer {
 	/** エンコード済み音声データのrawファイル出力用 */
 	private MediaRawChannelWriter mAudioWriter;
 	/** トラックインデックスからMediaRawFileWriterを参照するための配列 */
-	private MediaRawChannelWriter[] mMediaRawFileWriters = new MediaRawChannelWriter[2];
+	private final MediaRawChannelWriter[] mMediaRawFileWriters = new MediaRawChannelWriter[2];
 	
 	/**
 	 * コンストラクタ

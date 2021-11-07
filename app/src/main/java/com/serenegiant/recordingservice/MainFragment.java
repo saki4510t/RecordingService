@@ -98,7 +98,7 @@ public class MainFragment extends BaseFragment {
 				
 				return;
 			}
-			final FragmentManager fm = getFragmentManager();
+			final FragmentManager fm = getParentFragmentManager();
 			switch (position) {
 			case 0:
 				fm.beginTransaction()
@@ -129,8 +129,8 @@ public class MainFragment extends BaseFragment {
 	};
 	
 	private static class Item implements Parcelable {
-		private int mId;
-		private String mName;
+		private final int mId;
+		private final String mName;
 
 		public Item(final int id, final String name) {
 			mId = id;

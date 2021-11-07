@@ -34,8 +34,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.serenegiant.system.PermissionCheck;
+import com.serenegiant.system.SAFUtils;
 import com.serenegiant.utils.FileUtils;
-import com.serenegiant.utils.SAFUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,19 +130,17 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 	private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
 		@Override
 		public void onClick(final View view) {
-			switch (view.getId()) {
-			case R.id.cameraView:
+			final int id = view.getId();
+			if (id == R.id.cameraView) {
 				final int scale_mode = (mCameraView.getScaleMode() + 1) % 4;
 				mCameraView.setScaleMode(scale_mode);
 				updateScaleModeText();
-				break;
-			case R.id.record_button:
+			} else if (id == R.id.record_button) {
 				if (!isRecording()) {
 					startRecording();
 				} else {
 					stopRecording();
 				}
-				break;
 			}
 		}
 	};
@@ -206,9 +204,9 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 	protected static DocumentFile getRecordingRoot(@NonNull final Context context) {
 		if (DEBUG) Log.v(TAG, "getRecordingRoot:");
 		DocumentFile root = null;
-		if (SAFUtils.hasStorageAccess(context, REQUEST_ACCESS_SD)) {
+		if (SAFUtils.hasPermission(context, REQUEST_ACCESS_SD)) {
 			try {
-				root = SAFUtils.getStorage(context, REQUEST_ACCESS_SD);
+				root = SAFUtils.getDir(context, REQUEST_ACCESS_SD, null);
 				if ((root != null) && root.exists() && root.canWrite()) {
 					final DocumentFile appDir = root.findFile(APP_DIR_NAME);
 					if (appDir == null) {
@@ -230,7 +228,7 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 		if (root == null) {
 			// remove permission to access secondary (external) storage,
 			// because app can't access it and it will already be removed.
-			SAFUtils.releaseStorageAccessPermission(context, REQUEST_ACCESS_SD);
+			SAFUtils.releasePersistableUriPermission(context, REQUEST_ACCESS_SD);
 		}
 		if ((root == null) && PermissionCheck.hasWriteExternalStorage(context)) {
 			// fallback to primary external storage if app has permission

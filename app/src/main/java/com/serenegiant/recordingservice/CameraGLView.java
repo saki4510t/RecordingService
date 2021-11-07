@@ -421,6 +421,7 @@ public final class CameraGLView extends GLSurfaceView {
 		private CameraThread mThread;
 
 		public CameraHandler(final CameraThread thread) {
+			super(Looper.myLooper());
 			mThread = thread;
 		}
 

@@ -77,7 +77,7 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 	}
 
 	private int mRecordingSurfaceId = 0;
-	private AbstractServiceRecorder.Callback mCallback
+	private final AbstractServiceRecorder.Callback mCallback
 		= new AbstractServiceRecorder.Callback() {
 		@Override
 		public void onConnected() {
