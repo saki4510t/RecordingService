@@ -29,11 +29,14 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.serenegiant.librecservice.BuildConfig;
+import com.serenegiant.librecservice.R;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.system.BuildCheck;
 import com.serenegiant.utils.UriHelper;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -170,7 +173,13 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	protected IBinder getBinder() {
 		return mBinder;
 	}
-	
+
+	@NonNull
+	@Override
+	protected String getTitle() {
+		return getString(R.string.service_time_shift);
+	}
+
 //================================================================================
 	/**
 	 * タイムシフトバッファリング終了の実体

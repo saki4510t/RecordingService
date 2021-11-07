@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.serenegiant.librecservice.R;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
@@ -47,6 +48,12 @@ public class SimpleRecorderService extends AbstractRecorderService {
 	@Override
 	protected IBinder getBinder() {
 		return mBinder;
+	}
+
+	@NonNull
+	@Override
+	protected String getTitle() {
+		return getString(R.string.service_simple);
 	}
 
 	/**

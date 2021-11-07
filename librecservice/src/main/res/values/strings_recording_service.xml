@@ -10,5 +10,7 @@
 
 	<string name="error_no_free_space">No enough free space for recording or has no permission</string>
 
-	<string name="time_shift">Time shift recording service</string>
+	<string name="service_simple">Recording Service</string>
+	<string name="service_post_mux">PostMux Recording Service</string>
+	<string name="service_time_shift">Time Shift Recording Service</string>
 </resources>

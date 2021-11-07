@@ -140,7 +140,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				getString(R.string.notification_service),
 				R.mipmap.ic_recording_service, R.mipmap.ic_recording_service,
 				getString(R.string.notification_service),
-				getString(R.string.time_shift),
+				getTitle(),
 				contextIntent());
 			synchronized (mSync) {
 				if (mState == STATE_UNINITIALIZED) {
@@ -177,6 +177,8 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 	}
 
+	@NonNull
+	protected abstract String getTitle();
 //--------------------------------------------------------------------------------
 // BaseServiceの抽象メソッドをoverride
 	@Override
@@ -387,7 +389,7 @@ public abstract class AbstractRecorderService extends BaseService {
 								getString(R.string.notification_service),
 								R.mipmap.ic_recording_service, R.mipmap.ic_recording_service,
 								getString(R.string.notification_service),
-								getString(R.string.time_shift));
+								getTitle());
 							stopSelf();
 						}
 					});

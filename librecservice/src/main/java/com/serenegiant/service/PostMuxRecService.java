@@ -27,6 +27,7 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
+import com.serenegiant.librecservice.R;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.IPostMuxer;
 import com.serenegiant.media.MediaRawChannelMuxer;
@@ -95,7 +96,13 @@ public class PostMuxRecService extends AbstractRecorderService {
 	protected IBinder getBinder() {
 		return mBinder;
 	}
-	
+
+	@NonNull
+	@Override
+	protected String getTitle() {
+		return getString(R.string.service_post_mux);
+	}
+
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
 	 * @param outputDir 出力ディレクトリ
