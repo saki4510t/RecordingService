@@ -308,13 +308,11 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @return
 	 */
 	public final boolean isRecording() {
-		synchronized (mSync) {
-			final int state = getState();
-			return (state == STATE_PREPARING)
-				|| (state == STATE_PREPARED)
-				|| (state == STATE_READY)
-				|| (state == STATE_RECORDING);
-		}
+		final int state = getState();
+		return (state == STATE_PREPARING)
+			|| (state == STATE_PREPARED)
+			|| (state == STATE_READY)
+			|| (state == STATE_RECORDING);
 	}
 	
 	/**
