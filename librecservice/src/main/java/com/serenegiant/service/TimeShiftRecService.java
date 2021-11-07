@@ -174,12 +174,14 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * タイムシフトバッファリング終了の実体
 	 */
 	private void internalStopTimeShift() {
-		if (DEBUG) Log.v(TAG, "internalStopTimeShift:");
+		if (DEBUG) Log.v(TAG, "internalStopTimeShift:state=" + getState());
 		if (getState() == STATE_BUFFERING) {
 			setState(STATE_READY);
 			synchronized (mSync) {
 				releaseEncoder();
 			}
+		} else if (DEBUG) {
+			Log.v(TAG, "internalStopTimeShift: not buffering now");
 		}
 	}
 	
@@ -517,8 +519,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 					}
 				} // synchronized (mSync)
 				if ((videoTrackIx >= 0) && (videoInfo.size > 0)) {
-					if (DEBUG) Log.v(TAG, "writeSampleData/Video:size="+ videoInfo.size
-						+ ", presentationTimeUs=" + videoInfo.presentationTimeUs);
+//					if (DEBUG) Log.v(TAG, "writeSampleData/Video:size="+ videoInfo.size
+//						+ ", presentationTimeUs=" + videoInfo.presentationTimeUs);
 					try {
 						videoFrames++;
 						muxer.writeSampleData(videoTrackIx, videoBuf, videoInfo);
@@ -528,8 +530,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 					}
 				}
 				if ((audioTrackIx >= 0) && (audioInfo.size > 0)) {
-					if (DEBUG) Log.v(TAG, "writeSampleData/Audio:size=" + audioInfo.size
-						+ ", presentationTimeUs=" + audioInfo.presentationTimeUs);
+//					if (DEBUG) Log.v(TAG, "writeSampleData/Audio:size=" + audioInfo.size
+//						+ ", presentationTimeUs=" + audioInfo.presentationTimeUs);
 					try {
 						audioFrames++;
 						muxer.writeSampleData(audioTrackIx, audioBuf, audioInfo);
@@ -549,8 +551,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			} catch (final Exception e) {
 				Log.w(TAG, e);
 			}
-			if (DEBUG) Log.v(TAG, String.format("RecordingTask#run:finished, video=%d,audio=%d",
-				videoFrames, audioFrames));
+			if (DEBUG) Log.v(TAG, String.format("RecordingTask#run:finished, video=%d,audio=%d,err=%d",
+				videoFrames, audioFrames, error));
 		}
 
 	}
