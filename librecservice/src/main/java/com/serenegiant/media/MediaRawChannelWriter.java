@@ -90,7 +90,6 @@ abstract class MediaRawChannelWriter extends PostMuxCommon {
 	
 //================================================================================
 	private ByteChannel mOut;
-	private int mNumFrames = -1;
 	private int mFrameCounts;
 	
 	/**

@@ -91,7 +91,6 @@ abstract class MediaRawFileWriter extends PostMuxCommon {
 	
 //================================================================================
 	private DataOutputStream mOut;
-	private int mNumFrames = -1;
 	private int mFrameCounts;
 	
 	/**
