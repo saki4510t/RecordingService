@@ -71,13 +71,17 @@ public abstract class AbstractRecorderService extends BaseService {
 	public static final int STATE_READY = 3;
 	public static final int STATE_RECORDING = 4;
 	public static final int STATE_RELEASING = 9;
-	
+
+	/**
+	 * 録画サービスの状態が変更されたときのコールバックリスナー
+	 */
 	public interface StateChangeListener {
 		public void onStateChanged(@NonNull final AbstractRecorderService service,
 			final int state);
 	}
 
 //================================================================================
+	@NonNull
 	private final Set<StateChangeListener> mListeners
 		= new CopyOnWriteArraySet<StateChangeListener>();
 	private VideoConfig mVideoConfig;
@@ -91,17 +95,25 @@ public abstract class AbstractRecorderService extends BaseService {
 	private int mWidth, mHeight;
 	private int mFrameRate;
 	private float mBpp;
+	@Nullable
 	private MediaFormat mVideoFormat;
+	@Nullable
 	private MediaCodec mVideoEncoder;
+	@Nullable
 	private Surface mInputSurface;
+	@Nullable
 	private MediaReaper.VideoReaper mVideoReaper;
 // 音声関係
 	private volatile boolean mUseAudio;
+	@Nullable
 	private IAudioSampler mAudioSampler;
 	private boolean mIsOwnAudioSampler;
 	private int mSampleRate, mChannelCount;
+	@Nullable
 	private MediaFormat mAudioFormat;
+	@Nullable
 	private MediaCodec mAudioEncoder;
+	@Nullable
 	private MediaReaper.AudioReaper mAudioReaper;
 
 	@Override
@@ -168,6 +180,10 @@ public abstract class AbstractRecorderService extends BaseService {
 		return false;	// onRebind使用不可
 	}
 
+	/**
+	 * UI側からサービスへアクセスするためのIBinder生成のヘルパーメソッド
+	 * @return
+	 */
 	protected abstract IBinder getBinder();
 
 	@Nullable
@@ -177,6 +193,10 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 	}
 
+	/**
+	 * 通知領域に表示するコンテツタイトル取得のヘルパーメソッド
+	 * @return
+	 */
 	@NonNull
 	protected abstract String getTitle();
 //--------------------------------------------------------------------------------
@@ -191,7 +211,22 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	}
 
+	/**
+	 * サービスノティフィケーションを選択した時に実行されるPendingIntentの生成
+	 * 普通はMainActivityを起動させる。
+	 * デフォルトはnullを返すだけでノティフィケーションを選択しても何も実行されない。
+	 * @return
+	 */
+	@Override
+	protected PendingIntent contextIntent() {
+		return null;
+	}
+
 //--------------------------------------------------------------------------------
+	/**
+	 * ステート変更時のコールバックリスナーを登録する
+	 * @param listener
+	 */
 	void addListener(@Nullable final StateChangeListener listener) {
 		if (DEBUG) Log.v(TAG, "addListener:" + listener);
 		if (listener != null) {
@@ -199,6 +234,10 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 	}
 	
+	/**
+	 * ステート変更時のコールバックリスナーを登録解除する
+	 * @param listener
+	 */
 	void removeListener(@Nullable final StateChangeListener listener) {
 		if (DEBUG) Log.v(TAG, "removeListener:" + listener);
 		mListeners.remove(listener);
@@ -412,17 +451,6 @@ public abstract class AbstractRecorderService extends BaseService {
 	}
 	
 	/**
-	 * サービスノティフィケーションを選択した時に実行されるPendingIntentの生成
-	 * 普通はMainActivityを起動させる。
-	 * デフォルトはnullを返すだけでノティフィケーションを選択しても何も実行されない。
-	 * @return
-	 */
-	@Override
-	protected PendingIntent contextIntent() {
-		return null;
-	}
-
-	/**
 	 * 録画の準備
 	 * @throws IllegalStateException
 	 * @throws IOException
@@ -556,7 +584,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		// MediaCodecに適用するパラメータを設定する。
 		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
 		format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// aAPI >= 18
+			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
 		format.setInteger(MediaFormat.KEY_BIT_RATE,
 			requireConfig().getBitrate(width, height, frameRate, bpp));
 		format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
@@ -641,15 +669,21 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	protected void releaseEncoder() {
 		if (DEBUG) Log.v(TAG, "releaseEncoder:");
-		if (mVideoReaper != null) {
-			mVideoReaper.release();
+		final MediaReaper.VideoReaper videoReaper;
+		final MediaReaper.AudioReaper audioReaper;
+		synchronized (mSync) {
+			videoReaper = mVideoReaper;
 			mVideoReaper = null;
+			audioReaper = mAudioReaper;
+			mAudioReaper = null;
+		}
+		if (videoReaper != null) {
+			videoReaper.release();
 		}
 		mVideoEncoder = null;
 		mInputSurface = null;
-		if (mAudioReaper != null) {
-			mAudioReaper.release();
-			mAudioReaper = null;
+		if (audioReaper != null) {
+			audioReaper.release();
 		}
 		mAudioEncoder = null;
 		releaseOwnAudioSampler();
