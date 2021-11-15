@@ -54,6 +54,8 @@ public class MediaAVSplitRecorder extends Recorder {
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 * @throws IOException
 	 */
+	@SuppressWarnings("deprecation")
+	@Deprecated
 	public MediaAVSplitRecorder(@NonNull final Context context,
 		final RecorderCallback callback,
 		@NonNull final String outputDir,
@@ -75,6 +77,8 @@ public class MediaAVSplitRecorder extends Recorder {
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 * @throws IOException
 	 */
+	@SuppressWarnings("deprecation")
+	@Deprecated
 	public MediaAVSplitRecorder(@NonNull final Context context,
 		final RecorderCallback callback,
 		@Nullable final VideoConfig config,
@@ -165,6 +169,7 @@ public class MediaAVSplitRecorder extends Recorder {
 	 * 代わりに出力ディレクトリ取得用の#getOutputDirを使うこと
 	 * @return
 	 */
+	@Deprecated
 	@Nullable
 	@Override
 	public String getOutputPath() {
@@ -201,7 +206,9 @@ public class MediaAVSplitRecorder extends Recorder {
 		setMuxer(new MediaSplitMuxer(context, getConfig(), getMuxerFactory(),
 			queue, output, name, splitSize));
 	}
-	
+
+	@SuppressWarnings("deprecation")
+	@Deprecated
 	protected void setupMuxer(
 		@NonNull final Context context,
 		@Nullable final IMediaQueue queue,

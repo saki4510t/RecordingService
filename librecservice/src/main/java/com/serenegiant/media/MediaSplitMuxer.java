@@ -116,6 +116,8 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param name 出力ファイル名(拡張子なし)
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
+	@SuppressWarnings("deprecation")
+	@Deprecated
 	public MediaSplitMuxer(@NonNull final Context context,
 		@NonNull final String outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
@@ -132,6 +134,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @param name 出力ファイル名(拡張子なし)
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
 	 */
+	@Deprecated
 	public MediaSplitMuxer(@NonNull final Context context,
 		@Nullable final VideoConfig config,
 		@Nullable final IMuxerFactory factory,
