@@ -27,6 +27,8 @@ import androidx.documentfile.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.serenegiant.utils.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -56,21 +58,20 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 */
 	private final MediaFormat mConfigFormatAudio;
 	/**
-	 * mp4ファイルの出力ディレクトリ(絶対パス文字列)
+	 * mp4ファイルの出力先ファイル(絶対パス文字列)
 	 */
 	@Nullable
-	private final String mOutputDir;
+	private final String mOutputPath;
 	/**
-	 * mp4ファイルの出力ディレクトリ(DocumentFile)
+	 * mp4ファイルの出力先ファイル(DocumentFile)
 	 */
 	@Nullable
 	private final DocumentFile mOutputDoc;
 	/**
-	 * 最終出力ファイル名 = 一時ファイルを保存するディレクトリ名
-	 * 	= インスタンス生成時の日時文字列
+	 * 一時ファイルを保存するディレクトリ名
 	 */
 	@NonNull
-	private final String mOutputName;
+	private final String mTempName;
 	/** 実行中フラグ */
 	private volatile boolean mIsRunning;
 	private boolean mReleased;
@@ -86,23 +87,22 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 * コンストラクタ
 	 * @param context
 	 * @param config
-	 * @param outputDir 最終出力ディレクトリ
-	 * @param name 出つ力ファイル名(拡張子なし)
+	 * @param output 最終出力先ファイルパス
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
 		@Nullable final VideoConfig config,
-		@NonNull final String outputDir, @NonNull final String name,
+		@NonNull final String output,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
 		mVideoConfig = config != null ? config : new VideoConfig();
-		mOutputDir = outputDir;
+		mOutputPath = output;
 		mOutputDoc = null;
-		mOutputName = name;
+		mTempName = FileUtils.getDateTimeString();
 		mConfigFormatVideo = configFormatVideo;
 		mConfigFormatAudio = configFormatAudio;
 	}
@@ -111,23 +111,22 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 * コンストラクタ
 	 * @param context
 	 * @param config
-	 * @param outputDir 最終出力ディレクトリ
-	 * @param name 出つ力ファイル名(拡張子なし)
+	 * @param output 最終出力先ファイル
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
 	public MediaRawFileMuxer(@NonNull final Context context,
 		@Nullable final VideoConfig config,
-		@NonNull final DocumentFile outputDir, @NonNull final String name,
+		@NonNull final DocumentFile output,
 		@Nullable final MediaFormat configFormatVideo,
 		@Nullable final MediaFormat configFormatAudio) {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
 		mWeakContext = new WeakReference<Context>(context);
 		mVideoConfig = config != null ? config : new VideoConfig();
-		mOutputDir = null;
-		mOutputDoc = outputDir;
-		mOutputName = name;
+		mOutputPath = null;
+		mOutputDoc = output;
+		mTempName = FileUtils.getDateTimeString();
 		mConfigFormatVideo = configFormatVideo;
 		mConfigFormatAudio = configFormatAudio;
 	}
@@ -204,13 +203,10 @@ public class MediaRawFileMuxer implements IPostMuxer {
 		final Context context = getContext();
 		final String tempDir = getTempDir();
 		if (DEBUG) Log.v(TAG, "build:tempDir=" + tempDir);
-		if (!TextUtils.isEmpty(mOutputDir)) {
-			final String outputPath
-				= mOutputDir + (mOutputDir.endsWith("/")
-					? mOutputName : "/" + mOutputName) + ".mp4";
+		if (!TextUtils.isEmpty(mOutputPath)) {
 			try {
 				final PostMuxBuilder builder = new PostMuxBuilder(mVideoConfig.useMediaMuxer());
-				builder.buildFromRawFile(context, tempDir, outputPath);
+				builder.buildFromRawFile(context, tempDir, mOutputPath);
 			} finally {
 				delete(new File(tempDir));
 			}
@@ -218,16 +214,14 @@ public class MediaRawFileMuxer implements IPostMuxer {
 			// アプリケーションコンテキストでないとだめ
 			try {
 				MediaScannerConnection.scanFile(context.getApplicationContext(),
-					new String[] {outputPath}, null, null);
+					new String[] {mOutputPath}, null, null);
 			} catch (final Exception e) {
 				Log.w(TAG, e);
 			}
-		} else if (mOutputDir != null) {
-			final DocumentFile output = mOutputDoc.createFile(
-				"*/*", mOutputName + ".mp4");
+		} else if (mOutputDoc != null) {
 			try {
 				final PostMuxBuilder builder = new PostMuxBuilder(mVideoConfig.useMediaMuxer());
-				builder.buildFromRawFile(context, tempDir, output);
+				builder.buildFromRawFile(context, tempDir, mOutputDoc);
 			} finally {
 				delete(new File(tempDir));
 			}
@@ -386,12 +380,12 @@ public class MediaRawFileMuxer implements IPostMuxer {
 		if (DEBUG) Log.v(TAG, "getTempDir:");
 		final Context context = getContext();
 		try {
-			return context.getDir(mOutputName, Context.MODE_PRIVATE).getAbsolutePath();
+			return context.getDir(mTempName, Context.MODE_PRIVATE).getAbsolutePath();
 		} catch (final Exception e) {
 			Log.w(TAG, e);
 		}
 		return new File(
-			Environment.getDataDirectory(), mOutputName).getAbsolutePath();
+			Environment.getDataDirectory(), mTempName).getAbsolutePath();
 	}
 
 	/**

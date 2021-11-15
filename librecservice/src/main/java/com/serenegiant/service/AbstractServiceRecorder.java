@@ -191,20 +191,19 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	
 	/**
 	 * 録画開始
-	 * @param outputDir 出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
+	 * @param outputPath 出力先ファイルパス
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
 	@Override
-	public void start(@NonNull final String outputDir, @NonNull final String name)
+	public void start(@NonNull final String outputPath)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
+		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputPath);
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.start(outputDir, name);
+			service.start(outputPath);
 		} else {
 			throw new IllegalStateException("start:service is not ready");
 		}
@@ -212,20 +211,19 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 
 	/**
 	 * 録画開始
-	 * @param outputDir 出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
+	 * @param output 出力ファイル
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
 	@Override
-	public void start(@NonNull final DocumentFile outputDir, @NonNull final String name)
+	public void start(@NonNull final DocumentFile output)
 		throws IllegalStateException, IOException {
 
-		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputDir);
+		if (DEBUG) Log.v(TAG, "start:output=" + output);
 		checkReleased();
 		final AbstractRecorderService service = getService();
 		if (service != null) {
-			service.start(outputDir, name);
+			service.start(output);
 		} else {
 			throw new IllegalStateException("start:service is not ready");
 		}

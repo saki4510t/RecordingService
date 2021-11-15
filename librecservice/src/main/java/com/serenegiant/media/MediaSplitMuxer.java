@@ -42,6 +42,8 @@ import java.util.concurrent.TimeUnit;
  * Iフレームが来たときにしか出力ファイルを切り替えることができないため
  * 確実に指定ファイルサイズ以下になるわけではないので、多少の余裕をもって
  * 出力ファイルサイズをセットすること
+ *
+ * FIXME これは今のところAPI29/Android10以降の対象範囲別ストレージでは動かない(SAF経由なら動く)
  */
 public class MediaSplitMuxer implements IMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production

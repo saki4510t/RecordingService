@@ -33,10 +33,9 @@ import com.serenegiant.librecservice.R;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaMuxerWrapper;
 import com.serenegiant.media.MediaReaper;
+import com.serenegiant.mediastore.MediaStoreOutputStream;
 import com.serenegiant.system.BuildCheck;
 import com.serenegiant.utils.UriHelper;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +73,11 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * 最大タイムシフト時間[ミリ秒]
 	 */
 	private static final long DEFAULT_MAX_SHIFT_MS = 10000L;	// 10秒
+
+	/**
+	 * MediaStoreOutputStreamを使って出力するかどうか(Android8以降のみ有効)
+	 */
+	private static final boolean USE_MEDIASTORE_OUTPUT_STREAM = false;
 
 	/** Binder class to access this local service */
 	public class LocalBinder extends Binder {
@@ -198,14 +202,12 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputDir 出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
+	 * @param outputPath 出力先ファイルパス
 	 * @param videoFormat
 	 * @param audioFormat
 	 * @throws IOException
 	 */
-	protected void internalStart(@NonNull final String outputDir,
-		@NonNull final String name,
+	protected void internalStart(@NonNull final String outputPath,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 
@@ -213,11 +215,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		if (!TextUtils.isEmpty(outputDir) && !TextUtils.isEmpty(name)) {
-			final String outputPath
-				= outputDir + (outputDir.endsWith("/")
-					? name : "/" + name) + ".mp4";
-
+		if (!TextUtils.isEmpty(outputPath)) {
 			@SuppressLint("InlinedApi")
 			final IMuxer muxer = new MediaMuxerWrapper(
 				outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
@@ -234,15 +232,13 @@ public class TimeShiftRecService extends AbstractRecorderService {
 
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputDir 出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
+	 * @param output 出力ファイル
 	 * @param videoFormat
 	 * @param audioFormat
 	 * @throws IOException
 	 */
 	@SuppressLint("NewApi")
-	protected void internalStart(@NonNull final DocumentFile outputDir,
-		@NonNull final String name,
+	protected void internalStart(@NonNull final DocumentFile output,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 	
@@ -250,12 +246,25 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
 		}
-		final DocumentFile output = outputDir.createFile("*/*", name + ".mp4");
 		IMuxer muxer = null;
-		if (BuildCheck.isOreo()) {
-			muxer = new MediaMuxerWrapper(getContentResolver()
-				.openFileDescriptor(output.getUri(), "rw").getFileDescriptor(),
+		if (BuildCheck.isAPI29()) {
+			// API29以上は対象範囲別ストレージなのでMediaStoreOutputStreamを使って出力終了時にIS_PENDINGの更新を自動でする
+			if (DEBUG) Log.v(TAG, "internalStart:create MediaMuxerWrapper using MediaStoreOutputStream");
+			muxer = new MediaMuxerWrapper(
+				new MediaStoreOutputStream(this, output),
 				MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+		} else if (BuildCheck.isAPI26()) {
+			if (USE_MEDIASTORE_OUTPUT_STREAM) {
+				if (DEBUG) Log.v(TAG, "internalStart:create MediaMuxerWrapper using MediaStoreOutputStream");
+				muxer = new MediaMuxerWrapper(
+					new MediaStoreOutputStream(this, output),
+					MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+			} else {
+				if (DEBUG) Log.v(TAG, "internalStart:create MediaMuxerWrapper using ContentResolver");
+				muxer = new MediaMuxerWrapper(getContentResolver()
+					.openFileDescriptor(output.getUri(), "rw").getFileDescriptor(),
+					MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+			}
 		} else {
 			final String path = UriHelper.getPath(this, output.getUri());
 			final File f = new File(UriHelper.getPath(this, output.getUri()));
@@ -282,11 +291,6 @@ public class TimeShiftRecService extends AbstractRecorderService {
 		mRecordingTask = null;
 		if (getState() == STATE_RECORDING) {
 			setState(STATE_BUFFERING);
-			if (!TextUtils.isEmpty(mOutputPath)) {
-				final String path = mOutputPath;
-				mOutputPath = null;
-				scanFile(path);
-			}
 		}
 	}
 	
@@ -571,10 +575,27 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			} catch (final Exception e) {
 				Log.w(TAG, e);
 			}
+			final String outputPath;
+			if (muxer instanceof MediaMuxerWrapper) {
+				outputPath = ((MediaMuxerWrapper) muxer).getOutputPath();
+			} else {
+				outputPath = null;
+			}
 			try {
 				muxer.release();
 			} catch (final Exception e) {
 				Log.w(TAG, e);
+			}
+			if (!TextUtils.isEmpty(outputPath)) {
+				try {
+					final File out = new File(outputPath);
+					if (out.exists() && out.canRead()) {
+						if (DEBUG) Log.v(TAG, "RecordingTask#run::scanFile " + outputPath);
+						scanFile(outputPath);
+					}
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+				}
 			}
 			if (DEBUG) Log.v(TAG, String.format("RecordingTask#run:finished, video=%d,audio=%d,err=%d",
 				videoFrames, audioFrames, error));

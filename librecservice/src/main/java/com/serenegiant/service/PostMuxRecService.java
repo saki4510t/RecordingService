@@ -105,19 +105,17 @@ public class PostMuxRecService extends AbstractRecorderService {
 
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputDir 出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
+	 * @param outputPath 出力先ファイルパス
 	 * @param videoFormat
 	 * @param audioFormat
 	 * @throws IOException
 	 */
 	@Override
-	protected void internalStart(@NonNull final String outputDir,
-		@NonNull final String name,
+	protected void internalStart(@NonNull final String outputPath,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) {
 		
-		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputDir + ",video=" + videoFormat + ",audio=" + audioFormat);
+		if (DEBUG) Log.v(TAG, "internalStart:outputPath=" + outputPath + ",video=" + videoFormat + ",audio=" + audioFormat);
 		if (mMuxer == null) {
 			final Intent intent = getIntent();
 			@MuxIntermediateType
@@ -130,7 +128,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawChannelMuxer");
 				mMuxer = new MediaRawChannelMuxer(this,
 					requireConfig(),
-					outputDir, name,
+					outputPath,
 					videoFormat, audioFormat);
 				break;
 			case MUX_INTERMEDIATE_TYPE_FILE:
@@ -138,7 +136,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawFileMuxer");
 				mMuxer = new MediaRawFileMuxer(this,
 					requireConfig(),
-					outputDir, name,
+					outputPath,
 					videoFormat, audioFormat);
 				break;
 			}
@@ -155,22 +153,50 @@ public class PostMuxRecService extends AbstractRecorderService {
 	
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputDir 出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
+	 * @param output 出力ファイル
 	 * @param videoFormat
 	 * @param audioFormat
 	 * @throws IOException
 	 */
 	@SuppressLint("NewApi")
 	@Override
-	protected void internalStart(@NonNull final DocumentFile outputDir,
-		@NonNull final String name,
+	protected void internalStart(@NonNull final DocumentFile output,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) {
-		
-		if (DEBUG) Log.v(TAG, "internalStart:output=" + outputDir);
-		// FIXME 未実装
-		throw new UnsupportedOperationException("not implemented yet.");
+
+		if (DEBUG) Log.v(TAG, "internalStart:output=" + output + ",uri=" + output.getUri() + ",video=" + videoFormat + ",audio=" + audioFormat);
+		if (mMuxer == null) {
+			final Intent intent = getIntent();
+			@MuxIntermediateType
+			final int type = intent != null
+				? intent.getIntExtra(KEY_MUX_INTERMEDIATE_TYPE, MUX_INTERMEDIATE_TYPE_FILE)
+				: MUX_INTERMEDIATE_TYPE_FILE;
+			switch (type) {
+			case MUX_INTERMEDIATE_TYPE_CHANNEL:
+				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawChannelMuxer");
+				mMuxer = new MediaRawChannelMuxer(this,
+					requireConfig(),
+					output,
+					videoFormat, audioFormat);
+				break;
+			case MUX_INTERMEDIATE_TYPE_FILE:
+			default:
+				if (DEBUG) Log.v(TAG, "internalStart:create MediaRawFileMuxer");
+				mMuxer = new MediaRawFileMuxer(this,
+					requireConfig(),
+					output,
+					videoFormat, audioFormat);
+				break;
+			}
+			mVideoTrackIx = videoFormat != null ? mMuxer.addTrack(videoFormat) : -1;
+			mAudioTrackIx = audioFormat != null ? mMuxer.addTrack(audioFormat) : -1;
+			mMuxer.start();
+			synchronized (mSync) {
+				mSync.notifyAll();
+			}
+		} else if (DEBUG) {
+			Log.w(TAG, "internalStart:muxer already exists,muxer=" + mMuxer);
+		}
 	}
 	
 	/**

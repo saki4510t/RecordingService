@@ -22,6 +22,10 @@ package com.serenegiant.recordingservice;
 
 import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
+
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
 
@@ -37,8 +41,12 @@ import com.serenegiant.media.IVideoEncoder;
 import com.serenegiant.media.Recorder;
 import com.serenegiant.media.MediaAVSplitRecorder;
 import com.serenegiant.media.SurfaceEncoder;
+import com.serenegiant.system.BuildCheck;
+import com.serenegiant.system.PermissionCheck;
+import com.serenegiant.system.SAFUtils;
 import com.serenegiant.utils.FileUtils;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -328,5 +336,47 @@ public class SplitRecFragment extends AbstractCameraFragment {
 			}
 		}
 	};
-	
+
+	@SuppressLint("NewApi")
+	private static DocumentFile getRecordingRoot(@NonNull final Context context) {
+		if (DEBUG) Log.v(TAG, "getRecordingRoot:");
+		DocumentFile root = null;
+		if (BuildCheck.isAPI21() && SAFUtils.hasPermission(context, REQUEST_ACCESS_SD)) {
+			try {
+				root = SAFUtils.getDir(context, REQUEST_ACCESS_SD, null);
+				if ((root != null) && root.exists() && root.canWrite()) {
+					final DocumentFile appDir = root.findFile(APP_DIR_NAME);
+					if (appDir == null) {
+						// create app dir if it does not exist yet
+						root = root.createDirectory(APP_DIR_NAME);	// "${document root}/Pupil Mobile"
+					} else {
+						root = appDir;
+					}
+				} else {
+					root = null;
+					Log.d(TAG, "path will be wrong, will already be removed,"
+						+ (root != null ? root.getUri() : null));
+				}
+			} catch (final IOException | IllegalStateException e) {
+				root = null;
+				Log.d(TAG, "path is wrong, will already be removed.", e);
+			}
+		}
+		if (root == null) {
+			// remove permission to access secondary (external) storage,
+			// because app can't access it and it will already be removed.
+			SAFUtils.releasePersistableUriPermission(context, REQUEST_ACCESS_SD);
+		}
+		if ((root == null) && PermissionCheck.hasWriteExternalStorage(context)) {
+			// fallback to primary external storage if app has permission
+			final File captureDir
+				= FileUtils.getCaptureDir(context, Environment.DIRECTORY_MOVIES, 0);
+			if ((captureDir != null) && captureDir.canWrite()) {
+				root = DocumentFile.fromFile(captureDir);
+			}
+		}
+		if (DEBUG) Log.v(TAG, "getRecordingRoot:finished," + root);
+		return root;
+	}
+
 }

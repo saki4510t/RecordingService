@@ -20,17 +20,22 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 import android.view.Surface;
 
+import com.serenegiant.media.MediaFileUtils;
+import com.serenegiant.mediastore.MediaStoreUtils;
 import com.serenegiant.service.AbstractServiceRecorder;
 import com.serenegiant.service.TimeShiftRecService;
 import com.serenegiant.service.TimeShiftRecorder;
+import com.serenegiant.system.BuildCheck;
 import com.serenegiant.utils.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
+
+import androidx.documentfile.provider.DocumentFile;
 
 public class TimeShiftRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
@@ -68,17 +73,24 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 		super.internalOnPause();
 	}
 	
-	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@Override
 	protected void internalStartRecording() {
 		if (DEBUG) Log.v(TAG, "internalStartRecording:");
 		if ((mRecorder != null) && mRecorder.isTimeShift()) {
 			try {
-				final File dir = new File(
-					Environment.getExternalStoragePublicDirectory(
-						Environment.DIRECTORY_MOVIES), APP_DIR_NAME);
-				dir.mkdirs();
-				mRecorder.start(dir.toString(), FileUtils.getDateTimeString());
+				final Context context = requireContext();
+				final DocumentFile output;
+				if (BuildCheck.isAPI29()) {
+					output = MediaStoreUtils.getContentDocument(
+						context, "video/mp4",
+						null,
+						FileUtils.getDateTimeString() + ".mp4", null);
+				} else {
+					final DocumentFile dir = MediaFileUtils.getRecordingRoot(
+						context, Environment.DIRECTORY_MOVIES, 0);
+					output = dir.createFile("*/*", FileUtils.getDateTimeString() + ".mp4");
+				}
+				mRecorder.start(output);
 			} catch (final Exception e) {
 				Log.w(TAG, e);
 				stopRecording();	// 非同期で呼ばないとデッドロックするかも
