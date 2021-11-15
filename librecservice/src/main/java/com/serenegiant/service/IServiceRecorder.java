@@ -116,16 +116,6 @@ public interface IServiceRecorder {
 
 	/**
 	 * 録画開始
-	 * @param outputPath 出力先ファイルパス
-	 * @throws IllegalStateException
-	 * @throws IOException
-	 */
-	@Deprecated
-	public void start(@NonNull final String outputPath)
-		throws IllegalStateException, IOException;
-
-	/**
-	 * 録画開始
 	 * @param output 出力ファイル
 	 * @throws IllegalStateException
 	 * @throws IOException

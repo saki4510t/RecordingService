@@ -64,32 +64,6 @@ public class SimpleRecorderService extends AbstractRecorderService {
 
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputPath 出力先ファイルパス
-	 * @param videoFormat
-	 * @param audioFormat
-	 * @throws IOException
-	 */
-	@SuppressLint("InlinedApi")
-	@Override
-	protected void internalStart(
-		@NonNull final String outputPath,
-		@Nullable final MediaFormat videoFormat,
-		@Nullable final MediaFormat audioFormat) throws IOException {
-
-		if (DEBUG) Log.v(TAG, "internalStart:");
-		if (!TextUtils.isEmpty(outputPath)) {
-			mMuxer = new MediaMuxerWrapper(
-				outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-			mVideoTrackIx = videoFormat != null ? mMuxer.addTrack(videoFormat) : -1;
-			mAudioTrackIx = audioFormat != null ? mMuxer.addTrack(audioFormat) : -1;
-			mMuxer.start();
-		} else {
-			throw new IOException("invalid output dir or name");
-		}
-	}
-
-	/**
-	 * #startの実態, mSyncをロックして呼ばれる
 	 * @param output 出力ファイル
 	 * @param videoFormat
 	 * @param audioFormat

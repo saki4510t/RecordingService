@@ -722,34 +722,6 @@ public abstract class AbstractRecorderService extends BaseService {
 
 	/**
 	 * 録画開始
-	 * @param outputPath 出力先ファイルパス
-	 * @throws IllegalStateException
-	 * @throws IOException
-	 */
-	@Deprecated
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	public void start(@NonNull final String outputPath)
-		throws IllegalStateException, IOException {
-
-		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputPath);
-		synchronized (mSync) {
-			if ((!mUseVideo || (mVideoFormat != null)) && (!mUseAudio || (mAudioFormat != null))) {
-				if (checkFreeSpace(this, 0)) {
-					final File dir = new File(outputPath);
-					dir.mkdirs();
-					internalStart(outputPath, mVideoFormat, mAudioFormat);
-				} else {
-					throw new IOException();
-				}
-			} else {
-				throw new IllegalStateException("there is no MediaFormat received.");
-			}
-			setState(STATE_RECORDING);
-		}
-	}
-
-	/**
-	 * 録画開始
 	 * @param output 出力ファイル
 	 * @throws IllegalStateException
 	 * @throws IOException
@@ -771,18 +743,6 @@ public abstract class AbstractRecorderService extends BaseService {
 			setState(STATE_RECORDING);
 		}
 	}
-
-	/**
-	 * #startの実態, mSyncをロックして呼ばれる
-	 * @param outputPath 出力先ファイルパス
-	 * @param videoFormat
-	 * @param audioFormat
-	 * @throws IOException
-	 */
-	@Deprecated
-	protected abstract void internalStart(@NonNull final String outputPath,
-		@Nullable final MediaFormat videoFormat,
-		@Nullable final MediaFormat audioFormat) throws IOException;
 
 	/**
 	 * #startの実態, mSyncをロックして呼ばれる

@@ -191,26 +191,6 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	
 	/**
 	 * 録画開始
-	 * @param outputPath 出力先ファイルパス
-	 * @throws IllegalStateException
-	 * @throws IOException
-	 */
-	@Override
-	public void start(@NonNull final String outputPath)
-		throws IllegalStateException, IOException {
-
-		if (DEBUG) Log.v(TAG, "start:outputDir=" + outputPath);
-		checkReleased();
-		final AbstractRecorderService service = getService();
-		if (service != null) {
-			service.start(outputPath);
-		} else {
-			throw new IllegalStateException("start:service is not ready");
-		}
-	}
-
-	/**
-	 * 録画開始
 	 * @param output 出力ファイル
 	 * @throws IllegalStateException
 	 * @throws IOException
