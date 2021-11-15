@@ -51,6 +51,7 @@ import java.io.IOException;
 
 /**
  * MP4自動分割出力クラスのテスト用
+ * XXX これは録画サービスを使わずにUI側で直接録画する
  */
 public class SplitRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true; // FIXME set false on production
