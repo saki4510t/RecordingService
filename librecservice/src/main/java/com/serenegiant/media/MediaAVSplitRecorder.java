@@ -41,7 +41,6 @@ public class MediaAVSplitRecorder extends Recorder {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaAVSplitRecorder.class.getSimpleName();
 
-	private final int mSaveTreeId;	// SDカードへの出力を試みるかどうか
 	@NonNull
 	private final DocumentFile mOutputDir;
 	
@@ -87,7 +86,6 @@ public class MediaAVSplitRecorder extends Recorder {
 
 		super(context, callback, config, factory);
 		if (DEBUG) Log.v(TAG, "コンストラクタ");
-		mSaveTreeId = 0;
 		mOutputDir = DocumentFile.fromFile(new File(outputDir));
 		setupMuxer(context, queue, outputDir, name, splitSize);
 	}
@@ -134,7 +132,6 @@ public class MediaAVSplitRecorder extends Recorder {
 
 		super(context, callback, config, factory);
 		if (DEBUG) Log.v(TAG, "コンストラクタ");
-		mSaveTreeId = 0;
 		mOutputDir = outputDir;
 		setupMuxer(context, queue, outputDir, name, splitSize);
 	}
@@ -160,7 +157,7 @@ public class MediaAVSplitRecorder extends Recorder {
 		return (context == null)
 			|| ((mOutputDir == null)
 				&& !FileUtils.checkFreeSpace(context,
-					getConfig().maxDuration(), mStartTime, mSaveTreeId));
+					getConfig().maxDuration(), mStartTime, 0));
 	}
 	
 	/**
