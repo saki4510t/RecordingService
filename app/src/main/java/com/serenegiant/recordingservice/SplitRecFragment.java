@@ -371,7 +371,7 @@ public class SplitRecFragment extends AbstractCameraFragment {
 		if ((root == null) && PermissionCheck.hasWriteExternalStorage(context)) {
 			// fallback to primary external storage if app has permission
 			final File captureDir
-				= FileUtils.getCaptureDir(context, Environment.DIRECTORY_MOVIES, 0);
+				= FileUtils.getCaptureDir(context, Environment.DIRECTORY_MOVIES);
 			if ((captureDir != null) && captureDir.canWrite()) {
 				root = DocumentFile.fromFile(captureDir);
 			}
