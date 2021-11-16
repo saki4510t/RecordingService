@@ -19,6 +19,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.media.MediaScannerConnection;
 import android.os.Environment;
 import android.util.Log;
 
@@ -29,6 +30,7 @@ import com.serenegiant.system.StorageInfo;
 import com.serenegiant.system.StorageUtils;
 import com.serenegiant.system.Time;
 import com.serenegiant.utils.FileUtils;
+import com.serenegiant.utils.UriHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -565,11 +567,23 @@ public class MediaSplitMuxerV2 implements IMuxer {
 	private IMuxer createMuxer(final int segment) throws IOException {
 		if (DEBUG) Log.v(TAG, "createMuxer:");
 		if (mCurrent != null) {
-			// API>=29でMediaStoreからIS_PENDING=1で取得したuriの後処理
-			// デフォルトのIMuxerFactory実装であればMediaStoreOutputStreamで
-			// ラップしているのでここでのupdateContentUri呼び出しは冗長だけど、
-			// IMuxerFactoryを時前実装してる可能性があるので念のために呼んでおく
-			MediaStoreUtils.updateContentUri(requireContext(), mCurrent);
+			final Context context = requireContext();
+			if (BuildCheck.isAPI29()) {
+				// API>=29でMediaStoreからIS_PENDING=1で取得したuriの後処理
+				// デフォルトのIMuxerFactory実装であればMediaStoreOutputStreamで
+				// ラップしているのでここでのupdateContentUri呼び出しは冗長だけど、
+				// IMuxerFactoryを時前実装してる可能性があるので念のために呼んでおく
+				MediaStoreUtils.updateContentUri(context, mCurrent);
+			} else if (UriHelper.isFileUri(mCurrent)) {
+				final String path = UriHelper.getPath(context, mCurrent.getUri());
+				if (DEBUG) Log.v(TAG, "createMuxer:scanFile," + path);
+				try {
+					// 内部でexecutorを使ってワーカースレッド上で処理しているのでここで呼び出しても大丈夫なはず
+					MediaScannerConnection.scanFile(context, new String[] {path}, null, null);
+				} catch (final Exception e) {
+					Log.w(TAG, e);
+				}
+			}
 		}
 		mCurrent = createOutputDoc(segment);
 		return createMuxer(requireContext(), mCurrent);
