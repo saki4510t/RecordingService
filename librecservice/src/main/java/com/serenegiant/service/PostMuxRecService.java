@@ -112,11 +112,15 @@ public class PostMuxRecService extends AbstractRecorderService {
 	 */
 	@SuppressLint("NewApi")
 	@Override
-	protected void internalStart(@NonNull final DocumentFile output,
+	protected void internalStart(
+		@Nullable final DocumentFile output,
 		@Nullable final MediaFormat videoFormat,
-		@Nullable final MediaFormat audioFormat) {
+		@Nullable final MediaFormat audioFormat) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "internalStart:output=" + output + ",uri=" + output.getUri() + ",video=" + videoFormat + ",audio=" + audioFormat);
+		if (output == null) {
+			throw new IOException("output is null");
+		}
 		if (mMuxer == null) {
 			final Intent intent = getIntent();
 			@MuxIntermediateType

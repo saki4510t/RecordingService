@@ -726,7 +726,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void start(@NonNull final DocumentFile output)
+	public void start(@Nullable final DocumentFile output)
 		throws IllegalStateException, IOException {
 
 		if (DEBUG) Log.v(TAG, "start:");
@@ -751,7 +751,8 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param audioFormat
 	 * @throws IOException
 	 */
-	protected abstract void internalStart(@NonNull final DocumentFile output,
+	protected abstract void internalStart(
+		@Nullable final DocumentFile output,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException;
 	

@@ -238,13 +238,17 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	 * @throws IOException
 	 */
 	@SuppressLint("NewApi")
-	protected void internalStart(@NonNull final DocumentFile output,
+	protected void internalStart(
+		@Nullable final DocumentFile output,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 	
 		if (DEBUG) Log.v(TAG, "internalStart:");
 		if (getState() != STATE_BUFFERING) {
 			throw new IllegalStateException("not started");
+		}
+		if (output == null) {
+			throw new IOException("output is null");
 		}
 		IMuxer muxer = null;
 		if (BuildCheck.isAPI29()) {

@@ -72,11 +72,14 @@ public class SimpleRecorderService extends AbstractRecorderService {
 	@SuppressLint("NewApi")
 	@Override
 	protected void internalStart(
-		@NonNull final DocumentFile output,
+		@Nullable final DocumentFile output,
 		@Nullable final MediaFormat videoFormat,
 		@Nullable final MediaFormat audioFormat) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "internalStart:");
+		if (output == null) {
+			throw new IOException("output is null");
+		}
 		IMuxer muxer = null;
 		if (BuildCheck.isAPI29()) {
 			// API29以上は対象範囲別ストレージなのでMediaStoreOutputStreamを使って出力終了時にIS_PENDINGの更新を自動でする
