@@ -677,9 +677,9 @@ public final class CameraGLView extends GLSurfaceView {
 				case Surface.ROTATION_270: degrees = 270; break;
 			}
 			// get whether the camera is front camera or back camera
-			final Camera.CameraInfo info =
-					new android.hardware.Camera.CameraInfo();
-				android.hardware.Camera.getCameraInfo(CAMERA_ID, info);
+			final Camera.CameraInfo info
+				= new android.hardware.Camera.CameraInfo();
+			android.hardware.Camera.getCameraInfo(CAMERA_ID, info);
 			if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {	// front camera
 				degrees = (info.orientation + degrees) % 360;
 				degrees = (360 - degrees) % 360;  // reverse
