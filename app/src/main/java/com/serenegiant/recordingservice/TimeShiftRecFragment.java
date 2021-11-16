@@ -83,7 +83,7 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 				if (BuildCheck.isAPI29()) {
 					output = MediaStoreUtils.getContentDocument(
 						context, "video/mp4",
-						null,
+						Environment.DIRECTORY_MOVIES + "/" + FileUtils.getDirName(),
 						FileUtils.getDateTimeString() + ".mp4", null);
 				} else {
 					final DocumentFile dir = MediaFileUtils.getRecordingRoot(

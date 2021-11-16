@@ -804,7 +804,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @param reaper
 	 * @param byteBuf
 	 * @param bufferInfo
-	 * @param ptsUs
+	 * @param ptsUs この値は#getInputPTSUsから取得した値,
+	 * 				BufferInfo#presentationTimeUsの値とは違うので
+	 * 				必要に応じて#getInputPTSUsをoverrideして使い分けること
 	 * @throws IOException
 	 */
 	protected abstract void onWriteSampleData(@NonNull MediaReaper reaper,
