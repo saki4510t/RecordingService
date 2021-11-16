@@ -580,17 +580,8 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (codecInfo == null) {
 			throw new IOException("Unable to find an appropriate codec for " + MIME_VIDEO_AVC);
 		}
-		final MediaFormat format = MediaFormat.createVideoFormat(MIME_VIDEO_AVC, width, height);
-		// MediaCodecに適用するパラメータを設定する。
-		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
-		format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
-		format.setInteger(MediaFormat.KEY_BIT_RATE,
-			requireConfig().getBitrate(width, height, frameRate, bpp));
-		format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
-		format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);	// IFrameの間隔は1秒にする
+		final MediaFormat format = createVideoFormatAPI18(width, height, frameRate, bpp);
 		if (DEBUG) Log.d(TAG, "createEncoder:video format:" + format);
-
 		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
 		mVideoEncoder = MediaCodec.createEncoderByType(MIME_VIDEO_AVC);
 		mVideoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -600,6 +591,32 @@ public abstract class AbstractRecorderService extends BaseService {
 		mVideoReaper = new MediaReaper.VideoReaper(
 			mVideoEncoder, mReaperListener, width, height);
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
+	}
+
+	/**
+	 * API>=18の録画用MediaFormatを生成する
+	 * MIME_VIDEO_AVCを指定して生成すること
+	 * @param width
+	 * @param height
+	 * @param frameRate
+	 * @param bpp
+	 * @return
+	 */
+	@RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
+	protected MediaFormat createVideoFormatAPI18(
+		final int width, final int height,
+		final int frameRate, final float bpp) {
+
+		final MediaFormat format = MediaFormat.createVideoFormat(MIME_VIDEO_AVC, width, height);
+		// MediaCodecに適用するパラメータを設定する。
+		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
+		format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
+			MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);	// API >= 18
+		format.setInteger(MediaFormat.KEY_BIT_RATE,
+			requireConfig().getBitrate(width, height, frameRate, bpp));
+		format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
+		format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);	// IFrameの間隔は1秒にする
+		return format;
 	}
 
 	/**
@@ -615,15 +632,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (codecInfo == null) {
 			throw new IOException("Unable to find an appropriate codec for " + MIME_AUDIO_AAC);
 		}
-		final MediaFormat format = MediaFormat.createAudioFormat(
-			MIME_AUDIO_AAC, sampleRate, channelCount);
-		format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
-		format.setInteger(MediaFormat.KEY_CHANNEL_MASK,
-			mChannelCount == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
-		format.setInteger(MediaFormat.KEY_BIT_RATE, 64000/*FIXMEパラメータにする*/);
-		format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, mChannelCount);
-		// MediaCodecに適用するパラメータを設定する。
-		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
+		final MediaFormat format = createAudioFormat(sampleRate, channelCount);
 		if (DEBUG) Log.d(TAG, "createEncoder:audio format:" + format);
 
 		// 設定したフォーマットに従ってMediaCodecのエンコーダーを生成する
@@ -634,7 +643,27 @@ public abstract class AbstractRecorderService extends BaseService {
 			mAudioEncoder, mReaperListener, sampleRate, channelCount);
 		if (DEBUG) Log.v(TAG, "createEncoder:finished");
 	}
-	
+
+	/**
+	 * 録音用エンコーダー初期化用のMediaFormatを生成する
+	 * MIME_AUDIO_AACを指定して生成すること
+	 * @param sampleRate
+	 * @param channelCount
+	 * @return
+	 */
+	protected MediaFormat createAudioFormat(final int sampleRate, final int channelCount) {
+		final MediaFormat format = MediaFormat.createAudioFormat(
+			MIME_AUDIO_AAC, sampleRate, channelCount);
+		format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+		format.setInteger(MediaFormat.KEY_CHANNEL_MASK,
+			mChannelCount == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
+		format.setInteger(MediaFormat.KEY_BIT_RATE, 64000/*FIXMEパラメータにする*/);
+		format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, mChannelCount);
+		// MediaCodecに適用するパラメータを設定する。
+		// 誤った設定をするとMediaCodec#configureが復帰不可能な例外を生成する
+		return format;
+	}
+
 	/**
 	 * 前回MediaCodecへのエンコード時に使ったpresentationTimeUs
 	 */
