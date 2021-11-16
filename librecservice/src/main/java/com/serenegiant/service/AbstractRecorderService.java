@@ -734,7 +734,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				if (checkFreeSpace(this, 0)) {
 					internalStart(output, mVideoFormat, mAudioFormat);
 				} else {
-					throw new IOException();
+					throw new IOException("No enough storage space!");
 				}
 			} else {
 				throw new IllegalStateException("Not all MediaFormat received.");

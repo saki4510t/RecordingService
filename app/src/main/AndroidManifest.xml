@@ -53,6 +53,15 @@
 			</intent-filter>
 		</service>
 
+		<service
+			android:name="com.serenegiant.service.SplitRecorderService"
+			android:exported="false"
+			android:enabled="true" >
+			<intent-filter>
+				<action android:name="com.serenegiant.service.SplitRecorderService" />
+			</intent-filter>
+		</service>
+
 	</application>
 
 </manifest>
