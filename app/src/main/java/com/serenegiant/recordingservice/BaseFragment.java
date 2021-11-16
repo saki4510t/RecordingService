@@ -19,6 +19,7 @@ package com.serenegiant.recordingservice;
 */
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -443,7 +444,10 @@ public abstract class BaseFragment extends Fragment
 	 * @return true 外部ストレージへの書き込みパーミッションが有る
 	 */
 	protected boolean checkPermissionWriteExternalStorage() {
-		if (!PermissionCheck.hasWriteExternalStorage(getActivity())) {
+		// 26<=API<29で外部ストレージ書き込みパーミッションがないとき
+		if (BuildCheck.isAPI23() && !BuildCheck.isAPI29()
+			&& !PermissionCheck.hasWriteExternalStorage(getActivity())) {
+
 			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
 				R.string.permission_title, R.string.permission_ext_storage_request,
 				new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
@@ -502,15 +506,18 @@ public abstract class BaseFragment extends Fragment
 	 * パーミッションの要求はしない
 	 * @return
 	 */
+	@SuppressLint("NewApi")
 	protected boolean hasPermission() {
 		final Activity activity = getActivity();
 
 		if ((activity == null) || activity.isFinishing()) {
 			return false;
 		}
-
-		return (SAFUtils.hasPermission(activity, REQUEST_ACCESS_SD)
-			|| PermissionCheck.hasWriteExternalStorage(activity))
+		// API>=21&SAFパーミッションがあるかAPI>=29か外部ストレージのパーミッションがある
+		// && 録音のパーミッションがある
+		// && カメラパーミッションがある
+		return ((BuildCheck.isAPI21() && SAFUtils.hasPermission(activity, REQUEST_ACCESS_SD))
+			|| BuildCheck.isAPI29() || PermissionCheck.hasWriteExternalStorage(activity))
 			&& PermissionCheck.hasAudio(activity)
 			&& PermissionCheck.hasCamera(activity);
 	}

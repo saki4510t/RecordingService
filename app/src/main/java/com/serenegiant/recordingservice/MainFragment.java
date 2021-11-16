@@ -50,6 +50,7 @@ public class MainFragment extends BaseFragment {
 		new Item(1, "PostMuxRec"),
 		new Item(2, "TimeShiftRec"),
 		new Item(3, "SplitRec"),
+		new Item(4, "SplitRec2"),
 	};
 	
 	private ItemListAdapter mAdapter;
@@ -123,6 +124,12 @@ public class MainFragment extends BaseFragment {
 					.addToBackStack(null)
 					.replace(R.id.container,
 					new SplitRecFragment()).commit();
+				break;
+			case 4:
+				fm.beginTransaction()
+					.addToBackStack(null)
+					.replace(R.id.container,
+					new SplitRecFragment2()).commit();
 				break;
 			}
 		}

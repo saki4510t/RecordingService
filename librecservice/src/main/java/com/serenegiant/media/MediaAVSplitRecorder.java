@@ -35,8 +35,10 @@ import java.io.IOException;
 
 /**
  * MP4自動分割録画用IRecorder実装
- * FIXME これは今のところAPI29/Android10以降の対象範囲別ストレージでは動かない(SAF経由なら動く)
+ * @Deprecated API29/Android10以降の対象範囲別ストレージでは動かない(SAF経由でアクセスするなら動く)ので廃止予定。
+ * 				代わりにMediaAVSplitRecorderV2を使うこと
  */
+@Deprecated
 public class MediaAVSplitRecorder extends Recorder {
 	private static final boolean DEBUG = false; // FIXME set false on production
 	private static final String TAG = MediaAVSplitRecorder.class.getSimpleName();

@@ -20,11 +20,11 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Environment;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.documentfile.provider.DocumentFile;
 import android.util.Log;
 
+import com.serenegiant.mediastore.MediaStoreUtils;
+import com.serenegiant.system.BuildCheck;
+import com.serenegiant.system.PermissionCheck;
 import com.serenegiant.system.StorageInfo;
 import com.serenegiant.system.StorageUtils;
 import com.serenegiant.system.Time;
@@ -37,23 +37,26 @@ import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
+
 /**
  * 指定したファイルサイズになるように自動分割してMP4へ出力するためのIMuxer実装
  * Iフレームが来たときにしか出力ファイルを切り替えることができないため
  * 確実に指定ファイルサイズ以下になるわけではないので、多少の余裕をもって
  * 出力ファイルサイズをセットすること
- *
- * FIXME これは今のところAPI29/Android10以降の対象範囲別ストレージでは動かない(SAF経由なら動く)
+ * 出力ファイル切替時にIフレームの検出処理を行うため動画ファイル間で一部フレームが
+ * スキップされてしまう可能性がある
  */
-@Deprecated
-public class MediaSplitMuxer implements IMuxer {
+public class MediaSplitMuxerV2 implements IMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
-	private static final String TAG = MediaSplitMuxer.class.getSimpleName();
-	
+	private static final String TAG = MediaSplitMuxerV2.class.getSimpleName();
+
 	/**
 	 * セグメント名のプレフィックス文字列のデフォルト
 	 */
-	public static final String DEFAULT_PREFIX_SEGMENT_NAME = "-";
+	private static final String DEFAULT_PREFIX_SEGMENT_NAME = "";
 	/**
 	 * セグメント名のプレフィックス文字列, コンストラクタで読み込む
 	 */
@@ -63,84 +66,67 @@ public class MediaSplitMuxer implements IMuxer {
 	private static final int MAX_POOL_NUM = 1000;
 	private static final long DEFAULT_SPLIT_SIZE = 4000000000L;
 	private static final String EXT_MP4 = "mp4";
-	
+
+	@NonNull
 	private final Object mSync = new Object();
+	@NonNull
 	private final WeakReference<Context> mWeakContext;
 	/**
 	 * MediaCodecのエンコーダーの設定
 	 * 最終のmp4ファイル出力時に必要なため保持しておく
 	 */
-	private final MediaFormat[] mMediaFormats = new MediaFormat[2];
-	private int mVideoTrackIx = -1;
-	private int mAudioTrackIx = -1;
-	/**
-	 * mp4ファイルの出力ディレクトリ(絶対パス文字列)
-	 */
-	@Nullable
-	private final String mOutputDir;
-	/**
-	 * mp4ファイルの出力ディレクトリ(DocumentFile)
-	 */
-	@Nullable
-	private final DocumentFile mOutputDoc;
-	/**
-	 * 最終出力ファイル名 = 一時ファイルを保存するディレクトリ名
-	 * 	= インスタンス生成時の日時文字列
-	 */
 	@NonNull
-	private final String mOutputName;
+	private final MediaFormat[] mMediaFormats = new MediaFormat[2];
 	@NonNull
 	private final String mSegmentPrefix;
+	@NonNull
+	private final VideoConfig mVideoConfig;
+	@NonNull
+	private final IMuxerFactory mMuxerFactory;
 	@NonNull
 	private final IMediaQueue mQueue;
 	private final long mSplitSize;
 	@NonNull
-	private final IMuxerFactory mMuxerFactory;
-	@NonNull
-	private final VideoConfig mVideoConfig;
+	private final String mOutputDirName;
+	@Nullable
+	private final DocumentFile mOutputDir;
+
+	private int mVideoTrackIx = -1;
+	private int mAudioTrackIx = -1;
+	/**
+	 * 現在の出力先DocumentFile
+	 */
 	private DocumentFile mCurrent;
 	/** 実行中フラグ */
 	private volatile boolean mIsRunning;
 	private volatile boolean mRequestStop;
 	private boolean mReleased;
 	private int mLastTrackIndex = -1;
+	/**
+	 * コンストラクタで生成したセグメント0のmuxerをワーカースレッドへ引き継ぐための一時変数
+	 */
 	@Nullable
 	private IMuxer mMuxer;
 	@Nullable
 	private MuxTask mMuxTask;
-	
-	/**
-	 * コンストラクタ
-	 * キューはMemMediaQueueを使う
-	 * @param context
-	 * @param outputDir 最終出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
-	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
-	 */
-	@SuppressWarnings("deprecation")
-	@Deprecated
-	public MediaSplitMuxer(@NonNull final Context context,
-		@NonNull final String outputDir, @NonNull final String name,
-		final long splitSize) throws IOException {
-		
-		this(context, null, null,null,
-			outputDir, name, splitSize);
-	}
-	
+
 	/**
 	 * コンストラクタ
 	 * @param context
+	 * @param outputDir
+	 * @param config
+	 * @param factory
 	 * @param queue バッファリング用IMediaQueue
-	 * @param outputDir 最終出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
 	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
+	 * @throws IOException
 	 */
-	@Deprecated
-	public MediaSplitMuxer(@NonNull final Context context,
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	public MediaSplitMuxerV2(
+		@NonNull final Context context,
+		@Nullable final DocumentFile outputDir,
 		@Nullable final VideoConfig config,
 		@Nullable final IMuxerFactory factory,
 		@Nullable final IMediaQueue queue,
-		@NonNull final String outputDir, @NonNull final String name,
 		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
@@ -149,57 +135,34 @@ public class MediaSplitMuxer implements IMuxer {
 		mMuxerFactory = factory != null ? factory : new DefaultFactory();
 		mQueue = queue != null
 			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
-		mOutputDir = outputDir;
-		mOutputDoc = null;
-		mOutputName = name;
 		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
 		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
 			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
-		mMuxer = createMuxer(0);
-	}
-	
-	/**
-	 * コンストラクタ
-	 * @param context
-	 * @param outputDir 最終出力ディレクトリ
-	 * @param name 出つ力ファイル名(拡張子なし)
-	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
-	 */
-	public MediaSplitMuxer(@NonNull final Context context,
-		@NonNull final DocumentFile outputDir, @NonNull final String name,
-		final long splitSize) throws IOException {
-
-		this(context, null, null, null,
-			outputDir, name, splitSize);
-	}
-
-	/**
-	 * コンストラクタ
-	 * @param context
-	 * @param queue バッファリング用IMediaQueue
-	 * @param outputDir 最終出力ディレクトリ
-	 * @param name 出力ファイル名(拡張子なし)
-	 * @param splitSize 出力ファイルサイズの目安, 0以下ならデフォルト値
-	 */
-	public MediaSplitMuxer(@NonNull final Context context,
-		@Nullable final VideoConfig config,
-		@Nullable final IMuxerFactory factory,
-		@Nullable final IMediaQueue queue,
-		@NonNull final DocumentFile outputDir, @NonNull final String name,
-		final long splitSize) throws IOException {
-
-		if (DEBUG) Log.v(TAG, "コンストラクタ:");
-		mWeakContext = new WeakReference<Context>(context);
-		mVideoConfig = config != null ? config : new VideoConfig();
-		mMuxerFactory = factory != null ? factory : new DefaultFactory();
-		mQueue = queue != null
-			? queue : new MemMediaQueue(INI_POOL_NUM, MAX_POOL_NUM);
-		mOutputDir = null;
-		mOutputDoc = outputDir;
-		mOutputName = name;
-		mSplitSize = splitSize <= 0 ? DEFAULT_SPLIT_SIZE : splitSize;
-		mSegmentPrefix = PREFIX_SEGMENT_NAME != null
-			? PREFIX_SEGMENT_NAME : DEFAULT_PREFIX_SEGMENT_NAME;
+		// 出力先の相対パスに挿入するディレクトリ名
+		mOutputDirName = FileUtils.getDateTimeString();
+		// 出力先ディレクトリのDocumentFileを生成
+		if (outputDir != null) {
+			// 上位からDocumentFileが指定されたときはそれを使う
+			mOutputDir = outputDir;
+		} else if (!BuildCheck.isAPI29()
+			&& PermissionCheck.hasWriteExternalStorage(context)) {
+			// API29未満で外部ストレージアクセスのパーミッションがある時
+			if (DEBUG) Log.v(TAG, "コンストラクタ:出力先ディレクトリのツリードキュメントの生成を試みる");
+			// FileUtils#getCaptureDirはFileUtils.getDirNameを含んだパスを返す
+			File dir = FileUtils.getCaptureDir(context, Environment.DIRECTORY_MOVIES);
+			if (dir != null) {
+				dir = new File(dir, mOutputDirName);	// 出力先ディレクトリ名を追加
+				dir.mkdirs();	// パス中のディレクトリをすべて作成
+				// 出力先のディレクトリを指すツリードキュメントを生成
+				mOutputDir = DocumentFile.fromFile(dir);
+			} else {
+				mOutputDir = null;
+			}
+		} else {
+			mOutputDir = null;
+		}
+		// 録画ファイルを出力できるかどうかを確認するためにセグメント0のmuxerを生成する
+		// (出力できなければIOExceptionを投げる)
 		mMuxer = createMuxer(0);
 	}
 
@@ -377,38 +340,15 @@ public class MediaSplitMuxer implements IMuxer {
 	}
 
 	/**
-	 * 出力ファイル名(拡張子なし)を取得
- 	 * @return
+	 * 動画出力ファイルサイズを確認する最大間隔[ナノ秒]
+	 * 前回のチェックからこの値を超えるか1000フレームを超えるとファイルサイズチェックを行う
 	 */
-	@NonNull
-	protected String getOutputName() {
-		return mOutputName;
-	}
-	
-	/**
-	 * 出力ディレクトリを取得,
-	 * #getOutputDirPathと#getOutputDirDocはどちらかが必ずnull
- 	 * @return
-	 */
-	@Nullable
-	protected String getOutputDirPath() {
-		return mOutputDir;
-	}
-	
-	/**
-	 * 出力ディレクトリを取得,
-	 * #getOutputDirPathと#getOutputDirDocはどちらかが必ずnull
-	 * @return
-	 */
-	@Nullable
-	protected DocumentFile getOutputDirDoc() {
-		return mOutputDoc;
-	}
-	
 	private static final long MAX_CHECK_INTERVALS_NS = 3 * 1000000000L;	// 3 seconds
 
+	/**
+	 * 動画出力ファイルサイズをモニターして必要に応じて出力ファイルを切り替えるためのRunnable実装
+	 */
 	private final class MuxTask implements Runnable {
-
 		@Override
 		public void run() {
 			if (DEBUG) Log.v(TAG, "MuxTask#run:");
@@ -430,6 +370,11 @@ public class MediaSplitMuxer implements IMuxer {
 					final MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
 					final boolean shouldCheckIFrame = mVideoTrackIx >= 0;
 					long prevCheckTime = Time.nanoTime();
+					// MediaStoreから取得したUriをDocumentFileデラップした時に
+					// DocumentFile#lengthが常に0を返すのでファイルサイズチェック
+					// できないのでワークアラウンドとして書き込んだデータバイト数を自前で
+					// カウントする
+					long bytesWrote = 0;
 					boolean mRequestChangeFile = false;
 					int segment = 1, cnt = 0;
 					if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
@@ -454,6 +399,7 @@ public class MediaSplitMuxer implements IMuxer {
 								mRequestChangeFile = false;
 								try {
 									muxer = restartMuxer(muxer, segment++);
+									bytesWrote = 0;
 								} catch (final IOException e) {
 									break;
 								}
@@ -462,6 +408,7 @@ public class MediaSplitMuxer implements IMuxer {
 							internalWriteSampleData(muxer,
 								((RecycleMediaData) buf).trackIx(),
 								((RecycleMediaData) buf).get(), info);
+							bytesWrote += Math.max(info.size, 0);
 							// 再利用のためにバッファを返す
 							mQueue.recycle(buf);
 						} else if (mRequestStop) {
@@ -479,8 +426,9 @@ public class MediaSplitMuxer implements IMuxer {
 										> MAX_CHECK_INTERVALS_NS) )) {
 								
 							prevCheckTime = Time.nanoTime();
-
-							if (mCurrent.length() >= mSplitSize) {
+							final long length = Math.max(bytesWrote, mCurrent.length());
+							if (DEBUG) Log.v(TAG, "MuxTask#run:length=" + length);
+							if (length >= mSplitSize) {
 								// ファイルサイズが指定値を超えた
 								// ファイルサイズのチェック時はフラグを立てるだけにして
 								// 次のIフレームが来たときに切り替えないと次のファイルの先頭が
@@ -522,17 +470,16 @@ public class MediaSplitMuxer implements IMuxer {
 	 */
 	protected boolean checkFreespace() {
 		StorageInfo info = null;
-		if (mOutputDoc != null) {
+		if (mCurrent != null) {
 			try {
-				info = StorageUtils.getStorageInfo(requireContext(), mOutputDoc);
+				info = StorageUtils.getStorageInfo(requireContext(), mCurrent);
 			} catch (final IOException e) {
 				Log.w(TAG, e);
 			}
 		}
 		if (info == null) {
 			try {
-				info = StorageUtils.getStorageInfo(getContext(),
-					Environment.DIRECTORY_MOVIES, 0);
+				info = StorageUtils.getStorageInfo(getContext(), Environment.DIRECTORY_MOVIES);
 			} catch (final IOException e) {
 				Log.w(TAG, e);
 			}
@@ -562,7 +509,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @return 次のファイル出力用のIMuxer
 	 * @throws IOException
 	 */
-	protected IMuxer restartMuxer(@NonNull final IMuxer muxer, final int segment)
+	private IMuxer restartMuxer(@NonNull final IMuxer muxer, final int segment)
 		throws IOException {
 
 		if (DEBUG) Log.v(TAG, "restartMuxer:");
@@ -583,7 +530,8 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @return
 	 * @throws IOException
 	 */
-	protected IMuxer setupMuxer(final int segment) throws IOException {
+	private IMuxer setupMuxer(final int segment) throws IOException {
+		if (DEBUG) Log.v(TAG, "setupMuxer:");
 		final IMuxer result = createMuxer(segment);
 		int n = 0;
 		synchronized (mSync) {
@@ -614,53 +562,60 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @return
 	 * @throws IOException
 	 */
-	protected IMuxer createMuxer(final int segment) throws IOException {
-		if (DEBUG) Log.v(TAG, "MuxTask#run:create muxer");
-		IMuxer result;
-		mCurrent = createOutputDoc(EXT_MP4, segment);
-		result = createMuxer(requireContext(), mCurrent);
-		return result;
+	private IMuxer createMuxer(final int segment) throws IOException {
+		if (DEBUG) Log.v(TAG, "createMuxer:");
+		if (mCurrent != null) {
+			// API>=29でMediaStoreからIS_PENDING=1で取得したuriの後処理
+			// デフォルトのIMuxerFactory実装であればMediaStoreOutputStreamで
+			// ラップしているのでここでのupdateContentUri呼び出しは冗長だけど、
+			// IMuxerFactoryを時前実装してる可能性があるので念のために呼んでおく
+			MediaStoreUtils.updateContentUri(requireContext(), mCurrent);
+		}
+		mCurrent = createOutputDoc(segment);
+		return createMuxer(requireContext(), mCurrent);
 	}
 
 //--------------------------------------------------------------------------------
 	/**
 	 * 出力ファイルを示すDocumentFileを生成
-	 * @param ext 拡張子, ドット無し
-	 * @param segment
-	 * @return
-	 * @throws IOException
-	 */
-	protected DocumentFile createOutputDoc(
-		@NonNull final String ext, final int segment) throws IOException {
-		
-		return createOutputDoc(mOutputName, ext, segment);
-	}
-
-	/**
-	 * 出力ファイルを示すDocumentFileを生成
-	 * @param name
-	 * @param ext 拡張子, ドット無し
 	 * @param segment
 	 * @return
 	 */
-	protected DocumentFile createOutputDoc(
-		@NonNull final String name,
-		@NonNull final String ext, final int segment) throws IOException {
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	@NonNull
+	protected DocumentFile createOutputDoc(final int segment) throws IOException {
 
-		final String fileName = String.format(Locale.US, "%s%s%03d.%s",
-			mOutputName, mSegmentPrefix, segment + 1, ext);
-		if (mOutputDoc != null) {
-			final DocumentFile dir = mOutputDoc.isDirectory()
-				? mOutputDoc : mOutputDoc.getParentFile();
-			return dir.createFile(null, fileName);
-		} else if (mOutputDir != null) {
-			final File _dir = new File(mOutputDir);
-			final File dir = _dir.isDirectory() ? _dir : _dir.getParentFile();
-			return DocumentFile.fromFile(
-				new File(dir, fileName));
-		} else {
-			throw new IOException("output dir not set");
+		final String fileName = String.format(Locale.US, "%s%04d.%s",
+			mSegmentPrefix, segment + 1, EXT_MP4);
+		if (DEBUG) Log.v(TAG, "createOutputDoc:" + fileName);
+		final Context context = requireContext();
+		if (mOutputDir != null) {
+			// SAF経由か外部ストレージアクセスのパーミションがあって出力先ディレクトリのDocumentFileが指定されている時
+			final DocumentFile dir = mOutputDir.isDirectory()
+				? mOutputDir : mOutputDir.getParentFile();
+			return mOutputDir.createFile(null, fileName);
+		} else if (BuildCheck.isAPI29()) {
+			// 対象範囲別ストレージの場合
+			return MediaStoreUtils.getContentDocument(
+				context, "video/mp4",
+				Environment.DIRECTORY_MOVIES
+					+ "/" + FileUtils.getDirName()
+					+ "/" + mOutputDirName,
+				fileName, null);
+		} else if (PermissionCheck.hasWriteExternalStorage(context)) {
+			// フォールバック...コンストラクタで処理しているのでここへは来ないはず
+			if (DEBUG) Log.v(TAG, "createOutputDoc:外部ストレージへの書き込みを試みる");
+			// FileUtils#getCaptureDirはFileUtils.getDirNameを含んだパスを返す
+			File dir = FileUtils.getCaptureDir(context, Environment.DIRECTORY_MOVIES);
+			if (dir != null) {
+				dir = new File(dir, mOutputDirName);	// 出力先ディレクトリ名を追加
+				dir.mkdirs();	// パス中のディレクトリをすべて作成
+				// 出力先のディレクトリを指すツリードキュメントを生成
+				final DocumentFile output = DocumentFile.fromFile(dir);
+				return output.createFile(null, fileName);
+			}
 		}
+		throw new IOException("Failed to create output DocumentFile");
 	}
 
 //--------------------------------------------------------------------------------
@@ -672,12 +627,17 @@ public class MediaSplitMuxer implements IMuxer {
 	 * @throws IOException
 	 */
 	@SuppressLint("NewApi")
-	protected IMuxer createMuxer(@NonNull final Context context,
+	private IMuxer createMuxer(@NonNull final Context context,
 		@NonNull final DocumentFile file) throws IOException {
 
-		if (DEBUG) Log.v(TAG, "createMuxer:file=" + file.getUri());
+		if (DEBUG) Log.v(TAG, "createMuxer:uri=" + file.getUri());
 		final boolean useMediaMuxer = getConfig().useMediaMuxer();
-		IMuxer result = mMuxerFactory.createMuxer(context, useMediaMuxer, file);
+		IMuxer result = null;
+		try {
+			result = mMuxerFactory.createMuxer(context, useMediaMuxer, file);
+		} catch (final Exception e) {
+			if (DEBUG) Log.w(TAG, e);
+		}
 		if (result == null) {
 			result = mMuxerFactory.createMuxer(useMediaMuxer,
 				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
