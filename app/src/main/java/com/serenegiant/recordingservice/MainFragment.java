@@ -52,6 +52,7 @@ public class MainFragment extends BaseFragment {
 		new Item(3, "Split rec"),
 		new Item(4, "Split rec2"),
 		new Item(5, "Split rec2 on Service"),
+		new Item(6, "Timelapse rec on Service"),
 	};
 	
 	private ItemListAdapter mAdapter;
@@ -137,6 +138,12 @@ public class MainFragment extends BaseFragment {
 					.addToBackStack(null)
 					.replace(R.id.container,
 					new SplitRecFragment3()).commit();
+				break;
+			case 6:
+				fm.beginTransaction()
+					.addToBackStack(null)
+					.replace(R.id.container,
+					new TimelapseRecFragment()).commit();
 				break;
 			}
 		}
