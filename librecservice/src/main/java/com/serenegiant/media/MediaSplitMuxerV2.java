@@ -297,6 +297,7 @@ public class MediaSplitMuxerV2 implements IMuxer {
 		if (!mRequestStop && (trackIx <= mLastTrackIndex)) {
 			final IRecycleBuffer buf = mQueue.obtain();
 			if (buf instanceof RecycleMediaData) {
+				buffer.clear();	// limit==positionになってる変なByteBufferが来る端末があるのでclearする
 				((RecycleMediaData) buf).set(trackIx, buffer, info);
 				mQueue.queueFrame(buf);
 			} else if (DEBUG && (buf != null)) {
