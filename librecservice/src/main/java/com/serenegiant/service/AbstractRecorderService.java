@@ -88,6 +88,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	private int mState = STATE_UNINITIALIZED;
 	private boolean mIsBind;
 	private volatile boolean mIsEos;
+	private long mStartTime;
 // 動画関係
 	private volatile boolean mUseVideo;
 	/** 動画のサイズ(録画する場合) */
@@ -731,6 +732,7 @@ public abstract class AbstractRecorderService extends BaseService {
 		if (DEBUG) Log.v(TAG, "start:");
 		synchronized (mSync) {
 			if ((!mUseVideo || (mVideoFormat != null)) && (!mUseAudio || (mAudioFormat != null))) {
+				mStartTime = System.currentTimeMillis();
 				if (checkFreeSpace(this, 0)) {
 					internalStart(output, mVideoFormat, mAudioFormat);
 				} else {
@@ -762,8 +764,9 @@ public abstract class AbstractRecorderService extends BaseService {
 	 * @return
 	 */
 	protected boolean checkFreeSpace(final Context context, final int accessId) {
-		return FileUtils.checkFreeSpace(context,
-			requireConfig().maxDuration(), System.currentTimeMillis(), accessId);
+		return BuildCheck.isAPI29()	// API29以降は対象範囲別ストレージなので容量のチェックができない
+			|| FileUtils.checkFreeSpace(context,
+				requireConfig().maxDuration(), System.currentTimeMillis(), accessId);
 	}
 	
 	/**

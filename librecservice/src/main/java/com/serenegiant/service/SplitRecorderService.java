@@ -111,11 +111,6 @@ public class SplitRecorderService extends AbstractRecorderService {
 	}
 
 	@Override
-	protected boolean checkFreeSpace(final Context context, final int accessId) {
-		return true;	// FIXME 未実装
-	}
-
-	@Override
 	protected void onWriteSampleData(
 		@NonNull final MediaReaper reaper,
 		@NonNull final ByteBuffer buffer,
