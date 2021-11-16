@@ -176,6 +176,12 @@ public final class CameraGLView extends GLSurfaceView {
 		return mVideoHeight;
 	}
 
+	/**
+	 * 描画先のSurfaceを追加
+	 * @param id
+	 * @param surface Surface/SurfaceHolder/SurfaceTexture/SurfaceView/TextureWrapperのいずれか
+	 * @param isRecordable
+	 */
 	public synchronized void addSurface(final int id, final Object surface,
 		final boolean isRecordable) {
 		
@@ -183,7 +189,22 @@ public final class CameraGLView extends GLSurfaceView {
 			mRendererHolder.addSurface(id, surface, isRecordable);
 		}
 	}
-	
+
+	/**
+	 * 描画先のSurfaceを追加
+	 * @param id
+	 * @param surface Surface/SurfaceHolder/SurfaceTexture/SurfaceView/TextureWrapperのいずれか
+	 * @param isRecordable
+	 * @param maxFps 0以下なら未指定, 1000未満ならその値、1000以上なら1000.0fで割ったものを最大フレームレートとする
+	 */
+	public synchronized void addSurface(final int id, final Object surface,
+		final boolean isRecordable, final int maxFps) {
+
+		if (mRendererHolder != null) {
+			mRendererHolder.addSurface(id, surface, isRecordable, maxFps);
+		}
+	}
+
 	public synchronized void removeSurface(final int id) {
 		if (mRendererHolder != null) {
 			mRendererHolder.removeSurface(id);
