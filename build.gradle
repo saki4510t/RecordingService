@@ -45,7 +45,7 @@ ext {
 	androidXMaterial = '1.4.0'
 	androidXConstraint = '2.1.1'
 
-	commonLibVersion= '7.18.1'
+	commonLibVersion= '7.19.0'
 
 	versionCodeNum = 26
 	versionNameString = '2.0.0'

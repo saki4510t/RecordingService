@@ -120,7 +120,7 @@ public interface IServiceRecorder {
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
-	public void start(@NonNull final DocumentFile output)
+	public void start(@Nullable final DocumentFile output)
 		throws IllegalStateException, IOException;
 
 	/**

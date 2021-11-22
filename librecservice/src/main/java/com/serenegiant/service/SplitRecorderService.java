@@ -21,7 +21,6 @@ package com.serenegiant.service;
 */
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Binder;
@@ -33,7 +32,6 @@ import com.serenegiant.librecservice.R;
 import com.serenegiant.media.IMuxer;
 import com.serenegiant.media.MediaReaper;
 import com.serenegiant.media.MediaSplitMuxerV2;
-import com.serenegiant.utils.FileUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

@@ -196,7 +196,7 @@ public abstract class AbstractServiceRecorder implements IServiceRecorder {
 	 * @throws IOException
 	 */
 	@Override
-	public void start(@NonNull final DocumentFile output)
+	public void start(@Nullable final DocumentFile output)
 		throws IllegalStateException, IOException {
 
 		if (DEBUG) Log.v(TAG, "start:output=" + output);

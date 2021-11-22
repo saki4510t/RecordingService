@@ -85,7 +85,7 @@ public class MediaAVSplitRecorder extends Recorder {
 		final RecorderCallback callback,
 		@Nullable final VideoConfig config,
 		@Nullable final IMuxer.IMuxerFactory factory,
-		@Nullable final IMediaQueue queue,
+		@Nullable final IMediaQueue<RecycleMediaData> queue,
 		@NonNull final String outputDir,
 		@NonNull final String name,
 		final long splitSize) throws IOException {
@@ -131,7 +131,7 @@ public class MediaAVSplitRecorder extends Recorder {
 		final RecorderCallback callback,
 		@Nullable final VideoConfig config,
 		@Nullable final IMuxer.IMuxerFactory factory,
-		@Nullable final IMediaQueue queue,
+		@Nullable final IMediaQueue<RecycleMediaData> queue,
 		@NonNull final DocumentFile outputDir,
 		@NonNull final String name,
 		final long splitSize) throws IOException {
@@ -199,7 +199,7 @@ public class MediaAVSplitRecorder extends Recorder {
 	
 	protected void setupMuxer(
 		@NonNull final Context context,
-		@Nullable final IMediaQueue queue,
+		@Nullable final IMediaQueue<RecycleMediaData> queue,
 		@NonNull final DocumentFile output,
 		@NonNull final String name,
 		final long splitSize)  throws IOException {
@@ -213,7 +213,7 @@ public class MediaAVSplitRecorder extends Recorder {
 	@Deprecated
 	protected void setupMuxer(
 		@NonNull final Context context,
-		@Nullable final IMediaQueue queue,
+		@Nullable final IMediaQueue<RecycleMediaData> queue,
 		@NonNull final String outputPath,
 		@NonNull final String name,
 		final long splitSize)  throws IOException {

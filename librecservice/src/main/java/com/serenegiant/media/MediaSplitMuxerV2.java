@@ -86,7 +86,7 @@ public class MediaSplitMuxerV2 implements IMuxer {
 	@NonNull
 	private final IMuxerFactory mMuxerFactory;
 	@NonNull
-	private final IMediaQueue mQueue;
+	private final IMediaQueue<RecycleMediaData> mQueue;
 	private final long mSplitSize;
 	@NonNull
 	private final String mOutputDirName;
@@ -128,7 +128,7 @@ public class MediaSplitMuxerV2 implements IMuxer {
 		@Nullable final DocumentFile outputDir,
 		@Nullable final VideoConfig config,
 		@Nullable final IMuxerFactory factory,
-		@Nullable final IMediaQueue queue,
+		@Nullable final IMediaQueue<RecycleMediaData> queue,
 		final long splitSize) throws IOException {
 
 		if (DEBUG) Log.v(TAG, "コンストラクタ:");
@@ -295,13 +295,13 @@ public class MediaSplitMuxerV2 implements IMuxer {
 		@NonNull final MediaCodec.BufferInfo info) {
 	
 		if (!mRequestStop && (trackIx <= mLastTrackIndex)) {
-			final IRecycleBuffer buf = mQueue.obtain();
-			if (buf instanceof RecycleMediaData) {
+			final RecycleMediaData buf = mQueue.obtain();
+			if (buf != null) {
 				buffer.clear();	// limit==positionになってる変なByteBufferが来る端末があるのでclearする
-				((RecycleMediaData) buf).set(trackIx, buffer, info);
+				buf.set(trackIx, buffer, info);
 				mQueue.queueFrame(buf);
-			} else if (DEBUG && (buf != null)) {
-				Log.w(TAG, "unexpected buffer class");
+			} else if (DEBUG) {
+				Log.w(TAG, "frame skipped, failed to get buffer from pool.");
 			}
 		} else {
 			if (DEBUG) Log.w(TAG, "not ready!");
@@ -383,7 +383,7 @@ public class MediaSplitMuxerV2 implements IMuxer {
 					if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
 					for ( ; mIsRunning ; ) {
 						// バッファキューからエンコード済みデータを取得する
-						final IRecycleBuffer buf;
+						final RecycleMediaData buf;
 						try {
 							buf = mQueue.poll(10, TimeUnit.MILLISECONDS);
 						} catch (final InterruptedException e) {
@@ -391,8 +391,8 @@ public class MediaSplitMuxerV2 implements IMuxer {
 							mIsRunning = false;
 							break;
 						}
-						if (buf instanceof RecycleMediaData) {
-							((RecycleMediaData) buf).get(info);
+						if (buf != null) {
+							buf.get(info);
 							if (mRequestChangeFile
 								&& (!shouldCheckIFrame
 									|| (info.flags == MediaCodec.BUFFER_FLAG_KEY_FRAME)) ) {
@@ -409,17 +409,12 @@ public class MediaSplitMuxerV2 implements IMuxer {
 							}
 							// 出力ファイルへの書き込み処理
 							internalWriteSampleData(muxer,
-								((RecycleMediaData) buf).trackIx(),
-								((RecycleMediaData) buf).get(), info);
+								buf.trackIx(),
+								buf.get(), info);
 							bytesWrote += Math.max(info.size, 0);
 							// 再利用のためにバッファを返す
 							mQueue.recycle(buf);
 						} else if (mRequestStop) {
-							mIsRunning = false;
-							break;
-						} else if (buf != null) {
-							Log.w(TAG, "bug: unexpected buffer type," + buf);
-							mRequestStop = true;
 							mIsRunning = false;
 							break;
 						}
