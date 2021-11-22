@@ -18,11 +18,9 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -37,17 +35,13 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.serenegiant.dialog.PermissionDescriptionDialogV4;
 import com.serenegiant.system.BuildCheck;
 import com.serenegiant.system.PermissionCheck;
 import com.serenegiant.system.SAFUtils;
 import com.serenegiant.system.Stacktrace;
 import com.serenegiant.utils.HandlerThreadHandler;
 
-import java.util.Arrays;
-
-public abstract class BaseFragment extends Fragment
-	implements PermissionDescriptionDialogV4.DialogResultListener {
+public abstract class BaseFragment extends Fragment {
 
 	private static final boolean DEBUG = true; // set false on production
 	private static final String TAG = BaseFragment.class.getSimpleName();
@@ -360,147 +354,6 @@ public abstract class BaseFragment extends Fragment
 	}
 
 //================================================================================
-
-	/**
-	 * PermissionDescriptionDialogV4からのコールバックリスナー
-	 * @param dialog
-	 * @param requestCode
-	 * @param permissions
-	 * @param result
-	 */
-	@Override
-	public void onDialogResult(@NonNull final PermissionDescriptionDialogV4 dialog,
-		final int requestCode, @NonNull final String[] permissions, final boolean result) {
-
-		if (DEBUG) Log.v(TAG, "onDialogResult:" + result + "," + Arrays.toString(permissions));
-		if (result) {
-			// メッセージダイアログでOKを押された時はパーミッション要求する
-			if (BuildCheck.isMarshmallow()) {
-				requestPermissions(permissions, requestCode);
-				return;
-			}
-		}
-		// メッセージダイアログでキャンセルされた時とAndroid6でない時は自前でチェックして#checkPermissionResultを呼び出す
-		final Context context = getActivity();
-		for (final String permission: permissions) {
-			checkPermissionResult(requestCode, permission,
-				PermissionCheck.hasPermission(context, permission));
-		}
-	}
-
-	/**
-	 * パーミッション要求結果を受け取るためのメソッド
-	 * @param requestCode
-	 * @param permissions
-	 * @param grantResults
-	 */
-	@Override
-	public void onRequestPermissionsResult(final int requestCode,
-		@NonNull final String[] permissions, @NonNull final int[] grantResults) {
-
-		if (DEBUG) Log.v(TAG, "onRequestPermissionsResult:" + Arrays.toString(permissions));
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults);	// 何もしてないけど一応呼んどく
-		final int n = Math.min(permissions.length, grantResults.length);
-		for (int i = 0; i < n; i++) {
-			checkPermissionResult(requestCode, permissions[i],
-				grantResults[i] == PackageManager.PERMISSION_GRANTED);
-		}
-	}
-
-	/**
-	 * パーミッション要求の結果をチェック
-	 * ここではパーミッションを取得できなかった時にToastでメッセージ表示するだけ
-	 * @param requestCode
-	 * @param permission
-	 * @param result
-	 */
-	protected void checkPermissionResult(final int requestCode, final String permission, final boolean result) {
-		// パーミッションがないときにはメッセージを表示する
-		if (!result && (permission != null)) {
-			if (Manifest.permission.RECORD_AUDIO.equals(permission)) {
-				showToast(R.string.permission_audio);
-			}
-			if (Manifest.permission.WRITE_EXTERNAL_STORAGE.equals(permission)) {
-				showToast(R.string.permission_ext_storage);
-			}
-			if (Manifest.permission.CAMERA.equals(permission)) {
-				showToast(R.string.permission_camera);
-			}
-			if (Manifest.permission.INTERNET.equals(permission)) {
-				showToast(R.string.permission_network);
-			}
-		}
-	}
-
-	// 動的パーミッション要求時の要求コード
-	protected static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 0x1234;
-	protected static final int REQUEST_PERMISSION_AUDIO_RECORDING = 0x2345;
-	protected static final int REQUEST_PERMISSION_NETWORK = 0x3456;
-	protected static final int REQUEST_PERMISSION_CAMERA = 0x5678;
-
-	/**
-	 * 外部ストレージへの書き込みパーミッションが有るかどうかをチェック
-	 * なければ説明ダイアログを表示する
-	 * @return true 外部ストレージへの書き込みパーミッションが有る
-	 */
-	protected boolean checkPermissionWriteExternalStorage() {
-		// 26<=API<29で外部ストレージ書き込みパーミッションがないとき
-		if (BuildCheck.isAPI23() && !BuildCheck.isAPI29()
-			&& !PermissionCheck.hasWriteExternalStorage(getActivity())) {
-
-			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE,
-				R.string.permission_title, R.string.permission_ext_storage_request,
-				new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * 録音のパーミッションが有るかどうかをチェック
-	 * なければ説明ダイアログを表示する
-	 * @return true 録音のパーミッションが有る
-	 */
-	protected boolean checkPermissionAudio() {
-		if (!PermissionCheck.hasAudio(getActivity())) {
-			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_AUDIO_RECORDING,
-				R.string.permission_title, R.string.permission_audio_recording_request,
-				new String[]{Manifest.permission.RECORD_AUDIO});
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * カメラのパーミッションが有るかどうかをチェック
-	 * なければ説明ダイアログを表示する
-	 * @return true カメラのパーミッションが有る
-	 */
-	protected boolean checkPermissionCamera() {
-		if (!PermissionCheck.hasCamera(getActivity())) {
-			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_CAMERA,
-				R.string.permission_title, R.string.permission_camera,
-				new String[]{Manifest.permission.CAMERA});
-			return false;
-		}
-		return true;
-	}
-
-	/**
-	 * ネットワークアクセスのパーミッションが有るかどうかをチェック
-	 * なければ説明ダイアログを表示する
-	 * @return true ネットワークアクセスのパーミッションが有る
-	 */
-	protected boolean checkPermissionNetwork() {
-		if (!PermissionCheck.hasNetwork(getActivity())) {
-			PermissionDescriptionDialogV4.showDialog(this, REQUEST_PERMISSION_NETWORK,
-				R.string.permission_title, R.string.permission_network_request,
-				new String[]{Manifest.permission.INTERNET});
-			return false;
-		}
-		return true;
-	}
-
 	/**
 	 * 録画に必要なパーミッションを持っているかどうか
 	 * パーミッションの要求はしない

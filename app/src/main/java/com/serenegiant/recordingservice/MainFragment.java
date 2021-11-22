@@ -20,6 +20,7 @@ package com.serenegiant.recordingservice;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.Manifest;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -28,6 +29,8 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
+
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,14 +39,24 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.serenegiant.dialog.RationalDialogV4;
 import com.serenegiant.media.VideoConfig;
+import com.serenegiant.system.BuildCheck;
+import com.serenegiant.system.PermissionUtils;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
  * 他のFragmentを起動するためのメニュー表示用Fragment
  */
-public class MainFragment extends BaseFragment {
+public class MainFragment extends BaseFragment
+	implements RationalDialogV4.DialogResultListener {
+
+	private static final boolean DEBUG = true;	// set false on production
+	private static final String TAG = MainFragment.class.getSimpleName();
 
 	private static final Item[] ITEMS = {
 		new Item(0, "Simple rec on Service"),
@@ -54,13 +67,27 @@ public class MainFragment extends BaseFragment {
 		new Item(5, "Split rec2 on Service"),
 		new Item(6, "Timelapse rec on Service"),
 	};
-	
+
+	private static final String[] LOCATION_PERMISSIONS = new String[] {
+		Manifest.permission.ACCESS_FINE_LOCATION,
+		Manifest.permission.ACCESS_COARSE_LOCATION
+	};
+
+	private PermissionUtils mPermissions;
 	private ItemListAdapter mAdapter;
 	
 	public MainFragment() {
 		super();
 	}
-	
+
+	@Override
+	public void onAttach(@NonNull @NotNull final Context context) {
+		super.onAttach(context);
+		// パーミッション要求の準備
+		mPermissions = new PermissionUtils(this, mPermissionCallback)
+			.prepare(this, LOCATION_PERMISSIONS);
+	}
+
 	@Override
 	public void onCreate(@Nullable final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -148,7 +175,152 @@ public class MainFragment extends BaseFragment {
 			}
 		}
 	};
-	
+
+	/**
+	 * RationalDialogV4からのコールバックリスナー
+	 * @param dialog
+	 * @param permissions
+	 * @param result
+	 */
+	@Override
+	public void onDialogResult(@NonNull final RationalDialogV4 dialog,
+		@NonNull final String[] permissions, final boolean result) {
+
+		if (DEBUG) Log.v(TAG, "onDialogResult:" + result + "," + Arrays.toString(permissions));
+		if (result) { // メッセージダイアログでOKを押された時はパーミッション要求する
+			if (BuildCheck.isMarshmallow()) {
+				if (mPermissions != null) {
+					mPermissions.requestPermission(permissions, false);
+				}
+			}
+		}
+	}
+
+	private final PermissionUtils.PermissionCallback mPermissionCallback
+		= new PermissionUtils.PermissionCallback() {
+		@Override
+		public void onPermissionShowRational(@NonNull @NotNull final String permission) {
+			if (DEBUG) Log.v(TAG, "onPermissionShowRational:" + permission);
+			final RationalDialogV4 dialog = RationalDialogV4.showDialog(MainFragment.this, permission);
+			if (dialog == null) {
+				if (DEBUG) Log.v(TAG, "onPermissionShowRational:" +
+					"デフォルトのダイアログ表示ができなかったので自前で表示しないといけない," + permission);
+				if (Manifest.permission.INTERNET.equals(permission)) {
+					RationalDialogV4.showDialog(MainFragment.this,
+						R.string.permission_title,
+						R.string.permission_network_request,
+						new String[] {Manifest.permission.INTERNET});
+				} else if ((Manifest.permission.ACCESS_FINE_LOCATION.equals(permission))
+					|| (Manifest.permission.ACCESS_COARSE_LOCATION.equals(permission))) {
+					RationalDialogV4.showDialog(MainFragment.this,
+						R.string.permission_title,
+						R.string.permission_location_request,
+						LOCATION_PERMISSIONS
+					);
+				}
+			}
+		}
+
+		@Override
+		public void onPermissionShowRational(@NonNull @NotNull final String[] permissions) {
+			if (DEBUG) Log.v(TAG, "onPermissionShowRational:" + Arrays.toString(permissions));
+			// 複数パーミッションの一括要求時はデフォルトのダイアログ表示がないので自前で実装する
+			if (Arrays.equals(LOCATION_PERMISSIONS, permissions)) {
+				RationalDialogV4.showDialog(
+					MainFragment.this,
+					R.string.permission_title,
+					R.string.permission_location_request,
+					LOCATION_PERMISSIONS);
+			}
+		}
+
+		@Override
+		public void onPermissionDenied(@NonNull @NotNull final String permission) {
+			if (DEBUG) Log.v(TAG, "onPermissionDenied:" + permission);
+			// ユーザーがパーミッション要求を拒否したときの処理
+		}
+
+		@Override
+		public void onPermission(@NonNull @NotNull final String permission) {
+			if (DEBUG) Log.v(TAG, "onPermission:" + permission);
+			// ユーザーがパーミッション要求を承認したときの処理
+		}
+
+		@Override
+		public void onPermissionNeverAskAgain(@NonNull @NotNull final String permission) {
+			if (DEBUG) Log.v(TAG, "onPermissionNeverAskAgain:" + permission);
+			// 端末のアプリ設定画面を開くためのボタンを配置した画面へ遷移させる
+			getParentFragmentManager()
+				.beginTransaction()
+				.addToBackStack(null)
+				.replace(R.id.container, SettingsLinkFragment.newInstance())
+				.commit();
+		}
+
+		@Override
+		public void onPermissionNeverAskAgain(@NonNull @NotNull final String[] permissions) {
+			if (DEBUG) Log.v(TAG, "onPermissionNeverAskAgain" + Arrays.toString(permissions));
+			// 端末のアプリ設定画面を開くためのボタンを配置した画面へ遷移させる
+			getParentFragmentManager()
+				.beginTransaction()
+				.addToBackStack(null)
+				.replace(R.id.container, SettingsLinkFragment.newInstance())
+				.commit();
+		}
+	};
+
+	/**
+	 * 外部ストレージへの書き込みパーミッションが有るかどうかをチェック
+	 * なければ説明ダイアログを表示する
+	 * @return true 外部ストレージへの書き込みパーミッションが有る
+	 */
+	private boolean checkPermissionWriteExternalStorage() {
+		// 26<=API<29で外部ストレージ書き込みパーミッションがないとき
+		return !BuildCheck.isAPI26() || BuildCheck.isAPI29()
+			|| ((mPermissions != null)
+				&& mPermissions.requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, true));
+	}
+
+	/**
+	 * 録音のパーミッションが有るかどうかをチェック
+	 * なければ説明ダイアログを表示する
+	 * @return true 録音のパーミッションが有る
+	 */
+	private boolean checkPermissionAudio() {
+		return ((mPermissions != null)
+			&& mPermissions.requestPermission(Manifest.permission.RECORD_AUDIO, true));
+	}
+
+	/**
+	 * カメラのパーミッションが有るかどうかをチェック
+	 * なければ説明ダイアログを表示する
+	 * @return true カメラのパーミッションが有る
+	 */
+	private boolean checkPermissionCamera() {
+		return ((mPermissions != null)
+			&& mPermissions.requestPermission(Manifest.permission.CAMERA, true));
+	}
+
+	/**
+	 * ネットワークアクセスのパーミッションが有るかどうかをチェック
+	 * なければ説明ダイアログを表示する
+	 * @return true ネットワークアクセスのパーミッションが有る
+	 */
+	private boolean checkPermissionNetwork() {
+		return ((mPermissions != null)
+			&& mPermissions.requestPermission(Manifest.permission.INTERNET, true));
+	}
+
+	/**
+	 * 位置情報アクセスのパーミッションが有るかどうかをチェック
+	 * なければ説明ダイアログを表示する
+	 * @return true 位置情報アクセスのパーミッションが有る
+	 */
+	private boolean checkPermissionLocation() {
+		return ((mPermissions != null)
+			&& mPermissions.requestPermission(LOCATION_PERMISSIONS, true));
+	}
+
 	private static class Item implements Parcelable {
 		private final int mId;
 		private final String mName;
