@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
 /**
@@ -301,27 +302,29 @@ public class SplitRecFragment2 extends AbstractCameraFragment {
 	
 	private final EncoderListener mEncoderListener = new EncoderListener() {
 		@Override
-		public void onStartEncode(final Encoder encoder, final Surface source,
+		public void onStartEncode(
+			@NonNull final Encoder encoder,
+			@Nullable final Surface source,
 			final int captureFormat, final boolean mayFail) {
 			
 			if (DEBUG) Log.v(TAG, "mEncoderListener#onStartEncode:" + encoder);
 		}
 
 		@Override
-		public void onStopEncode(final Encoder encoder) {
+		public void onStopEncode(@NonNull final Encoder encoder) {
 			if (DEBUG) Log.v(TAG, "mEncoderListener#onStopEncode:" + encoder);
 		}
 
 		@Override
-		public void onDestroy(final Encoder encoder) {
+		public void onDestroy(@NonNull final Encoder encoder) {
 			if (DEBUG) Log.v(TAG, "mEncoderListener#onDestroy:"
 				+ encoder + ",mRecorder=" + mRecorder);
 			if (DEBUG) Log.v(TAG, "mEncoderListener#onDestroy:finished");
 		}
 
 		@Override
-		public void onError(final Exception e) {
-			Log.w(TAG, e);
+		public void onError(@NonNull final Throwable t) {
+			Log.w(TAG, t);
 			final IRecorder recorder = mRecorder;
 			mRecorder = null;
 			if ((recorder != null) && (recorder.isReady() || recorder.isStarted())) {

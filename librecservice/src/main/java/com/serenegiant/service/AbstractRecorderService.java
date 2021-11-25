@@ -863,14 +863,14 @@ public abstract class AbstractRecorderService extends BaseService {
 		}
 
 		@Override
-		public void onError(@NonNull final MediaReaper reaper, final Exception e) {
-			AbstractRecorderService.this.onError(e);
+		public void onError(@NonNull final MediaReaper reaper, final Throwable t) {
+			AbstractRecorderService.this.onError(t);
 		}
 	};
 
-	protected void onError(final Exception e) {
+	protected void onError(final Throwable t) {
 		if (DEBUG) Log.v(TAG, "onError:");
-		Log.w(TAG, e);
+		Log.w(TAG, t);
 	}
 	
 	/**

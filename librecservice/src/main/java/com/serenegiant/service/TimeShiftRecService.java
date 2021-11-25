@@ -313,8 +313,8 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	}
 
 	@Override
-	protected void onError(final Exception e) {
-		super.onError(e);
+	protected void onError(final Throwable t) {
+		super.onError(t);
 		stopTimeShiftAsync();
 	}
 	
