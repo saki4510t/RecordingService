@@ -675,8 +675,9 @@ public class MediaSplitMuxer implements IMuxer {
 		final boolean useMediaMuxer = getConfig().useMediaMuxer();
 		IMuxer result = mMuxerFactory.createMuxer(context, useMediaMuxer, file);
 		if (result == null) {
-			result = mMuxerFactory.createMuxer(useMediaMuxer,
-				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
+			throw new IOException("Failed to create muxer");
+//			result = mMuxerFactory.createMuxer(useMediaMuxer,
+//				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
 		}
 		if (DEBUG) Log.v(TAG, "createMuxer:finished," + result);
 		return result;

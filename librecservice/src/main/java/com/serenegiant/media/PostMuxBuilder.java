@@ -130,8 +130,9 @@ class PostMuxBuilder extends PostMuxCommon {
 		if (hasVideo || hasAudio) {
 			IMuxer muxer = mMuxerFactory.createMuxer(context, mUseMediaMuxer, output);
 			if (muxer == null) {
-				muxer = mMuxerFactory.createMuxer(mUseMediaMuxer,
-					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
+				throw new IOException("Failed to create muxer");
+//				muxer = mMuxerFactory.createMuxer(mUseMediaMuxer,
+//					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 			}
 			if (muxer != null) {
 				try {
@@ -320,8 +321,9 @@ class PostMuxBuilder extends PostMuxCommon {
 		if (hasVideo || hasAudio) {
 			IMuxer muxer = mMuxerFactory.createMuxer(context, mUseMediaMuxer, output);
 			if (muxer == null) {
-				muxer = mMuxerFactory.createMuxer(mUseMediaMuxer,
-					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
+				throw new IOException("Failed to create muxer");
+//				muxer = mMuxerFactory.createMuxer(mUseMediaMuxer,
+//					context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 			}
 			if (muxer != null) {
 				try {

@@ -632,25 +632,21 @@ public class MediaSplitMuxerV2 implements IMuxer {
 	/**
 	 * IMuxer生成処理
 	 * @param context
-	 * @param file
+	 * @param output
 	 * @return
 	 * @throws IOException
 	 */
 	@SuppressLint("NewApi")
 	private IMuxer createMuxer(@NonNull final Context context,
-		@NonNull final DocumentFile file) throws IOException {
+		@NonNull final DocumentFile output) throws IOException {
 
-		if (DEBUG) Log.v(TAG, "createMuxer:uri=" + file.getUri());
+		if (DEBUG) Log.v(TAG, "createMuxer:uri=" + output.getUri());
 		final boolean useMediaMuxer = getConfig().useMediaMuxer();
-		IMuxer result = null;
-		try {
-			result = mMuxerFactory.createMuxer(context, useMediaMuxer, file);
-		} catch (final Exception e) {
-			if (DEBUG) Log.w(TAG, e);
-		}
+		IMuxer result = mMuxerFactory.createMuxer(context, useMediaMuxer, output);
 		if (result == null) {
-			result = mMuxerFactory.createMuxer(useMediaMuxer,
-				context.getContentResolver().openFileDescriptor(file.getUri(), "rw").getFd());
+			throw new IOException("Failed to create muxer");
+//			result = mMuxerFactory.createMuxer(useMediaMuxer,
+//				context.getContentResolver().openFileDescriptor(output.getUri(), "rw").getFd());
 		}
 		if (DEBUG) Log.v(TAG, "createMuxer:finished," + result);
 		return result;
