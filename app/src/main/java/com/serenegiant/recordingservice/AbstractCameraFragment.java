@@ -24,6 +24,8 @@ import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -86,16 +88,22 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 
 		final LayoutInflater custom_inflater
 			= getThemedLayoutInflater(inflater, R.style.AppTheme_Camera);
-		final View rootView
-			= custom_inflater.inflate(R.layout.fragment_camera, container, false);
-		mCameraView = rootView.findViewById(R.id.cameraView);
+		return custom_inflater.inflate(R.layout.fragment_camera, container, false);
+	}
+
+	@Override
+	public void onViewCreated(
+		@NonNull final View view,
+		@Nullable final Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+
+		mCameraView = view.findViewById(R.id.cameraView);
 		mCameraView.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 		mCameraView.setOnClickListener(mOnClickListener);
-		mScaleModeView = rootView.findViewById(R.id.scalemode_textview);
+		mScaleModeView = view.findViewById(R.id.scalemode_textview);
 		updateScaleModeText();
-		mRecordButton = rootView.findViewById(R.id.record_button);
+		mRecordButton = view.findViewById(R.id.record_button);
 		mRecordButton.setOnClickListener(mOnClickListener);
-		return rootView;
 	}
 
 	@Override

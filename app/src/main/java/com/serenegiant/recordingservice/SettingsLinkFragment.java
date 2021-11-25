@@ -42,8 +42,16 @@ public class SettingsLinkFragment extends BaseFragment {
 
 		mBinding = DataBindingUtil.inflate(inflater,
 			R.layout.fragment_settings_link, container, false);
-		init();
 		return mBinding.getRoot();
+	}
+
+	@Override
+	public void onViewCreated(
+		@NonNull final View view,
+		@Nullable final Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+
+		init();
 	}
 
 	private void init() {

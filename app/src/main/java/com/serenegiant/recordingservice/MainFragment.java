@@ -98,9 +98,17 @@ public class MainFragment extends BaseFragment
 	public View onCreateView(@NonNull final LayoutInflater inflater,
 		final ViewGroup container, final Bundle savedInstanceState) {
 
-		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-		final ListView listView = rootView.findViewById(android.R.id.list);
-		final View emptyView = rootView.findViewById(android.R.id.empty);
+		return inflater.inflate(R.layout.fragment_main, container, false);
+	}
+
+	@Override
+	public void onViewCreated(
+		@NonNull final View view,
+		@Nullable final Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+
+		final ListView listView = view.findViewById(android.R.id.list);
+		final View emptyView = view.findViewById(android.R.id.empty);
 		listView.setEmptyView(emptyView);
 		if (mAdapter == null) {
 			mAdapter = new ItemListAdapter(getActivity(),
@@ -108,9 +116,8 @@ public class MainFragment extends BaseFragment
 		}
 		listView.setAdapter(mAdapter);
 		listView.setOnItemClickListener(mOnItemClickListener);
-		return rootView;
 	}
-	
+
 	protected void internalOnResume() {
 		super.internalOnResume();
 		getActivity().setTitle(R.string.app_name);
