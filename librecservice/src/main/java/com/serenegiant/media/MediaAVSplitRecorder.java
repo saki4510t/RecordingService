@@ -38,9 +38,11 @@ import java.io.IOException;
  * @Deprecated API29/Android10以降の対象範囲別ストレージでは動かない(SAF経由でアクセスするなら動く)ので廃止予定。
  * 				代わりにMediaAVSplitRecorderV2を使うこと
  */
+@SuppressWarnings("deprecation")
 @Deprecated
 public class MediaAVSplitRecorder extends Recorder {
 	private static final boolean DEBUG = false; // FIXME set false on production
+	@SuppressWarnings("deprecation")
 	private static final String TAG = MediaAVSplitRecorder.class.getSimpleName();
 
 	@NonNull
@@ -209,7 +211,6 @@ public class MediaAVSplitRecorder extends Recorder {
 			queue, output, name, splitSize));
 	}
 
-	@SuppressWarnings("deprecation")
 	@Deprecated
 	protected void setupMuxer(
 		@NonNull final Context context,

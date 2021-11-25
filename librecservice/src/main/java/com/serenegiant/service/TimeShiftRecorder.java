@@ -83,9 +83,9 @@ public class TimeShiftRecorder extends AbstractServiceRecorder
 
 	/**
 	 * キャッシュサイズを指定
-	 * @param cacheSize
-	 * @throws IllegalStateException
-	 * @throws IllegalArgumentException
+	 * @param cacheSize タイムシフトに使用する映像キャッシュサイズ[バイト]を指定
+	 * @throws IllegalStateException 0以下をセットするとIllegalArgumentExceptionを投げる
+	 * @throws IllegalArgumentException #prepare以降に呼び出されるとIllegalStateExceptionを投げる
 	 */
 	@Override
 	public void setCacheSize(final int cacheSize)

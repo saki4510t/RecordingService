@@ -66,7 +66,7 @@ public class PostMuxRecService extends AbstractRecorderService {
 		MUX_INTERMEDIATE_TYPE_CHANNEL,
 	})
 	@Retention(RetentionPolicy.SOURCE)
-	@interface MuxIntermediateType {}
+	public @interface MuxIntermediateType {}
 	
 	/** Binder class to access this local service */
 	public class LocalBinder extends Binder {

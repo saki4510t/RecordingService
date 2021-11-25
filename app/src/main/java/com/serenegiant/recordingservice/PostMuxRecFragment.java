@@ -35,10 +35,23 @@ import com.serenegiant.utils.FileUtils;
 
 import androidx.documentfile.provider.DocumentFile;
 
+/**
+ * エンコードと録画ファイル生成を分離し、エンコード終了後に一括で録画ファイル生成するテスト用
+ * 中間ファイルを生成する
+ * PostMuxRecorderを使ってサービス上で録画を実行する
+ */
 public class PostMuxRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = PostMuxRecFragment.class.getSimpleName();
-	
+
+	/**
+	 * 中間ファイルの形式
+	 * ・MUX_INTERMEDIATE_TYPE_CHANNEL	MediaRawChannelMuxerを使う
+	 * ・MUX_INTERMEDIATE_TYPE_FILE		MediaRawFileMuxerを使う
+	 */
+	@PostMuxRecService.MuxIntermediateType
+	private static final int MUX_INTERMEDIATE_TYPE = PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL;
+
 	private PostMuxRecorder mRecorder;
 	
 	public PostMuxRecFragment() {
@@ -57,8 +70,7 @@ public class PostMuxRecFragment extends AbstractCameraFragment {
 		if (mRecorder == null) {
 			if (DEBUG) Log.v(TAG, "internalStartRecording:get PostMuxRecorder");
 			mRecorder = PostMuxRecorder.newInstance(requireContext(),
-				PostMuxRecService.class, mCallback,
-				PostMuxRecService.MUX_INTERMEDIATE_TYPE_CHANNEL);
+				PostMuxRecService.class, mCallback, MUX_INTERMEDIATE_TYPE);
 		} else {
 			Log.w(TAG, "internalStartRecording:recorder is not null, already start recording?");
 		}

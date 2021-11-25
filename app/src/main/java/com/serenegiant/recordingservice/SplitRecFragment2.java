@@ -51,7 +51,7 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
 /**
- * MP4自動分割出力クラスのテスト用
+ * MP4自動分割出力クラスのテスト用(MediaAVSplitRecorderV2を使う)
  * XXX これは録画サービスを使わずにUI側で直接録画する
  */
 public class SplitRecFragment2 extends AbstractCameraFragment {

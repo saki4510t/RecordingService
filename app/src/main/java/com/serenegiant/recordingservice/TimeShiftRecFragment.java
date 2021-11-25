@@ -37,11 +37,14 @@ import java.io.IOException;
 
 import androidx.documentfile.provider.DocumentFile;
 
+/**
+ * タイムシフト録画テスト用
+ * TimeShiftRecorderを使ってサービス上で録画を実行する
+ */
 public class TimeShiftRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = TimeShiftRecFragment.class.getSimpleName();
-	
-	
+
 	private TimeShiftRecorder mRecorder;
 
 	public TimeShiftRecFragment() {

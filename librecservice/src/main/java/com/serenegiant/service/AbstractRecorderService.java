@@ -199,6 +199,10 @@ public abstract class AbstractRecorderService extends BaseService {
 	 */
 	@NonNull
 	protected abstract String getTitle();
+
+	public long getStartTimeMs() {
+		return mStartTime;
+	}
 //--------------------------------------------------------------------------------
 // BaseServiceの抽象メソッドをoverride
 	@Override
@@ -821,8 +825,10 @@ public abstract class AbstractRecorderService extends BaseService {
 		mReaperListener = new MediaReaper.ReaperListener() {
 
 		@Override
-		public void writeSampleData(@NonNull final MediaReaper reaper,
-			final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
+		public void writeSampleData(
+			@NonNull final MediaReaper reaper,
+			@NonNull final ByteBuffer byteBuf,
+			@NonNull final MediaCodec.BufferInfo bufferInfo) {
 
 //			if (DEBUG) Log.v(TAG, "writeSampleData:");
 			try {
@@ -1014,7 +1020,7 @@ public abstract class AbstractRecorderService extends BaseService {
 			encodeV21(encoder, buffer, length, presentationTimeUs);
 		} else {
 			final ByteBuffer[] inputBuffers = encoder.getInputBuffers();
-			for ( ; isRunning() && !mIsEos ;) {
+			while (isRunning() && !mIsEos) {
 				final int inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_USEC);
 				if (inputBufferIndex >= 0) {
 					final ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
@@ -1038,7 +1044,7 @@ public abstract class AbstractRecorderService extends BaseService {
 					// 送れるようになるまでループする
 					// MediaCodec#dequeueInputBufferにタイムアウト(10ミリ秒)をセットしているのでここでは待機しない
 				}
-			}
+			} // end of while
 		}
 	}
 	
@@ -1052,7 +1058,7 @@ public abstract class AbstractRecorderService extends BaseService {
 	private void encodeV21(@NonNull final MediaCodec encoder,
 		@Nullable final ByteBuffer buffer, final int length, final long presentationTimeUs) {
 	
-		for ( ; isRunning() && !mIsEos ;) {
+		while (isRunning() && !mIsEos) {
 			final int inputBufferIndex = encoder.dequeueInputBuffer(TIMEOUT_USEC);
 			if (inputBufferIndex >= 0) {
 				final ByteBuffer inputBuffer = encoder.getInputBuffer(inputBufferIndex);
@@ -1076,7 +1082,7 @@ public abstract class AbstractRecorderService extends BaseService {
 				// 送れるようになるまでループする
 				// MediaCodec#dequeueInputBufferにタイムアウト(10ミリ秒)をセットしているのでここでは待機しない
 			}
-		}
+		} // end of while
 	}
 
 	/**

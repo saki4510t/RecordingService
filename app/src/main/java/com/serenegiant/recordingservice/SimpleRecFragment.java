@@ -37,6 +37,10 @@ import java.io.IOException;
 
 import androidx.documentfile.provider.DocumentFile;
 
+/**
+ * サービス上でログがするテスト用
+ * SimpleServiceRecorderを使ってサービ上で録画を実行する
+ */
 public class SimpleRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = SimpleRecFragment.class.getSimpleName();

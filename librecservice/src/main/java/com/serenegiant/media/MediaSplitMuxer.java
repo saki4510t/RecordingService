@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 @Deprecated
 public class MediaSplitMuxer implements IMuxer {
 	private static final boolean DEBUG = false; // FIXME set false on production
+	@SuppressWarnings("deprecation")
 	private static final String TAG = MediaSplitMuxer.class.getSimpleName();
 	
 	/**
@@ -434,7 +435,7 @@ public class MediaSplitMuxer implements IMuxer {
 					boolean mRequestChangeFile = false;
 					int segment = 1, cnt = 0;
 					if (DEBUG) Log.v(TAG, "MuxTask#run:muxing");
-					for ( ; mIsRunning ; ) {
+					while (mIsRunning) {
 						// バッファキューからエンコード済みデータを取得する
 						final RecycleMediaData buf;
 						try {
@@ -490,7 +491,7 @@ public class MediaSplitMuxer implements IMuxer {
 								break;
 							}
 						}
-					} // end of for
+					} // end of while
 				} catch (final Exception e) {
 					Log.w(TAG, e);
 				}
@@ -516,6 +517,7 @@ public class MediaSplitMuxer implements IMuxer {
 	 * ストレージの空き容量を確認する
 	 * @return 空き容量が少なければtrueを返す
 	 */
+	@SuppressWarnings("deprecation")
 	protected boolean checkFreespace() {
 		StorageInfo info = null;
 		if (mOutputDoc != null) {

@@ -60,6 +60,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	/**
 	 * mp4ファイルの出力先ファイル(絶対パス文字列)
 	 */
+	@Deprecated
 	@Nullable
 	private final String mOutputPath;
 	/**
@@ -91,6 +92,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
+	@SuppressWarnings("deprecation")
 	@Deprecated
 	public MediaRawFileMuxer(@NonNull final Context context,
 		@Nullable final VideoConfig config,
@@ -116,6 +118,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
+	@SuppressWarnings("deprecation")
 	public MediaRawFileMuxer(@NonNull final Context context,
 		@Nullable final VideoConfig config,
 		@NonNull final DocumentFile output,
@@ -198,6 +201,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 * 一時rawファイルからmp4ファイルを生成する・
 	 * mp4ファイル生成終了まで返らないので注意
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void build() throws IOException {
 		if (DEBUG) Log.v(TAG, "build:");

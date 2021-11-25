@@ -35,6 +35,11 @@ import com.serenegiant.utils.FileUtils;
 
 import androidx.documentfile.provider.DocumentFile;
 
+/**
+ * タイムラプス動画撮影テスト用(間引いて録画するので早送りになる)
+ * TimelapseServiceRecorderを使ってサービス上で録画を実行する
+ * 録音には対応していない
+ */
 public class TimelapseRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = TimelapseRecFragment.class.getSimpleName();

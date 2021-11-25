@@ -51,7 +51,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * MP4自動分割出力クラスのテスト用
+ * MP4自動分割出力クラスのテスト用(deprecatedのMediaAVSplitRecorderを使う)
  * XXX これは録画サービスを使わずにUI側で直接録画する
  */
 public class SplitRecFragment extends AbstractCameraFragment {

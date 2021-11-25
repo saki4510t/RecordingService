@@ -30,6 +30,10 @@ import com.serenegiant.service.SplitServiceRecorder;
 
 import java.io.IOException;
 
+/**
+ * MP4自動分割出力クラスのテスト用
+ * SplitServiceRecorderを使いサービス上で録画を実行する
+ */
 public class SplitRecFragment3 extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = SplitRecFragment3.class.getSimpleName();

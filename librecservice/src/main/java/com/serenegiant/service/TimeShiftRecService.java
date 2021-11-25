@@ -320,9 +320,9 @@ public class TimeShiftRecService extends AbstractRecorderService {
 	
 	/**
 	 * キャッシュサイズを指定
-	 * @param cacheSize
-	 * @throws IllegalStateException
-	 * @throws IllegalArgumentException
+	 * @param cacheSize タイムシフトに使用する映像キャッシュサイズ[バイト]を指定
+	 * @throws IllegalStateException 0以下をセットするとIllegalArgumentExceptionを投げる
+	 * @throws IllegalArgumentException #prepare以降に呼び出されるとIllegalStateExceptionを投げる
 	 */
 	public void setCacheSize(final int cacheSize)
 		throws IllegalStateException, IllegalArgumentException {
@@ -331,7 +331,7 @@ public class TimeShiftRecService extends AbstractRecorderService {
 			if (getState() != STATE_INITIALIZED) {
 				throw new IllegalStateException();
 			}
-			if (cacheSize < 0) {
+			if (cacheSize <= 0) {
 				throw new IllegalArgumentException("cache size should be greater than zero");
 			}
 			mCacheSize = cacheSize;
