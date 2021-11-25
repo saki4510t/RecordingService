@@ -79,6 +79,7 @@ class PostMuxBuilder extends PostMuxCommon {
 	 * @param outputPath
 	 * @throws IOException
 	 */
+	@Deprecated
 	public void buildFromRawFile(@NonNull final Context context,
 		@NonNull final String tempDirPath,
 		@NonNull final String outputPath) throws IOException {
@@ -147,7 +148,9 @@ class PostMuxBuilder extends PostMuxCommon {
 					mIsRunning = false;
 					muxer.release();
 				}
-			} // if (muxer != null)
+			} else { // if (muxer != null)
+				throw new IOException("Failed to create muxer");
+			}
 		}
 		if (DEBUG) Log.v(TAG, "buildFromRawFile:finished");
 	}
@@ -268,6 +271,7 @@ class PostMuxBuilder extends PostMuxCommon {
 	 * @param outputPath
 	 * @throws IOException
 	 */
+	@Deprecated
 	public void buildFromRawChannel(@NonNull final Context context,
 		@NonNull final String tempDirPath,
 		@NonNull final String outputPath) throws IOException {
@@ -332,7 +336,9 @@ class PostMuxBuilder extends PostMuxCommon {
 					mIsRunning = false;
 					muxer.release();
 				}
-			} // if (muxer != null)
+			} else { // if (muxer != null)
+				throw new IOException("Failed to create muxer");
+			}
 		}
 		if (DEBUG) Log.v(TAG, "buildFromRawFile:finished");
 	}

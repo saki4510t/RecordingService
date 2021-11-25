@@ -91,6 +91,7 @@ public class MediaRawFileMuxer implements IPostMuxer {
 	 * @param configFormatVideo
 	 * @param configFormatAudio
 	 */
+	@Deprecated
 	public MediaRawFileMuxer(@NonNull final Context context,
 		@Nullable final VideoConfig config,
 		@NonNull final String output,
