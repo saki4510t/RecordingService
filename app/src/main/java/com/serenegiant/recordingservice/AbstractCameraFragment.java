@@ -50,6 +50,14 @@ public abstract class AbstractCameraFragment extends BaseFragment {
 	 */
 	protected static final int VIDEO_WIDTH = 1280, VIDEO_HEIGHT = 720;
 	/**
+	 * Video frame rate per second
+	 */
+	protected static final int FPS = 30;
+	/**
+	 * bit per pixel for video recording
+	 */
+	protected static final float BPP = 0.25f;
+	/**
 	 * Audio recording settings
 	 */
 	protected static final int SAMPLE_RATE = 44100, CHANNEL_COUNT = 1;

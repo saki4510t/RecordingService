@@ -136,7 +136,7 @@ public class TimeShiftRecFragment extends AbstractCameraFragment {
 			}
 			if (mRecorder != null) {
 				try {
-					mRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, 30, 0.25f);
+					mRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, FPS, BPP);
 					mRecorder.setAudioSettings(SAMPLE_RATE, CHANNEL_COUNT);
 					mRecorder.prepare();
 				} catch (final Exception e) {

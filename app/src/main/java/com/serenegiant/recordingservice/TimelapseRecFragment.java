@@ -44,8 +44,6 @@ public class TimelapseRecFragment extends AbstractCameraFragment {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = TimelapseRecFragment.class.getSimpleName();
 
-	private static final int FPS = 30;
-
 	private TimelapseServiceRecorder mRecorder;
 
 	public TimelapseRecFragment() {
@@ -98,7 +96,7 @@ public class TimelapseRecFragment extends AbstractCameraFragment {
 			}
 			if (mRecorder != null) {
 				try {
-					mRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, FPS, 0.25f);
+					mRecorder.setVideoSettings(VIDEO_WIDTH, VIDEO_HEIGHT, FPS, BPP);
 //					mRecorder.setAudioSettings(SAMPLE_RATE, CHANNEL_COUNT);	// タイムラプス録画は録音に対応していない
 					mRecorder.prepare();
 				} catch (final Exception e) {

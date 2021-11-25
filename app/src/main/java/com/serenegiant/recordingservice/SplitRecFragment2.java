@@ -170,7 +170,7 @@ public class SplitRecFragment2 extends AbstractCameraFragment {
 		if (DEBUG) Log.v(TAG, "create SurfaceEncoder");
 		mVideoEncoder = new SurfaceEncoder(recorder, mEncoderListener); // API>=18
 		mVideoEncoder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
-		((SurfaceEncoder)mVideoEncoder).setVideoConfig(-1, 30, 10);
+		((SurfaceEncoder)mVideoEncoder).setVideoConfig(-1, FPS, 10);
 		if (audio_source >= 0) {
 			mAudioSampler = new AudioSampler(audio_source,
 				audio_channels, SAMPLE_RATE,
