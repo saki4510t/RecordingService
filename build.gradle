@@ -44,6 +44,7 @@ ext {
 	androidXAnnotation = '1.1.0'
 	androidXMaterial = '1.4.0'
 	androidXConstraint = '2.1.1'
+	androidXMultiDex = '2.0.1'
 
 	commonLibVersion= '7.23.1'
 

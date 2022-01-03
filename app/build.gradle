@@ -22,6 +22,8 @@ android {
 		buildConfigField 'String', 'VERSION_NAME', "\"${rootProject.versionNameString}\""
 
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+		multiDexEnabled true
 	}
 
 	buildTypes {
@@ -65,10 +67,9 @@ dependencies {
 	implementation "androidx.recyclerview:recyclerview:${androidXRecyclerview}"
 	implementation "androidx.annotation:annotation:${androidXAnnotation}"
 	implementation "androidx.constraintlayout:constraintlayout:${androidXConstraint}"
+	implementation "androidx.multidex:multidex:${androidXMultiDex}"
 
-	implementation("com.serenegiant:common:${commonLibVersion}") {
-		exclude module: 'support-v4'
-	}
+	implementation "com.serenegiant:common:${commonLibVersion}"
 
 	implementation project(':librecservice')
 }
